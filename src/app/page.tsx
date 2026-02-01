@@ -15,7 +15,10 @@ import {
   Trash2, 
   RefreshCw, 
   Plus,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Edit2,
+  Check,
+  X
 } from 'lucide-react';
 import { 
   Card, 
@@ -34,6 +37,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from '@/components/ui/input';
 
 export default function AssetTrackerPage() {
   const { toast } = useToast();
@@ -47,6 +51,10 @@ export default function AssetTrackerPage() {
     stockPrices: {}
   });
   const [loading, setLoading] = useState(true);
+  
+  // Editing state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState<string>('');
 
   // Initialize from LocalStorage
   useEffect(() => {
@@ -76,6 +84,8 @@ export default function AssetTrackerPage() {
   useEffect(() => {
     if (assets.length > 0) {
       localStorage.setItem('assets', JSON.stringify(assets));
+    } else {
+      localStorage.removeItem('assets');
     }
     if (snapshots.length > 0) {
       localStorage.setItem('snapshots', JSON.stringify(snapshots));
@@ -200,6 +210,36 @@ export default function AssetTrackerPage() {
     setAssets(prev => prev.filter(a => a.id !== id));
   };
 
+  const startEditing = (asset: Asset) => {
+    setEditingId(asset.id);
+    setEditAmount(asset.amount.toString());
+  };
+
+  const saveEdit = () => {
+    const newAmount = parseFloat(editAmount);
+    if (isNaN(newAmount) || newAmount < 0) {
+      toast({
+        variant: "destructive",
+        title: "無效的數值",
+        description: "請輸入大於或等於 0 的數字。"
+      });
+      return;
+    }
+
+    setAssets(prev => prev.map(a => 
+      a.id === editingId ? { ...a, amount: newAmount } : a
+    ));
+    setEditingId(null);
+    toast({
+      title: "持有量已更新",
+      description: "資產數據已成功修改。"
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+  };
+
   const takeSnapshot = () => {
     const newSnapshot: Snapshot = {
       id: crypto.randomUUID(),
@@ -315,12 +355,40 @@ export default function AssetTrackerPage() {
                       <div className="text-xs text-muted-foreground uppercase">{asset.symbol}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-mono text-sm">
-                        {asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}
-                        <span className="ml-1 text-[10px] text-muted-foreground">
-                          {asset.category === 'Stock' ? '股' : asset.category === 'Crypto' ? asset.symbol : asset.currency}
-                        </span>
-                      </div>
+                      {editingId === asset.id ? (
+                        <div className="flex items-center gap-2">
+                          <Input 
+                            type="number" 
+                            value={editAmount} 
+                            onChange={(e) => setEditAmount(e.target.value)}
+                            className="h-8 w-24 text-sm font-mono"
+                            step="any"
+                          />
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={saveEdit}>
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-red-600" onClick={cancelEdit}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 group/amount">
+                          <div className="font-mono text-sm">
+                            {asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}
+                            <span className="ml-1 text-[10px] text-muted-foreground">
+                              {asset.category === 'Stock' ? '股' : asset.category === 'Crypto' ? asset.symbol : asset.currency}
+                            </span>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 opacity-0 group-hover/amount:opacity-100 transition-opacity"
+                            onClick={() => startEditing(asset)}
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="text-right font-bold text-primary">
                       {getCurrencySymbol(displayCurrency)} {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
