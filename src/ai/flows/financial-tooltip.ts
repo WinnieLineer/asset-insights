@@ -17,12 +17,13 @@ const FinancialTipInputSchema = z.object({
   marketConditions: z
     .string()
     .describe('A summary of current market conditions and trends.'),
+  language: z.enum(['en', 'zh']).default('zh').describe('The language to provide the report in.'),
 });
 export type FinancialTipInput = z.infer<typeof FinancialTipInputSchema>;
 
 const FinancialTipOutputSchema = z.object({
   analysis: z.string().describe('A brief professional analysis of the current portfolio state.'),
-  riskLevel: z.enum(['低', '中', '高']).describe('The overall risk level of the portfolio.'),
+  riskLevel: z.string().describe('The overall risk level of the portfolio (e.g., Low, Medium, High).'),
   diversificationScore: z.number().min(0).max(100).describe('A score from 0-100 indicating how well the portfolio is diversified.'),
   recommendations: z.array(z.string()).describe('A list of 3-4 actionable financial recommendations.'),
 });
@@ -36,18 +37,19 @@ const prompt = ai.definePrompt({
   name: 'financialTipPrompt',
   input: {schema: FinancialTipInputSchema},
   output: {schema: FinancialTipOutputSchema},
-  prompt: `你是一位資深的專業財務顧問。請根據使用者的資產配置與當前市場狀況，提供深入且具體的分析。
+  prompt: `You are a professional senior financial advisor. Provide a deep and specific analysis based on the user's portfolio and market conditions.
 
-  使用者資產摘要：{{{portfolioSummary}}}
-  當前市場狀況：{{{marketConditions}}}
+  Portfolio Summary: {{{portfolioSummary}}}
+  Market Conditions: {{{marketConditions}}}
+  Output Language: {{#if (eq language "en")}}English{{else}}Traditional Chinese (Taiwan){{/if}}
 
-  請提供以下結構的建議：
-  1. 針對現狀的簡短專業分析。
-  2. 風險等級評估（低、中、高）。
-  3. 分散投資評分（0-100 分）。
-  4. 至少 3 點具體、可執行的投資建議。
+  Please provide the following structure:
+  1. A brief professional analysis of the current state.
+  2. Risk level assessment.
+  3. Diversification score (0-100).
+  4. At least 3 specific, actionable investment recommendations.
 
-  請確保使用繁體中文回答。`,
+  Ensure the entire output is in the requested language.`,
 });
 
 const financialTipFlow = ai.defineFlow(
