@@ -15,13 +15,14 @@ import {
   RefreshCw, 
   Edit2, 
   Check, 
-  X, 
   Eye, 
   Calendar,
   Languages,
   ShieldCheck,
   CreditCard,
-  Lock
+  Lock,
+  ArrowRight,
+  Info
 } from 'lucide-react';
 import { 
   Card, 
@@ -48,10 +49,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogDescription,
-  DialogFooter as UIDialogFooter
 } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type Language = 'en' | 'zh';
 
@@ -82,12 +82,16 @@ const translations = {
     licenseTitle: 'Lifetime License',
     licenseDesc: 'Unlock all pro features for life.',
     licensePrice: 'NT$ 30',
-    buyNow: 'Buy Lifetime Access',
-    licensed: 'Activated',
+    buyNow: 'Unlock Pro (NT$ 30)',
+    startTrial: 'Start Free Trial',
+    licensed: 'Pro Active',
     unlicensed: 'Free Version',
     licenseRequired: 'License Required',
-    licensePrompt: 'Please activate your lifetime license to start tracking your assets.',
+    licensePrompt: 'Experience the power of professional asset tracking.',
     activationSuccess: 'Activation Successful! Thank you for your support.',
+    trialLimitAssets: 'Free version limited to 3 assets. Upgrade to Pro for unlimited tracking.',
+    trialLimitSnapshots: 'Free version limited to 1 snapshot. Upgrade to Pro for history trends.',
+    upgradeToPro: 'Upgrade to Pro',
   },
   zh: {
     title: 'Asset Insights',
@@ -115,12 +119,16 @@ const translations = {
     licenseTitle: '終身買斷授權',
     licenseDesc: '一次性付費，解鎖所有專業追蹤與 AI 功能。',
     licensePrice: 'NT$ 30',
-    buyNow: '立即買斷解鎖',
-    licensed: '已啟動 Pro',
-    unlicensed: '免費版',
+    buyNow: '立即解鎖 Pro (NT$ 30)',
+    startTrial: '先試用看看',
+    licensed: 'Pro 已啟動',
+    unlicensed: '試用中 (免費版)',
     licenseRequired: '需要授權',
-    licensePrompt: '請先啟用您的終身授權以開始管理您的個人資產。',
+    licensePrompt: '立即體驗專業資產追蹤與 AI 深度分析。',
     activationSuccess: '啟動成功！感謝您的支持。',
+    trialLimitAssets: '免費版限新增 3 項資產，升級 Pro 以解鎖無限資產追蹤。',
+    trialLimitSnapshots: '免費版限儲存 1 份快照，升級 Pro 以查看完整歷史趨勢。',
+    upgradeToPro: '升級解鎖完整版',
   }
 };
 
@@ -131,7 +139,8 @@ export default function AssetTrackerPage() {
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
   const [isLicensed, setIsLicensed] = useState<boolean>(false);
-  const [isBuyDialogOpen, setIsBuyDialogOpen] = useState(false);
+  const [hasStartedTrial, setHasStartedTrial] = useState<boolean>(false);
+  
   const [marketData, setMarketData] = useState<MarketData>({
     exchangeRate: 32.5,
     rates: { TWD: 32.5, CNY: 7.2, USD: 1 },
@@ -151,11 +160,15 @@ export default function AssetTrackerPage() {
     const savedSnapshots = localStorage.getItem('snapshots');
     const savedLang = localStorage.getItem('language');
     const savedLicense = localStorage.getItem('app_license_v1');
+    const savedTrial = localStorage.getItem('app_trial_started');
     
     if (savedLicense === 'true') setIsLicensed(true);
+    if (savedTrial === 'true') setHasStartedTrial(true);
     if (savedLang) setLanguage(savedLang as Language);
-    if (savedAssets) setAssets(JSON.parse(savedAssets));
-    else {
+    
+    if (savedAssets) {
+      setAssets(JSON.parse(savedAssets));
+    } else {
       setAssets([{
         id: 'default-0050',
         name: '元大台灣50',
@@ -166,16 +179,18 @@ export default function AssetTrackerPage() {
       }]);
     }
     if (savedSnapshots) setSnapshots(JSON.parse(savedSnapshots));
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('assets', assets.length > 0 ? JSON.stringify(assets) : '[]');
-    localStorage.setItem('snapshots', JSON.stringify(snapshots));
-    localStorage.setItem('language', language);
-  }, [assets, snapshots, language]);
+    if (!loading) {
+      localStorage.setItem('assets', JSON.stringify(assets));
+      localStorage.setItem('snapshots', JSON.stringify(snapshots));
+      localStorage.setItem('language', language);
+    }
+  }, [assets, snapshots, language, loading]);
 
   const updateMarketData = async () => {
-    if (!isLicensed) return;
     setLoading(true);
     const cryptos = assets.filter(a => a.category === 'Crypto').map(a => a.symbol);
     const stocks = assets.filter(a => a.category === 'Stock').map(a => a.symbol);
@@ -195,19 +210,21 @@ export default function AssetTrackerPage() {
   };
 
   useEffect(() => {
-    if (isLicensed && assets.length > 0) updateMarketData();
-    else setLoading(false);
-  }, [assets.length, isLicensed]);
+    if (assets.length > 0) updateMarketData();
+  }, [assets.length]);
 
   const handlePurchase = () => {
-    // 模擬支付流程
     localStorage.setItem('app_license_v1', 'true');
     setIsLicensed(true);
-    setIsBuyDialogOpen(false);
     toast({
       title: t.activationSuccess,
       description: t.licenseTitle,
     });
+  };
+
+  const handleStartTrial = () => {
+    localStorage.setItem('app_trial_started', 'true');
+    setHasStartedTrial(true);
   };
 
   const assetCalculations = useMemo(() => {
@@ -252,8 +269,8 @@ export default function AssetTrackerPage() {
   }, [assets, marketData, displayCurrency]);
 
   const takeSnapshot = () => {
-    if (!isLicensed) {
-      setIsBuyDialogOpen(true);
+    if (!isLicensed && snapshots.length >= 1) {
+      toast({ variant: "destructive", title: t.trialLimitSnapshots });
       return;
     }
     const newSnapshot: Snapshot = {
@@ -267,6 +284,14 @@ export default function AssetTrackerPage() {
     toast({ title: t.snapshotSaved });
   };
 
+  const handleAddAsset = (a: Omit<Asset, 'id'>) => {
+    if (!isLicensed && assets.length >= 3) {
+      toast({ variant: "destructive", title: t.trialLimitAssets });
+      return;
+    }
+    setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }]);
+  };
+
   const getCurrencySymbol = (cur: Currency) => cur === 'USD' ? '$' : cur === 'CNY' ? '¥' : 'NT$';
   const convertTWDToDisplay = (twdVal: number) => {
     if (displayCurrency === 'USD') return twdVal / marketData.rates.TWD;
@@ -274,7 +299,7 @@ export default function AssetTrackerPage() {
     return twdVal;
   };
 
-  if (!isLicensed && !loading) {
+  if (!isLicensed && !hasStartedTrial && !loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <Card className="max-w-md w-full shadow-2xl border-t-4 border-t-primary">
@@ -296,8 +321,8 @@ export default function AssetTrackerPage() {
               {[
                 language === 'zh' ? '無限制資產追蹤' : 'Unlimited Asset Tracking',
                 language === 'zh' ? '全球即時匯率與股市抓取' : 'Global Market Data Sync',
-                language === 'zh' ? 'AI 財務顧問問答' : 'Interactive AI Advisor',
-                language === 'zh' ? '歷史快照與趨勢分析' : 'Historical Snapshots & Trends'
+                language === 'zh' ? 'AI 財務顧問對話' : 'Interactive AI Advisor',
+                language === 'zh' ? '完整歷史趨勢分析' : 'Full Historical Trends'
               ].map((text, i) => (
                 <li key={i} className="flex items-center gap-3 text-sm text-slate-600">
                   <ShieldCheck className="h-5 w-5 text-green-500" />
@@ -310,6 +335,10 @@ export default function AssetTrackerPage() {
             <Button className="w-full h-12 text-lg font-semibold" onClick={handlePurchase}>
               <CreditCard className="mr-2 h-5 w-5" />
               {t.buyNow}
+            </Button>
+            <Button variant="outline" className="w-full h-12 text-lg" onClick={handleStartTrial}>
+              {t.startTrial}
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button variant="ghost" className="w-full text-xs text-muted-foreground" onClick={() => setLanguage(language === 'en' ? 'zh' : 'en')}>
               <Languages className="mr-2 h-3 w-3" />
@@ -330,13 +359,20 @@ export default function AssetTrackerPage() {
               <TrendingUp className="h-8 w-8 text-accent" />
               {t.title}
             </h1>
-            <p className="text-muted-foreground mt-1 flex items-center gap-2">
-              {t.subtitle}
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                <ShieldCheck className="h-3 w-3 mr-1" />
-                {t.licensed}
-              </Badge>
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-muted-foreground">{t.subtitle}</p>
+              {isLicensed ? (
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  <ShieldCheck className="h-3 w-3 mr-1" />
+                  {t.licensed}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 cursor-pointer" onClick={() => setHasStartedTrial(false)}>
+                  <Info className="h-3 w-3 mr-1" />
+                  {t.unlicensed}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -364,6 +400,17 @@ export default function AssetTrackerPage() {
           </Button>
         </div>
       </header>
+
+      {!isLicensed && (
+        <Alert className="bg-primary/5 border-primary/20">
+          <Info className="h-4 w-4 text-primary" />
+          <AlertTitle className="text-primary font-bold">{t.upgradeToPro}</AlertTitle>
+          <AlertDescription className="flex items-center justify-between">
+            <span>{assets.length >= 3 ? t.trialLimitAssets : snapshots.length >= 1 ? t.trialLimitSnapshots : t.licensePrompt}</span>
+            <Button size="sm" className="ml-4" onClick={handlePurchase}>{t.buyNow}</Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="shadow-sm border-l-4 border-l-primary bg-primary/5">
@@ -421,7 +468,7 @@ export default function AssetTrackerPage() {
         <div className="xl:col-span-1 space-y-8">
           <Card>
             <CardHeader><CardTitle className="text-lg">{t.addAsset}</CardTitle></CardHeader>
-            <CardContent><AssetForm language={language} onAdd={(a) => setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }])} /></CardContent>
+            <CardContent><AssetForm language={language} onAdd={handleAddAsset} /></CardContent>
           </Card>
 
           <Card>
@@ -445,7 +492,7 @@ export default function AssetTrackerPage() {
                       <Dialog>
                         <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedSnapshot(s)}><Eye className="h-4 w-4" /></Button></DialogTrigger>
                         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader><DialogTitle>{t.snapshotDetail} - {new Date(s.date).toLocaleString(language === 'en' ? 'en-US' : 'zh-TW')}</DialogTitle></DialogHeader>
+                          <DialogHeader><CardTitle>{t.snapshotDetail} - {new Date(s.date).toLocaleString(language === 'en' ? 'en-US' : 'zh-TW')}</CardTitle></DialogHeader>
                           <Table>
                             <TableHeader>
                               <TableRow>
@@ -511,7 +558,7 @@ export default function AssetTrackerPage() {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-right font-bold text-primary">{getCurrencySymbol(displayCurrency)} {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}</TableCell>
+                    <TableCell className="text-right font-bold text-primary">{asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}</TableCell>
                     <TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => setAssets(prev => prev.filter(a => a.id !== asset.id))} className="text-destructive"><Trash2 className="h-4 w-4" /></Button></TableCell>
                   </TableRow>
                 ))}
