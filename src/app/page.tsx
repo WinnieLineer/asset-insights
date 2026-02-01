@@ -150,24 +150,24 @@ export default function AssetTrackerPage() {
     };
 
     const processedAssets = assets.map(asset => {
-      let price = 1; 
+      let currentPrice = 1; 
       
       if (asset.category === 'Crypto') {
-        price = marketData.cryptoPrices[asset.symbol.toUpperCase()] || 0;
+        currentPrice = marketData.cryptoPrices[asset.symbol.toUpperCase()] || 0;
       } else if (asset.category === 'Stock') {
-        price = marketData.stockPrices[asset.symbol.toUpperCase()] || 0;
+        currentPrice = marketData.stockPrices[asset.symbol.toUpperCase()] || 0;
       }
 
       let valueInTWD = 0;
       if (asset.currency === 'USD') {
         const usdValue = (asset.category === 'Stock' || asset.category === 'Crypto') 
-          ? asset.amount * price 
+          ? asset.amount * currentPrice 
           : asset.amount;
         valueInTWD = usdValue * marketData.rates.TWD;
       } else if (asset.currency === 'CNY') {
         valueInTWD = asset.amount * (marketData.rates.TWD / marketData.rates.CNY);
       } else {
-        const multiplier = (asset.category === 'Stock' ? price : 1);
+        const multiplier = (asset.category === 'Stock' ? (currentPrice || 1) : 1);
         valueInTWD = asset.amount * multiplier;
       }
 
@@ -180,7 +180,7 @@ export default function AssetTrackerPage() {
 
       return {
         ...asset,
-        calculatedPrice: price,
+        calculatedPrice: currentPrice,
         valueInTWD,
         valueInDisplay
       };
@@ -235,12 +235,16 @@ export default function AssetTrackerPage() {
       date: new Date().toISOString(),
       totalTWD: assetCalculations.totalTWD,
       allocations: assetCalculations.processedAssets.map(a => ({ category: a.category, value: a.valueInTWD })),
-      assets: [...assetCalculations.processedAssets] // 儲存當時的詳細狀態
+      assets: assetCalculations.processedAssets.map(a => ({
+        ...a,
+        price: a.calculatedPrice, // 存檔時捕捉價格
+        valueInTWD: a.valueInTWD    // 存檔時捕捉台幣價值
+      }))
     };
     setSnapshots(prev => [...prev, newSnapshot].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
     toast({
       title: "快照已存檔",
-      description: `當前總資產 NT$${assetCalculations.totalTWD.toLocaleString()}。`
+      description: `當前總資產 NT$${assetCalculations.totalTWD.toLocaleString(undefined, { maximumFractionDigits: 0 })}。`
     });
   };
 
@@ -253,6 +257,12 @@ export default function AssetTrackerPage() {
     if (cur === 'USD') return '$';
     if (cur === 'CNY') return '¥';
     return 'NT$';
+  };
+
+  const convertTWDToDisplay = (twdVal: number) => {
+    if (displayCurrency === 'USD') return twdVal / marketData.rates.TWD;
+    if (displayCurrency === 'CNY') return twdVal * (marketData.rates.CNY / marketData.rates.TWD);
+    return twdVal;
   };
 
   const portfolioSummary = `Current portfolio total: NT$${assetCalculations.totalTWD.toLocaleString()}.`;
@@ -348,7 +358,9 @@ export default function AssetTrackerPage() {
                   <div key={s.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50 transition-colors">
                     <div>
                       <div className="text-sm font-medium">{new Date(s.date).toLocaleDateString()}</div>
-                      <div className="text-xs text-muted-foreground">NT${s.totalTWD.toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {getCurrencySymbol(displayCurrency)} {convertTWDToDisplay(s.totalTWD).toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
+                      </div>
                     </div>
                     <div className="flex gap-1">
                       <Dialog>
@@ -364,8 +376,10 @@ export default function AssetTrackerPage() {
                           <div className="space-y-4 pt-4">
                             <div className="grid grid-cols-2 gap-4">
                               <Card className="p-4 bg-muted/30">
-                                <div className="text-xs text-muted-foreground uppercase">當時總資產</div>
-                                <div className="text-xl font-bold">NT${s.totalTWD.toLocaleString()}</div>
+                                <div className="text-xs text-muted-foreground uppercase">當時總資產 ({displayCurrency})</div>
+                                <div className="text-xl font-bold">
+                                  {getCurrencySymbol(displayCurrency)} {convertTWDToDisplay(s.totalTWD).toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
+                                </div>
                               </Card>
                             </div>
                             <Table>
@@ -373,20 +387,31 @@ export default function AssetTrackerPage() {
                                 <TableRow>
                                   <TableHead>資產</TableHead>
                                   <TableHead>當時數量</TableHead>
-                                  <TableHead className="text-right">估值 (TWD)</TableHead>
+                                  <TableHead className="text-right">當時估值 ({displayCurrency})</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {s.assets?.map((a, idx) => (
-                                  <TableRow key={idx}>
-                                    <TableCell>
-                                      <div className="text-sm font-medium">{a.name}</div>
-                                      <div className="text-[10px] text-muted-foreground">{a.symbol}</div>
-                                    </TableCell>
-                                    <TableCell className="text-sm">{a.amount.toLocaleString()} {a.category === 'Stock' ? '股' : ''}</TableCell>
-                                    <TableCell className="text-right font-medium">NT${(a.amount * (a.price || 1)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
-                                  </TableRow>
-                                ))}
+                                {s.assets?.map((a, idx) => {
+                                  // 使用儲存時的台幣價值進行當前幣別換算，確保與總額一致
+                                  const displayValue = convertTWDToDisplay(a.valueInTWD || 0);
+                                  return (
+                                    <TableRow key={idx}>
+                                      <TableCell>
+                                        <div className="text-sm font-medium">{a.name}</div>
+                                        <div className="text-[10px] text-muted-foreground">{a.symbol}</div>
+                                      </TableCell>
+                                      <TableCell className="text-sm">
+                                        {a.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })} 
+                                        <span className="ml-1 text-[10px] text-muted-foreground">
+                                          {a.category === 'Stock' ? '股' : a.category === 'Crypto' ? a.symbol : a.currency}
+                                        </span>
+                                      </TableCell>
+                                      <TableCell className="text-right font-medium text-primary">
+                                        {getCurrencySymbol(displayCurrency)} {displayValue.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
                               </TableBody>
                             </Table>
                           </div>

@@ -12,6 +12,7 @@ export interface Asset {
   currency: Currency;
   interestRate?: number; // For Fixed Deposit
   price?: number; // Current market price in its base currency
+  valueInTWD?: number; // 儲存快照時的台幣總價值
 }
 
 export interface Snapshot {
