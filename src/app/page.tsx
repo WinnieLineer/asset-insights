@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Asset, Snapshot, MarketData, AssetCategory } from './lib/types';
-import { fetchMarketData } from '@/lib/api-service';
+import { getMarketData } from '@/app/actions/market';
 import { AssetForm } from '@/components/AssetForm';
 import { PortfolioCharts } from '@/components/PortfolioCharts';
 import { AITipCard } from '@/components/AITipCard';
@@ -14,10 +14,7 @@ import {
   History, 
   Trash2, 
   RefreshCw, 
-  Plus,
-  Coins,
-  Banknote,
-  Briefcase
+  Plus
 } from 'lucide-react';
 import { 
   Card, 
@@ -55,7 +52,6 @@ export default function AssetTrackerPage() {
     if (savedAssets) {
       setAssets(JSON.parse(savedAssets));
     } else {
-      // 根據您的需求預設 0050 數據
       const initialAssets: Asset[] = [
         {
           id: 'default-0050',
@@ -82,21 +78,26 @@ export default function AssetTrackerPage() {
     }
   }, [assets, snapshots]);
 
-  // Fetch live data
+  // Fetch live data via Server Action
   const updateMarketData = async () => {
     setLoading(true);
     const cryptos = assets.filter(a => a.category === 'Crypto').map(a => a.symbol);
     const stocks = assets.filter(a => a.category === 'Stock').map(a => a.symbol);
     
     try {
-      const data = await fetchMarketData({ cryptos, stocks });
+      const data = await getMarketData({ cryptos, stocks });
       setMarketData(data);
       toast({
-        title: "行情已更新",
-        description: `匯率：${data.exchangeRate.toFixed(2)}，股票/加密貨幣已同步。`
+        title: "數據已自動抓取",
+        description: `0050 目前市價：NT$${data.stockPrices['0050'] || '未取得'}。`
       });
     } catch (error) {
       console.error('Market update failed', error);
+      toast({
+        variant: "destructive",
+        title: "抓取失敗",
+        description: "無法連接到市場數據介面。"
+      });
     } finally {
       setLoading(false);
     }
@@ -137,8 +138,8 @@ export default function AssetTrackerPage() {
           valueInTWD = asset.amount * marketData.exchangeRate;
         }
       } else {
-        // TWD 計價資產 (如 0050) 直接乘上 TWD 價格
-        valueInTWD = asset.amount * price;
+        // TWD 資產 (0050) 直接使用抓取到的 TWD 價格
+        valueInTWD = asset.amount * (asset.category === 'Stock' ? price : 1);
       }
 
       totalTWD += valueInTWD;
@@ -203,7 +204,7 @@ export default function AssetTrackerPage() {
             className="flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            更新行情
+            更新市場數據
           </Button>
           <Button 
             onClick={takeSnapshot} 
@@ -223,7 +224,9 @@ export default function AssetTrackerPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">NT$ {assetCalculations.totalTWD.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">匯率參考：USD/TWD @ {marketData.exchangeRate.toFixed(2)}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              自動抓取：0050 @ NT${marketData.stockPrices['0050']?.toFixed(2) || '--'}
+            </p>
           </CardContent>
         </Card>
 
