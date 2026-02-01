@@ -291,7 +291,20 @@ export default function AssetTrackerPage() {
         </Card>
 
         <div className="md:col-span-2">
-          <AITipCard language={language} portfolioSummary={`Total: NT$${assetCalculations.totalTWD.toLocaleString()}`} marketConditions={`1 USD = ${marketData.rates.TWD.toFixed(2)} TWD`} />
+          <AITipCard 
+            language={language} 
+            assets={assetCalculations.processedAssets.map(a => ({
+              name: a.name,
+              symbol: a.symbol,
+              category: a.category,
+              amount: a.amount,
+              currency: a.currency,
+              price: a.calculatedPrice,
+              valueInTWD: a.valueInTWD
+            }))}
+            totalTWD={assetCalculations.totalTWD}
+            marketConditions={`1 USD = ${marketData.rates.TWD.toFixed(2)} TWD`} 
+          />
         </div>
       </div>
 
