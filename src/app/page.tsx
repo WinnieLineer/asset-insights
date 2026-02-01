@@ -22,7 +22,10 @@ import {
   CreditCard,
   Lock,
   ArrowRight,
-  Info
+  Info,
+  QrCode,
+  Smartphone,
+  Loader2
 } from 'lucide-react';
 import { 
   Card, 
@@ -49,9 +52,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter as DialogFooterUI,
 } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 type Language = 'en' | 'zh';
 
@@ -92,6 +98,13 @@ const translations = {
     trialLimitAssets: 'Free version limited to 3 assets. Upgrade to Pro for unlimited tracking.',
     trialLimitSnapshots: 'Free version limited to 1 snapshot. Upgrade to Pro for history trends.',
     upgradeToPro: 'Upgrade to Pro',
+    paymentMethod: 'Select Payment Method',
+    payNow: 'Complete Purchase',
+    processing: 'Processing Payment...',
+    creditCard: 'Credit Card',
+    linePay: 'LINE Pay',
+    jkopay: 'JKOPAY',
+    scanQr: 'Please scan the QR code to pay',
   },
   zh: {
     title: 'Asset Insights',
@@ -129,6 +142,13 @@ const translations = {
     trialLimitAssets: '免費版限新增 3 項資產，升級 Pro 以解鎖無限資產追蹤。',
     trialLimitSnapshots: '免費版限儲存 1 份快照，升級 Pro 以查看完整歷史趨勢。',
     upgradeToPro: '升級解鎖完整版',
+    paymentMethod: '選擇支付方式',
+    payNow: '確認支付',
+    processing: '金流處理中...',
+    creditCard: '信用卡 / 金融卡',
+    linePay: 'LINE Pay',
+    jkopay: '街口支付',
+    scanQr: '請使用手機掃描下方 QR Code 完成支付',
   }
 };
 
@@ -140,6 +160,9 @@ export default function AssetTrackerPage() {
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
   const [isLicensed, setIsLicensed] = useState<boolean>(false);
   const [hasStartedTrial, setHasStartedTrial] = useState<boolean>(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentStep, setPaymentStep] = useState<'selection' | 'processing' | 'success'>('selection');
+  const [selectedMethod, setSelectedMethod] = useState('credit');
   
   const [marketData, setMarketData] = useState<MarketData>({
     exchangeRate: 32.5,
@@ -213,13 +236,22 @@ export default function AssetTrackerPage() {
     if (assets.length > 0) updateMarketData();
   }, [assets.length]);
 
-  const handlePurchase = () => {
-    localStorage.setItem('app_license_v1', 'true');
-    setIsLicensed(true);
-    toast({
-      title: t.activationSuccess,
-      description: t.licenseTitle,
-    });
+  const handleProcessPayment = () => {
+    setPaymentStep('processing');
+    // 模擬串接金流延遲
+    setTimeout(() => {
+      localStorage.setItem('app_license_v1', 'true');
+      setIsLicensed(true);
+      setPaymentStep('success');
+      toast({
+        title: t.activationSuccess,
+        description: t.licenseTitle,
+      });
+      // 延遲關閉視窗
+      setTimeout(() => {
+        setShowPaymentDialog(false);
+      }, 1500);
+    }, 2000);
   };
 
   const handleStartTrial = () => {
@@ -332,10 +364,76 @@ export default function AssetTrackerPage() {
             </ul>
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
-            <Button className="w-full h-12 text-lg font-semibold" onClick={handlePurchase}>
-              <CreditCard className="mr-2 h-5 w-5" />
-              {t.buyNow}
-            </Button>
+            <Dialog open={showPaymentDialog} onOpenChange={(open) => { setShowPaymentDialog(open); if(!open) setPaymentStep('selection'); }}>
+              <DialogTrigger asChild>
+                <Button className="w-full h-12 text-lg font-semibold">
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  {t.buyNow}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[400px]">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5 text-primary" />
+                    {t.licenseTitle} - {t.licensePrice}
+                  </DialogTitle>
+                </DialogHeader>
+
+                {paymentStep === 'selection' && (
+                  <div className="py-4 space-y-6">
+                    <RadioGroup defaultValue="credit" onValueChange={setSelectedMethod} className="space-y-3">
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                        <RadioGroupItem value="credit" id="credit" />
+                        <Label htmlFor="credit" className="flex flex-1 items-center justify-between cursor-pointer">
+                          <span className="font-medium">{t.creditCard}</span>
+                          <CreditCard className="h-5 w-5 text-slate-400" />
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                        <RadioGroupItem value="linepay" id="linepay" />
+                        <Label htmlFor="linepay" className="flex flex-1 items-center justify-between cursor-pointer">
+                          <span className="font-medium">{t.linePay}</span>
+                          <Smartphone className="h-5 w-5 text-green-500" />
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
+                        <RadioGroupItem value="jkopay" id="jkopay" />
+                        <Label htmlFor="jkopay" className="flex flex-1 items-center justify-between cursor-pointer">
+                          <span className="font-medium">{t.jkopay}</span>
+                          <div className="bg-red-500 text-white text-[10px] px-1 rounded font-bold">JKO</div>
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                    <Button onClick={handleProcessPayment} className="w-full h-11 bg-primary">
+                      {t.payNow}
+                    </Button>
+                  </div>
+                )}
+
+                {paymentStep === 'processing' && (
+                  <div className="py-12 flex flex-col items-center justify-center space-y-4">
+                    <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                    <p className="text-sm font-medium animate-pulse">{t.processing}</p>
+                    {selectedMethod !== 'credit' && (
+                      <div className="mt-4 p-4 bg-slate-50 rounded-lg flex flex-col items-center">
+                        <QrCode className="h-32 w-32 text-slate-800" />
+                        <p className="text-[10px] text-muted-foreground mt-2">{t.scanQr}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {paymentStep === 'success' && (
+                  <div className="py-12 flex flex-col items-center justify-center space-y-4">
+                    <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center">
+                      <Check className="h-10 w-10 text-green-600" />
+                    </div>
+                    <p className="text-lg font-bold text-green-600">{t.activationSuccess}</p>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
+
             <Button variant="outline" className="w-full h-12 text-lg" onClick={handleStartTrial}>
               {t.startTrial}
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -367,7 +465,7 @@ export default function AssetTrackerPage() {
                   {t.licensed}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 cursor-pointer" onClick={() => setHasStartedTrial(false)}>
+                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 cursor-pointer" onClick={() => { setHasStartedTrial(false); setPaymentStep('selection'); }}>
                   <Info className="h-3 w-3 mr-1" />
                   {t.unlicensed}
                 </Badge>
@@ -407,7 +505,7 @@ export default function AssetTrackerPage() {
           <AlertTitle className="text-primary font-bold">{t.upgradeToPro}</AlertTitle>
           <AlertDescription className="flex items-center justify-between">
             <span>{assets.length >= 3 ? t.trialLimitAssets : snapshots.length >= 1 ? t.trialLimitSnapshots : t.licensePrompt}</span>
-            <Button size="sm" className="ml-4" onClick={handlePurchase}>{t.buyNow}</Button>
+            <Button size="sm" className="ml-4" onClick={() => { setHasStartedTrial(false); setPaymentStep('selection'); }}>{t.buyNow}</Button>
           </AlertDescription>
         </Alert>
       )}
@@ -506,7 +604,9 @@ export default function AssetTrackerPage() {
                               {s.assets?.map((a, idx) => (
                                 <TableRow key={idx}>
                                   <TableCell><div className="text-sm font-medium">{a.name}</div><div className="text-[10px] text-muted-foreground uppercase">{a.symbol}</div></TableCell>
-                                  <TableCell className="text-sm font-mono text-muted-foreground">{a.price ? `${getCurrencySymbol(a.currency)}${a.price.toLocaleString()}` : '--'}</TableCell>
+                                  <TableCell className="text-sm font-mono text-muted-foreground">
+                                    {(a.category === 'Stock' || a.category === 'Crypto') ? (a.price ? `${getCurrencySymbol(a.currency)}${a.price.toLocaleString()}` : '--') : '--'}
+                                  </TableCell>
                                   <TableCell className="text-sm font-mono">{a.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</TableCell>
                                   <TableCell className="text-right font-medium text-primary">{getCurrencySymbol(displayCurrency)} {convertTWDToDisplay(a.valueInTWD || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
                                 </TableRow>
