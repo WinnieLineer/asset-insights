@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -22,17 +23,28 @@ interface PortfolioChartsProps {
   allocationData: { name: string; value: number }[];
   historicalData: Snapshot[];
   displayCurrency: Currency;
-  exchangeRate: number;
+  rates: { TWD: number, CNY: number, USD: number };
 }
 
-export function PortfolioCharts({ allocationData, historicalData, displayCurrency, exchangeRate }: PortfolioChartsProps) {
-  // 處理歷史數據以符合當前顯示幣別
+export function PortfolioCharts({ allocationData, historicalData, displayCurrency, rates }: PortfolioChartsProps) {
+  const getCurrencySymbol = (cur: Currency) => {
+    if (cur === 'USD') return '$';
+    if (cur === 'CNY') return '¥';
+    return 'NT$';
+  };
+
+  const convertTWDToDisplay = (twdVal: number) => {
+    if (displayCurrency === 'USD') return twdVal / rates.TWD;
+    if (displayCurrency === 'CNY') return twdVal * (rates.CNY / rates.TWD);
+    return twdVal;
+  };
+
   const processedHistoricalData = historicalData.map(d => ({
     ...d,
-    totalValue: displayCurrency === 'TWD' ? d.totalTWD : d.totalTWD / exchangeRate
+    totalValue: convertTWDToDisplay(d.totalTWD)
   }));
 
-  const currencySymbol = displayCurrency === 'USD' ? '$' : 'NT$';
+  const currencySymbol = getCurrencySymbol(displayCurrency);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -55,7 +67,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 ))}
               </Pie>
               <RechartsTooltip 
-                formatter={(value: number) => `${currencySymbol}${value.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'USD' ? 2 : 0 })}`}
+                formatter={(value: number) => `${currencySymbol}${value.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}`}
               />
               <Legend />
             </PieChart>
@@ -79,7 +91,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 tickFormatter={(val) => `${currencySymbol}${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`}
               />
               <RechartsTooltip 
-                formatter={(value: number) => [`${currencySymbol}${value.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'USD' ? 2 : 0 })}`, '總資產']}
+                formatter={(value: number) => [`${currencySymbol}${value.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}`, '總資產']}
                 labelFormatter={(label) => new Date(label).toLocaleDateString()}
               />
               <Line 

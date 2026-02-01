@@ -8,7 +8,6 @@ const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
 /**
  * 從 Yahoo Finance 抓取價格
- * 針對台股代碼（純數字，如 2330）自動加上 .TW 字尾以符合 Yahoo API 格式
  */
 async function fetchYahooStockPrice(symbol: string): Promise<number | null> {
   const isNumeric = /^\d+$/.test(symbol);
@@ -33,16 +32,20 @@ async function fetchYahooStockPrice(symbol: string): Promise<number | null> {
 }
 
 export async function getMarketData(symbols: { cryptos: string[]; stocks: string[] }): Promise<MarketData> {
-  let exchangeRate = 32.5;
+  let rates = { TWD: 32.5, CNY: 7.2, USD: 1 };
   const cryptoPrices: Record<string, number> = {};
   const stockPrices: Record<string, number> = {};
 
-  // 1. 抓取最新匯率 (USD to TWD)
+  // 1. 抓取最新匯率 (USD base)
   try {
     const erResponse = await fetch(EXCHANGE_RATE_API);
     if (erResponse.ok) {
       const data = await erResponse.json();
-      exchangeRate = data.rates.TWD;
+      rates = {
+        TWD: data.rates.TWD,
+        CNY: data.rates.CNY,
+        USD: 1
+      };
     }
   } catch (e) {}
 
@@ -62,19 +65,19 @@ export async function getMarketData(symbols: { cryptos: string[]; stocks: string
     }
   } catch (e) {}
 
-  // 3. 抓取所有股票價格 (自動判定台股或美股)
+  // 3. 抓取股票價格
   for (const s of symbols.stocks) {
     const price = await fetchYahooStockPrice(s);
     if (price !== null) {
       stockPrices[s.toUpperCase()] = price;
     } else {
-      // 若抓取失敗，暫時回傳 0 以免計算錯誤
       stockPrices[s.toUpperCase()] = 0;
     }
   }
 
   return {
-    exchangeRate,
+    exchangeRate: rates.TWD,
+    rates,
     cryptoPrices,
     stockPrices,
   };

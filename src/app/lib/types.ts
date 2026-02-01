@@ -1,5 +1,5 @@
 
-export type Currency = 'TWD' | 'USD';
+export type Currency = 'TWD' | 'USD' | 'CNY';
 
 export type AssetCategory = 'Stock' | 'Crypto' | 'Bank' | 'Fixed Deposit' | 'Savings';
 
@@ -26,6 +26,11 @@ export interface Snapshot {
 
 export interface MarketData {
   exchangeRate: number; // 1 USD to TWD
+  rates: {
+    TWD: number;
+    CNY: number;
+    USD: number;
+  };
   cryptoPrices: Record<string, number>; // symbol to USD price
   stockPrices: Record<string, number>; // symbol to USD price
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -41,6 +42,7 @@ export default function AssetTrackerPage() {
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
   const [marketData, setMarketData] = useState<MarketData>({
     exchangeRate: 32.5,
+    rates: { TWD: 32.5, CNY: 7.2, USD: 1 },
     cryptoPrices: {},
     stockPrices: {}
   });
@@ -91,14 +93,14 @@ export default function AssetTrackerPage() {
       setMarketData(data);
       toast({
         title: "市場數據已更新",
-        description: `成功抓取 ${stocks.length} 項股票及 ${cryptos.length} 項加密貨幣數據。`
+        description: `成功抓取數據。1 USD = ${data.rates.TWD.toFixed(2)} TWD / ${data.rates.CNY.toFixed(2)} CNY`
       });
     } catch (error) {
       console.error('Market update failed', error);
       toast({
         variant: "destructive",
         title: "抓取失敗",
-        description: "目前無法連接到市場數據介面，請稍後再試。"
+        description: "目前無法連接到市場數據介面。"
       });
     } finally {
       setLoading(false);
@@ -135,11 +137,13 @@ export default function AssetTrackerPage() {
 
       let valueInTWD = 0;
       if (asset.currency === 'USD') {
-        if (asset.category === 'Stock' || asset.category === 'Crypto') {
-          valueInTWD = asset.amount * price * marketData.exchangeRate;
-        } else {
-          valueInTWD = asset.amount * marketData.exchangeRate;
-        }
+        const usdValue = (asset.category === 'Stock' || asset.category === 'Crypto') 
+          ? asset.amount * price 
+          : asset.amount;
+        valueInTWD = usdValue * marketData.rates.TWD;
+      } else if (asset.currency === 'CNY') {
+        // CNY to TWD via USD cross rate
+        valueInTWD = asset.amount * (marketData.rates.TWD / marketData.rates.CNY);
       } else {
         // TWD 資產
         const multiplier = (asset.category === 'Stock' ? price : 1);
@@ -149,8 +153,13 @@ export default function AssetTrackerPage() {
       totalTWD += valueInTWD;
       allocationMap[asset.category] += valueInTWD;
 
-      // 轉換為當前顯示幣別的價值
-      const valueInDisplay = displayCurrency === 'TWD' ? valueInTWD : valueInTWD / marketData.exchangeRate;
+      // 轉換為當前顯示幣別
+      let valueInDisplay = valueInTWD;
+      if (displayCurrency === 'USD') {
+        valueInDisplay = valueInTWD / marketData.rates.TWD;
+      } else if (displayCurrency === 'CNY') {
+        valueInDisplay = valueInTWD * (marketData.rates.CNY / marketData.rates.TWD);
+      }
 
       return {
         ...asset,
@@ -160,7 +169,12 @@ export default function AssetTrackerPage() {
       };
     });
 
-    const totalDisplay = displayCurrency === 'TWD' ? totalTWD : totalTWD / marketData.exchangeRate;
+    let totalDisplay = totalTWD;
+    if (displayCurrency === 'USD') {
+      totalDisplay = totalTWD / marketData.rates.TWD;
+    } else if (displayCurrency === 'CNY') {
+      totalDisplay = totalTWD * (marketData.rates.CNY / marketData.rates.TWD);
+    }
 
     return { 
       processedAssets, 
@@ -168,10 +182,12 @@ export default function AssetTrackerPage() {
       totalDisplay,
       allocationData: Object.entries(allocationMap)
         .filter(([_, value]) => value > 0)
-        .map(([name, value]) => ({ 
-          name, 
-          value: displayCurrency === 'TWD' ? value : value / marketData.exchangeRate 
-        }))
+        .map(([name, value]) => {
+          let displayVal = value;
+          if (displayCurrency === 'USD') displayVal = value / marketData.rates.TWD;
+          if (displayCurrency === 'CNY') displayVal = value * (marketData.rates.CNY / marketData.rates.TWD);
+          return { name, value: displayVal };
+        })
     };
   }, [assets, marketData, displayCurrency]);
 
@@ -198,47 +214,44 @@ export default function AssetTrackerPage() {
     });
   };
 
-  const portfolioSummary = `Current portfolio: Total NT$${assetCalculations.totalTWD.toLocaleString()}. Allocation: ${assetCalculations.allocationData.map(d => `${d.name}: ${((d.value/assetCalculations.totalDisplay)*100).toFixed(1)}%`).join(', ')}.`;
-  const marketConditions = `USD/TWD rate is ${marketData.exchangeRate.toFixed(2)}. Market prices are live.`;
+  const getCurrencySymbol = (cur: Currency) => {
+    if (cur === 'USD') return '$';
+    if (cur === 'CNY') return '¥';
+    return 'NT$';
+  };
+
+  const portfolioSummary = `Current portfolio total: NT$${assetCalculations.totalTWD.toLocaleString()}.`;
+  const marketConditions = `Rates: 1 USD = ${marketData.rates.TWD.toFixed(2)} TWD, ${marketData.rates.CNY.toFixed(2)} CNY.`;
 
   return (
     <div className="min-h-screen p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
-      {/* Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border shadow-sm">
         <div>
           <h1 className="text-3xl font-headline font-bold text-primary flex items-center gap-2">
             <TrendingUp className="h-8 w-8 text-accent" />
             Asset Insights
           </h1>
-          <p className="text-muted-foreground mt-1">追蹤您的全球與台灣資產組合。</p>
+          <p className="text-muted-foreground mt-1">追蹤全球資產組合。</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
             <TabsList className="bg-slate-100">
               <TabsTrigger value="TWD">TWD</TabsTrigger>
               <TabsTrigger value="USD">USD</TabsTrigger>
+              <TabsTrigger value="CNY">CNY</TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button 
-            variant="outline" 
-            onClick={updateMarketData} 
-            disabled={loading}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" onClick={updateMarketData} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             更新數據
           </Button>
-          <Button 
-            onClick={takeSnapshot} 
-            className="bg-accent hover:bg-accent/90 flex items-center gap-2"
-          >
-            <History className="h-4 w-4" />
+          <Button onClick={takeSnapshot} className="bg-accent hover:bg-accent/90">
+            <History className="h-4 w-4 mr-2" />
             存儲快照
           </Button>
         </div>
       </header>
 
-      {/* Main Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="shadow-sm border-l-4 border-l-primary bg-primary/5">
           <CardHeader className="pb-2">
@@ -248,11 +261,10 @@ export default function AssetTrackerPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">
-              {displayCurrency === 'USD' ? '$' : 'NT$'} {assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'USD' ? 2 : 0 })}
+              {getCurrencySymbol(displayCurrency)} {assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2 bg-white/50 w-fit px-2 py-1 rounded">
-              <ArrowRightLeft className="h-3 w-3" />
-              <span>1 USD = {marketData.exchangeRate.toFixed(2)} TWD</span>
+            <div className="text-xs text-muted-foreground mt-2 bg-white/50 w-fit px-2 py-1 rounded">
+              1 USD = {marketData.rates.TWD.toFixed(2)} TWD / {marketData.rates.CNY.toFixed(2)} CNY
             </div>
           </CardContent>
         </Card>
@@ -261,18 +273,13 @@ export default function AssetTrackerPage() {
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">資產數量</CardTitle>
           </CardHeader>
-          <CardContent className="flex items-center gap-2">
-            <div className="text-2xl font-bold font-headline">
-              {assets.length} <span className="text-sm font-normal text-muted-foreground">項</span>
-            </div>
+          <CardContent>
+            <div className="text-2xl font-bold font-headline">{assets.length} <span className="text-sm font-normal">項</span></div>
           </CardContent>
         </Card>
 
         <div className="md:col-span-2">
-          <AITipCard 
-            portfolioSummary={portfolioSummary} 
-            marketConditions={marketConditions} 
-          />
+          <AITipCard portfolioSummary={portfolioSummary} marketConditions={marketConditions} />
         </div>
       </div>
 
@@ -280,94 +287,51 @@ export default function AssetTrackerPage() {
         allocationData={assetCalculations.allocationData} 
         historicalData={snapshots} 
         displayCurrency={displayCurrency}
-        exchangeRate={marketData.exchangeRate}
+        rates={marketData.rates}
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <div className="xl:col-span-1 space-y-6">
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-headline text-lg">
-                <Plus className="h-5 w-5 text-primary" />
-                新增資產
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AssetForm onAdd={addAsset} />
-            </CardContent>
+        <div className="xl:col-span-1">
+          <Card><CardHeader><CardTitle className="text-lg">新增資產</CardTitle></CardHeader>
+            <CardContent><AssetForm onAdd={addAsset} /></CardContent>
           </Card>
         </div>
-
         <div className="xl:col-span-2">
-          <Card className="shadow-sm overflow-hidden">
-            <CardHeader className="bg-slate-50 border-b">
-              <CardTitle className="flex items-center gap-2 font-headline text-lg text-primary">
-                <Wallet className="h-5 w-5" />
-                資產明細
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>資產名稱 / 代號</TableHead>
-                    <TableHead>分類</TableHead>
-                    <TableHead>持有量</TableHead>
-                    <TableHead>市場單價</TableHead>
-                    <TableHead className="text-right">估值 ({displayCurrency})</TableHead>
-                    <TableHead></TableHead>
+          <Card className="overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>資產名稱</TableHead>
+                  <TableHead>持有量</TableHead>
+                  <TableHead className="text-right">估值 ({displayCurrency})</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {assetCalculations.processedAssets.map(asset => (
+                  <TableRow key={asset.id} className="group">
+                    <TableCell>
+                      <div className="font-medium">{asset.name}</div>
+                      <div className="text-xs text-muted-foreground uppercase">{asset.symbol}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-mono text-sm">
+                        {asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}
+                        <span className="ml-1 text-[10px] text-muted-foreground">
+                          {asset.category === 'Stock' ? '股' : asset.category === 'Crypto' ? asset.symbol : asset.currency}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-bold text-primary">
+                      {getCurrencySymbol(displayCurrency)} {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="icon" onClick={() => removeAsset(asset.id)} className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {assetCalculations.processedAssets.map(asset => (
-                    <TableRow key={asset.id} className="group">
-                      <TableCell>
-                        <div className="font-medium">{asset.name}</div>
-                        <div className="text-xs text-muted-foreground uppercase">{asset.symbol}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="font-normal">
-                          {asset.category === 'Savings' ? '活期存款' : 
-                           asset.category === 'Stock' ? '股票' : 
-                           asset.category === 'Crypto' ? '加密貨幣' : 
-                           asset.category === 'Fixed Deposit' ? '定期存款' : '其他'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-mono flex items-baseline gap-1">
-                          <span>{asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</span>
-                          <span className="text-[10px] text-muted-foreground font-sans">
-                            {asset.category === 'Stock' ? '股' : 
-                             asset.category === 'Crypto' ? asset.symbol.toUpperCase() : 
-                             asset.currency}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-mono">
-                          {asset.category === 'Stock' || asset.category === 'Crypto' 
-                            ? `${asset.currency === 'USD' ? '$' : 'NT$'}${asset.calculatedPrice?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
-                            : '-'}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right font-bold text-primary">
-                        {displayCurrency === 'USD' ? '$' : 'NT$'} {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'USD' ? 2 : 0 })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => removeAsset(asset.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
+                ))}
+              </TableBody>
+            </Table>
           </Card>
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect } from 'react';
@@ -28,7 +29,7 @@ const formSchema = z.object({
   symbol: z.string().optional(),
   category: z.enum(['Stock', 'Crypto', 'Bank', 'Fixed Deposit', 'Savings']),
   amount: z.number().min(0, '金額不能小於 0'),
-  currency: z.enum(['TWD', 'USD']),
+  currency: z.enum(['TWD', 'USD', 'CNY']),
   interestRate: z.number().optional(),
 });
 
@@ -52,14 +53,12 @@ export function AssetForm({ onAdd }: AssetFormProps) {
   const category = form.watch('category');
   const symbol = form.watch('symbol');
   
-  // Logic for automatic currency detection
   const isNumericSymbol = /^\d+$/.test(symbol || '');
   const isTWStock = category === 'Stock' && isNumericSymbol && symbol !== '';
   const isUSStock = category === 'Stock' && symbol && !isNumericSymbol;
   const isCrypto = category === 'Crypto';
   const isSavings = category === 'Savings';
 
-  // Automatically set currency based on category and symbol
   useEffect(() => {
     if (isTWStock) {
       form.setValue('currency', 'TWD');
@@ -68,7 +67,6 @@ export function AssetForm({ onAdd }: AssetFormProps) {
     }
   }, [isTWStock, isUSStock, isCrypto, form]);
 
-  // Handle savings/cash defaults
   useEffect(() => {
     if (isSavings) {
       form.setValue('symbol', 'CASH');
@@ -77,8 +75,6 @@ export function AssetForm({ onAdd }: AssetFormProps) {
     }
   }, [isSavings, form]);
 
-  // Determine if currency selector should be hidden
-  // For Stocks and Crypto, we derive the currency automatically
   const shouldHideCurrency = category === 'Stock' || category === 'Crypto';
 
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -100,39 +96,33 @@ export function AssetForm({ onAdd }: AssetFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>資產名稱</FormLabel>
+              <FormControl><Input placeholder="例如：薪資戶" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        {!isSavings && (
           <FormField
             control={form.control}
-            name="name"
+            name="symbol"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>資產名稱</FormLabel>
-                <FormControl>
-                  <Input placeholder="例如：台積電、薪資戶" {...field} />
-                </FormControl>
+                <FormLabel>代號 (台股數字, 美股代碼)</FormLabel>
+                <FormControl><Input placeholder="BTC, AAPL, 2330" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
-          {!isSavings && (
-            <FormField
-              control={form.control}
-              name="symbol"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>代號 (台股數字, 美股/加密代碼)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="BTC, AAPL, 2330" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-        </div>
+        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="category"
@@ -140,11 +130,7 @@ export function AssetForm({ onAdd }: AssetFormProps) {
               <FormItem>
                 <FormLabel>分類</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="選擇分類" />
-                    </SelectTrigger>
-                  </FormControl>
+                  <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                   <SelectContent>
                     <SelectItem value="Stock">股票</SelectItem>
                     <SelectItem value="Crypto">加密貨幣</SelectItem>
@@ -153,7 +139,6 @@ export function AssetForm({ onAdd }: AssetFormProps) {
                     <SelectItem value="Bank">其他銀行資產</SelectItem>
                   </SelectContent>
                 </Select>
-                <FormMessage />
               </FormItem>
             )}
           />
@@ -166,64 +151,34 @@ export function AssetForm({ onAdd }: AssetFormProps) {
                 <FormItem>
                   <FormLabel>幣別</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="選擇幣別" />
-                      </SelectTrigger>
-                    </FormControl>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value="TWD">TWD (台幣)</SelectItem>
                       <SelectItem value="USD">USD (美金)</SelectItem>
+                      <SelectItem value="CNY">CNY (人民幣)</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormMessage />
                 </FormItem>
               )}
             />
           )}
-
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem className={shouldHideCurrency ? "md:col-span-2" : ""}>
-                <FormLabel>持有數量 / 金額</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="any"
-                    {...field} 
-                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
 
-        {category === 'Fixed Deposit' && (
-          <FormField
-            control={form.control}
-            name="interestRate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>年利率 (%)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="0.01" 
-                    {...field} 
-                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>持有數量 / 金額</FormLabel>
+              <FormControl>
+                <Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        <Button type="submit" className="w-full bg-primary font-headline">新增資產</Button>
+        <Button type="submit" className="w-full">新增資產</Button>
       </form>
     </Form>
   );
