@@ -18,13 +18,16 @@ import {
   ArrowRightLeft,
   Edit2,
   Check,
-  X
+  X,
+  Eye,
+  Calendar
 } from 'lucide-react';
 import { 
   Card, 
   CardContent, 
   CardHeader, 
-  CardTitle 
+  CardTitle,
+  CardDescription
 } from '@/components/ui/card';
 import { 
   Table, 
@@ -38,6 +41,13 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from '@/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function AssetTrackerPage() {
   const { toast } = useToast();
@@ -55,6 +65,9 @@ export default function AssetTrackerPage() {
   // Editing state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState<string>('');
+
+  // Selected snapshot for detail view
+  const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null);
 
   // Initialize from LocalStorage
   useEffect(() => {
@@ -103,7 +116,7 @@ export default function AssetTrackerPage() {
       setMarketData(data);
       toast({
         title: "市場數據已更新",
-        description: `成功抓取數據。1 USD = ${data.rates.TWD.toFixed(2)} TWD / ${data.rates.CNY.toFixed(2)} CNY`
+        description: `成功抓取數據。1 USD = ${data.rates.TWD.toFixed(2)} TWD`
       });
     } catch (error) {
       console.error('Market update failed', error);
@@ -152,10 +165,8 @@ export default function AssetTrackerPage() {
           : asset.amount;
         valueInTWD = usdValue * marketData.rates.TWD;
       } else if (asset.currency === 'CNY') {
-        // CNY to TWD via USD cross rate
         valueInTWD = asset.amount * (marketData.rates.TWD / marketData.rates.CNY);
       } else {
-        // TWD 資產
         const multiplier = (asset.category === 'Stock' ? price : 1);
         valueInTWD = asset.amount * multiplier;
       }
@@ -163,13 +174,9 @@ export default function AssetTrackerPage() {
       totalTWD += valueInTWD;
       allocationMap[asset.category] += valueInTWD;
 
-      // 轉換為當前顯示幣別
       let valueInDisplay = valueInTWD;
-      if (displayCurrency === 'USD') {
-        valueInDisplay = valueInTWD / marketData.rates.TWD;
-      } else if (displayCurrency === 'CNY') {
-        valueInDisplay = valueInTWD * (marketData.rates.CNY / marketData.rates.TWD);
-      }
+      if (displayCurrency === 'USD') valueInDisplay = valueInTWD / marketData.rates.TWD;
+      else if (displayCurrency === 'CNY') valueInDisplay = valueInTWD * (marketData.rates.CNY / marketData.rates.TWD);
 
       return {
         ...asset,
@@ -180,11 +187,8 @@ export default function AssetTrackerPage() {
     });
 
     let totalDisplay = totalTWD;
-    if (displayCurrency === 'USD') {
-      totalDisplay = totalTWD / marketData.rates.TWD;
-    } else if (displayCurrency === 'CNY') {
-      totalDisplay = totalTWD * (marketData.rates.CNY / marketData.rates.TWD);
-    }
+    if (displayCurrency === 'USD') totalDisplay = totalTWD / marketData.rates.TWD;
+    else if (displayCurrency === 'CNY') totalDisplay = totalTWD * (marketData.rates.CNY / marketData.rates.TWD);
 
     return { 
       processedAssets, 
@@ -218,25 +222,10 @@ export default function AssetTrackerPage() {
   const saveEdit = () => {
     const newAmount = parseFloat(editAmount);
     if (isNaN(newAmount) || newAmount < 0) {
-      toast({
-        variant: "destructive",
-        title: "無效的數值",
-        description: "請輸入大於或等於 0 的數字。"
-      });
+      toast({ variant: "destructive", title: "無效數值" });
       return;
     }
-
-    setAssets(prev => prev.map(a => 
-      a.id === editingId ? { ...a, amount: newAmount } : a
-    ));
-    setEditingId(null);
-    toast({
-      title: "持有量已更新",
-      description: "資產數據已成功修改。"
-    });
-  };
-
-  const cancelEdit = () => {
+    setAssets(prev => prev.map(a => a.id === editingId ? { ...a, amount: newAmount } : a));
     setEditingId(null);
   };
 
@@ -245,13 +234,19 @@ export default function AssetTrackerPage() {
       id: crypto.randomUUID(),
       date: new Date().toISOString(),
       totalTWD: assetCalculations.totalTWD,
-      allocations: assetCalculations.processedAssets.map(a => ({ category: a.category, value: a.valueInTWD }))
+      allocations: assetCalculations.processedAssets.map(a => ({ category: a.category, value: a.valueInTWD })),
+      assets: [...assetCalculations.processedAssets] // 儲存當時的詳細狀態
     };
     setSnapshots(prev => [...prev, newSnapshot].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
     toast({
       title: "快照已存檔",
       description: `當前總資產 NT$${assetCalculations.totalTWD.toLocaleString()}。`
     });
+  };
+
+  const deleteSnapshot = (id: string) => {
+    setSnapshots(prev => prev.filter(s => s.id !== id));
+    toast({ title: "快照已刪除" });
   };
 
   const getCurrencySymbol = (cur: Currency) => {
@@ -261,7 +256,7 @@ export default function AssetTrackerPage() {
   };
 
   const portfolioSummary = `Current portfolio total: NT$${assetCalculations.totalTWD.toLocaleString()}.`;
-  const marketConditions = `Rates: 1 USD = ${marketData.rates.TWD.toFixed(2)} TWD, ${marketData.rates.CNY.toFixed(2)} CNY.`;
+  const marketConditions = `Rates: 1 USD = ${marketData.rates.TWD.toFixed(2)} TWD.`;
 
   return (
     <div className="min-h-screen p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
@@ -271,7 +266,7 @@ export default function AssetTrackerPage() {
             <TrendingUp className="h-8 w-8 text-accent" />
             Asset Insights
           </h1>
-          <p className="text-muted-foreground mt-1">追蹤全球資產組合。</p>
+          <p className="text-muted-foreground mt-1">追蹤全球資產組合與歷史變動。</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
@@ -331,17 +326,90 @@ export default function AssetTrackerPage() {
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <div className="xl:col-span-1">
-          <Card><CardHeader><CardTitle className="text-lg">新增資產</CardTitle></CardHeader>
+        <div className="xl:col-span-1 space-y-8">
+          <Card>
+            <CardHeader><CardTitle className="text-lg">新增資產</CardTitle></CardHeader>
             <CardContent><AssetForm onAdd={addAsset} /></CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                歷史快照清單
+              </CardTitle>
+              <CardDescription>管理您過去儲存的資產記錄。</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {snapshots.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground text-sm">尚未有任何快照。</div>
+              ) : (
+                snapshots.slice().reverse().map(s => (
+                  <div key={s.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50 transition-colors">
+                    <div>
+                      <div className="text-sm font-medium">{new Date(s.date).toLocaleDateString()}</div>
+                      <div className="text-xs text-muted-foreground">NT${s.totalTWD.toLocaleString()}</div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedSnapshot(s)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>快照詳情 - {new Date(s.date).toLocaleString()}</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 pt-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <Card className="p-4 bg-muted/30">
+                                <div className="text-xs text-muted-foreground uppercase">當時總資產</div>
+                                <div className="text-xl font-bold">NT${s.totalTWD.toLocaleString()}</div>
+                              </Card>
+                            </div>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>資產</TableHead>
+                                  <TableHead>當時數量</TableHead>
+                                  <TableHead className="text-right">估值 (TWD)</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {s.assets?.map((a, idx) => (
+                                  <TableRow key={idx}>
+                                    <TableCell>
+                                      <div className="text-sm font-medium">{a.name}</div>
+                                      <div className="text-[10px] text-muted-foreground">{a.symbol}</div>
+                                    </TableCell>
+                                    <TableCell className="text-sm">{a.amount.toLocaleString()} {a.category === 'Stock' ? '股' : ''}</TableCell>
+                                    <TableCell className="text-right font-medium">NT${(a.amount * (a.price || 1)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteSnapshot(s.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
         </div>
+        
         <div className="xl:col-span-2">
           <Card className="overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>資產名稱</TableHead>
+                  <TableHead>市場單價</TableHead>
                   <TableHead>持有量</TableHead>
                   <TableHead className="text-right">估值 ({displayCurrency})</TableHead>
                   <TableHead></TableHead>
@@ -353,6 +421,18 @@ export default function AssetTrackerPage() {
                     <TableCell>
                       <div className="font-medium">{asset.name}</div>
                       <div className="text-xs text-muted-foreground uppercase">{asset.symbol}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm font-mono text-muted-foreground">
+                        {asset.calculatedPrice > 0 ? (
+                          <>
+                            {getCurrencySymbol(asset.category === 'Stock' && /^\d+$/.test(asset.symbol) ? 'TWD' : 'USD')}
+                            {asset.calculatedPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                          </>
+                        ) : (
+                          '--'
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {editingId === asset.id ? (
@@ -367,7 +447,7 @@ export default function AssetTrackerPage() {
                           <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={saveEdit}>
                             <Check className="h-4 w-4" />
                           </Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-red-600" onClick={cancelEdit}>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-red-600" onClick={() => setEditingId(null)}>
                             <X className="h-4 w-4" />
                           </Button>
                         </div>

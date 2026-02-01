@@ -22,6 +22,7 @@ export interface Snapshot {
     category: AssetCategory;
     value: number;
   }[];
+  assets?: Asset[]; // 儲存當時的詳細資產清單
 }
 
 export interface MarketData {
