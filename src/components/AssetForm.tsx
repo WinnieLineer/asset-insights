@@ -26,10 +26,10 @@ import {
 } from '@/components/ui/form';
 
 const formSchema = z.object({
-  name: z.string().min(2, 'Name is too short'),
-  symbol: z.string().min(1, 'Symbol is required'),
+  name: z.string().min(2, '名稱太短'),
+  symbol: z.string().min(1, '代號為必填'),
   category: z.enum(['Stock', 'Crypto', 'Bank', 'Fixed Deposit']),
-  amount: z.number().min(0),
+  amount: z.number().min(0, '金額不能小於 0'),
   currency: z.enum(['TWD', 'USD']),
   interestRate: z.number().optional(),
 });
@@ -46,14 +46,21 @@ export function AssetForm({ onAdd }: AssetFormProps) {
       symbol: '',
       category: 'Stock',
       amount: 0,
-      currency: 'USD',
+      currency: 'TWD',
       interestRate: 0,
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     onAdd(values as Omit<Asset, 'id'>);
-    form.reset();
+    form.reset({
+      name: '',
+      symbol: '',
+      category: 'Stock',
+      amount: 0,
+      currency: 'TWD',
+      interestRate: 0,
+    });
   }
 
   return (
@@ -65,9 +72,9 @@ export function AssetForm({ onAdd }: AssetFormProps) {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Asset Name</FormLabel>
+                <FormLabel>資產名稱</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g. Bitcoin, Apple" {...field} />
+                  <Input placeholder="例如：台積電、比特幣" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -78,9 +85,9 @@ export function AssetForm({ onAdd }: AssetFormProps) {
             name="symbol"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Symbol / ID</FormLabel>
+                <FormLabel>代號 (台股請輸入數字)</FormLabel>
                 <FormControl>
-                  <Input placeholder="BTC, AAPL, Savings" {...field} />
+                  <Input placeholder="BTC, AAPL, 2330" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -94,18 +101,18 @@ export function AssetForm({ onAdd }: AssetFormProps) {
             name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Category</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormLabel>分類</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select Category" />
+                      <SelectValue placeholder="選擇分類" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Stock">Stock</SelectItem>
-                    <SelectItem value="Crypto">Crypto</SelectItem>
-                    <SelectItem value="Bank">Bank Cash</SelectItem>
-                    <SelectItem value="Fixed Deposit">Fixed Deposit</SelectItem>
+                    <SelectItem value="Stock">股票</SelectItem>
+                    <SelectItem value="Crypto">加密貨幣</SelectItem>
+                    <SelectItem value="Bank">銀行現金</SelectItem>
+                    <SelectItem value="Fixed Deposit">定期存款</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -118,16 +125,16 @@ export function AssetForm({ onAdd }: AssetFormProps) {
             name="currency"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Currency</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormLabel>幣別</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select Currency" />
+                      <SelectValue placeholder="選擇幣別" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="TWD">TWD</SelectItem>
+                    <SelectItem value="TWD">TWD (台幣)</SelectItem>
+                    <SelectItem value="USD">USD (美金)</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -140,7 +147,7 @@ export function AssetForm({ onAdd }: AssetFormProps) {
             name="amount"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Balance / Units</FormLabel>
+                <FormLabel>持有數量 / 金額</FormLabel>
                 <FormControl>
                   <Input 
                     type="number" 
@@ -161,7 +168,7 @@ export function AssetForm({ onAdd }: AssetFormProps) {
             name="interestRate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Interest Rate (%)</FormLabel>
+                <FormLabel>年利率 (%)</FormLabel>
                 <FormControl>
                   <Input 
                     type="number" 
@@ -176,7 +183,7 @@ export function AssetForm({ onAdd }: AssetFormProps) {
           />
         )}
 
-        <Button type="submit" className="w-full bg-primary font-headline">Add Asset</Button>
+        <Button type="submit" className="w-full bg-primary font-headline">新增資產</Button>
       </form>
     </Form>
   );
