@@ -335,7 +335,7 @@ export default function AssetTrackerPage() {
                       </TableCell>
                       <TableCell>
                         <div className="font-mono flex items-baseline gap-1">
-                          <span>{asset.amount.toLocaleString()}</span>
+                          <span>{asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</span>
                           <span className="text-[10px] text-muted-foreground font-sans">
                             {asset.category === 'Stock' ? '股' : 
                              asset.category === 'Crypto' ? asset.symbol.toUpperCase() : 
