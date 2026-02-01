@@ -88,15 +88,15 @@ export default function AssetTrackerPage() {
       const data = await getMarketData({ cryptos, stocks });
       setMarketData(data);
       toast({
-        title: "數據已自動抓取",
-        description: `0050 目前市價：NT$${data.stockPrices['0050'] || '未取得'}。`
+        title: "市場數據已更新",
+        description: `成功抓取 ${stocks.length} 項股票及 ${cryptos.length} 項加密貨幣數據。`
       });
     } catch (error) {
       console.error('Market update failed', error);
       toast({
         variant: "destructive",
         title: "抓取失敗",
-        description: "無法連接到市場數據介面。"
+        description: "目前無法連接到市場數據介面，請稍後再試。"
       });
     } finally {
       setLoading(false);
@@ -138,7 +138,7 @@ export default function AssetTrackerPage() {
           valueInTWD = asset.amount * marketData.exchangeRate;
         }
       } else {
-        // TWD 資產 (0050) 直接使用抓取到的 TWD 價格
+        // TWD 資產直接使用抓取到的價格 (例如台股 2330 抓到的是 TWD)
         valueInTWD = asset.amount * (asset.category === 'Stock' ? price : 1);
       }
 
@@ -183,7 +183,7 @@ export default function AssetTrackerPage() {
   };
 
   const portfolioSummary = `Current portfolio: Total NT$${assetCalculations.totalTWD.toLocaleString()}. Allocation: ${assetCalculations.allocationData.map(d => `${d.name}: ${((d.value/assetCalculations.totalTWD)*100).toFixed(1)}%`).join(', ')}.`;
-  const marketConditions = `USD/TWD rate is ${marketData.exchangeRate}. 0050 is trading around ${marketData.stockPrices['0050']} TWD.`;
+  const marketConditions = `USD/TWD rate is ${marketData.exchangeRate.toFixed(2)}. Many stock prices are being fetched live.`;
 
   return (
     <div className="min-h-screen p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
@@ -194,7 +194,7 @@ export default function AssetTrackerPage() {
             <TrendingUp className="h-8 w-8 text-accent" />
             Asset Insights
           </h1>
-          <p className="text-muted-foreground mt-1">追蹤並優化您的個人資產組合。</p>
+          <p className="text-muted-foreground mt-1">追蹤您的全球與台灣資產組合。</p>
         </div>
         <div className="flex items-center gap-3">
           <Button 
@@ -225,14 +225,14 @@ export default function AssetTrackerPage() {
           <CardContent>
             <div className="text-2xl font-bold font-headline">NT$ {assetCalculations.totalTWD.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              自動抓取：0050 @ NT${marketData.stockPrices['0050']?.toFixed(2) || '--'}
+              匯率基準：1 USD = {marketData.exchangeRate.toFixed(2)} TWD
             </p>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">資產類別多樣性</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">監控中項目</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center gap-2">
             <div className="text-2xl font-bold font-headline">
@@ -274,7 +274,7 @@ export default function AssetTrackerPage() {
             <CardHeader className="bg-slate-50 border-b">
               <CardTitle className="flex items-center gap-2 font-headline">
                 <Wallet className="h-5 w-5 text-primary" />
-                資產明細
+                資產明細 (台股代碼直接輸入數字)
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">

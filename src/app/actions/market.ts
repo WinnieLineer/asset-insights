@@ -7,20 +7,27 @@ const COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price';
 const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
 /**
- * 從 Yahoo Finance 抓取台灣股票價格 (例如 0050.TW)
+ * 從 Yahoo Finance 抓取價格
+ * 針對台股代碼（純數字，如 2330）自動加上 .TW 字尾以符合 Yahoo API 格式
  */
 async function fetchYahooStockPrice(symbol: string): Promise<number | null> {
-  const yahooSymbol = symbol === '0050' ? '0050.TW' : symbol;
+  const isNumeric = /^\d+$/.test(symbol);
+  const yahooSymbol = isNumeric ? `${symbol}.TW` : symbol.toUpperCase();
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
   
   try {
-    const response = await fetch(url, { next: { revalidate: 60 } });
+    const response = await fetch(url, { 
+      next: { revalidate: 60 },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
     if (!response.ok) return null;
     const data = await response.json();
     const price = data.chart?.result?.[0]?.meta?.regularMarketPrice;
     return price || null;
   } catch (error) {
-    console.error(`Failed to fetch stock price for ${symbol}:`, error);
+    console.error(`Failed to fetch stock price for ${yahooSymbol}:`, error);
     return null;
   }
 }
@@ -30,7 +37,7 @@ export async function getMarketData(symbols: { cryptos: string[]; stocks: string
   const cryptoPrices: Record<string, number> = {};
   const stockPrices: Record<string, number> = {};
 
-  // 1. 抓取匯率
+  // 1. 抓取最新匯率 (USD to TWD)
   try {
     const erResponse = await fetch(EXCHANGE_RATE_API);
     if (erResponse.ok) {
@@ -39,7 +46,7 @@ export async function getMarketData(symbols: { cryptos: string[]; stocks: string
     }
   } catch (e) {}
 
-  // 2. 抓取加密貨幣
+  // 2. 抓取加密貨幣價格 (CoinGecko)
   try {
     if (symbols.cryptos.length > 0) {
       const ids = symbols.cryptos.join(',').toLowerCase();
@@ -55,15 +62,14 @@ export async function getMarketData(symbols: { cryptos: string[]; stocks: string
     }
   } catch (e) {}
 
-  // 3. 抓取股票 (包含 0050)
+  // 3. 抓取所有股票價格 (自動判定台股或美股)
   for (const s of symbols.stocks) {
-    const price = await fetchYahooStockPrice(s.toUpperCase());
+    const price = await fetchYahooStockPrice(s);
     if (price !== null) {
       stockPrices[s.toUpperCase()] = price;
     } else {
-      // Fallback 模擬值
-      const fallbacks: Record<string, number> = { '0050': 198.5, 'AAPL': 225, 'TSLA': 350 };
-      stockPrices[s.toUpperCase()] = fallbacks[s.toUpperCase()] || 100;
+      // 若抓取失敗，暫時回傳 0 以免計算錯誤
+      stockPrices[s.toUpperCase()] = 0;
     }
   }
 
