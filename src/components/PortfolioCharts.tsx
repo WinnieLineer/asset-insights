@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -15,28 +14,30 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts';
-import { Snapshot } from '@/app/lib/types';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Snapshot, Currency } from '@/app/lib/types';
 
 const COLORS = ['#3F51B5', '#FF4500', '#4CAF50', '#9C27B0', '#FF9800'];
 
 interface PortfolioChartsProps {
   allocationData: { name: string; value: number }[];
   historicalData: Snapshot[];
+  displayCurrency: Currency;
+  exchangeRate: number;
 }
 
-export function PortfolioCharts({ allocationData, historicalData }: PortfolioChartsProps) {
-  const chartConfig = {
-    value: {
-      label: "Value (TWD)",
-      color: "hsl(var(--primary))",
-    },
-  };
+export function PortfolioCharts({ allocationData, historicalData, displayCurrency, exchangeRate }: PortfolioChartsProps) {
+  // 處理歷史數據以符合當前顯示幣別
+  const processedHistoricalData = historicalData.map(d => ({
+    ...d,
+    totalValue: displayCurrency === 'TWD' ? d.totalTWD : d.totalTWD / exchangeRate
+  }));
+
+  const currencySymbol = displayCurrency === 'USD' ? '$' : 'NT$';
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <div className="bg-white p-6 rounded-xl border shadow-sm flex flex-col items-center">
-        <h3 className="font-headline font-bold text-lg mb-4 self-start">Asset Allocation</h3>
+        <h3 className="font-headline font-bold text-lg mb-4 self-start">資產配置比例</h3>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -54,7 +55,7 @@ export function PortfolioCharts({ allocationData, historicalData }: PortfolioCha
                 ))}
               </Pie>
               <RechartsTooltip 
-                formatter={(value: number) => `NT$${value.toLocaleString()}`}
+                formatter={(value: number) => `${currencySymbol}${value.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'USD' ? 2 : 0 })}`}
               />
               <Legend />
             </PieChart>
@@ -63,10 +64,10 @@ export function PortfolioCharts({ allocationData, historicalData }: PortfolioCha
       </div>
 
       <div className="bg-white p-6 rounded-xl border shadow-sm">
-        <h3 className="font-headline font-bold text-lg mb-4">Historical Performance</h3>
+        <h3 className="font-headline font-bold text-lg mb-4">資產歷史趨勢 ({displayCurrency})</h3>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={historicalData}>
+            <LineChart data={processedHistoricalData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
               <XAxis 
                 dataKey="date" 
@@ -75,15 +76,15 @@ export function PortfolioCharts({ allocationData, historicalData }: PortfolioCha
               />
               <YAxis 
                 tick={{ fontSize: 12 }} 
-                tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`}
+                tickFormatter={(val) => `${currencySymbol}${val >= 1000 ? (val / 1000).toFixed(0) + 'k' : val}`}
               />
               <RechartsTooltip 
-                formatter={(value: number) => [`NT$${value.toLocaleString()}`, 'Total Assets']}
+                formatter={(value: number) => [`${currencySymbol}${value.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'USD' ? 2 : 0 })}`, '總資產']}
                 labelFormatter={(label) => new Date(label).toLocaleDateString()}
               />
               <Line 
                 type="monotone" 
-                dataKey="totalTWD" 
+                dataKey="totalValue" 
                 stroke="#3F51B5" 
                 strokeWidth={3} 
                 dot={{ r: 4, fill: '#3F51B5' }} 

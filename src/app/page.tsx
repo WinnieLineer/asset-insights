@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Asset, Snapshot, MarketData, AssetCategory } from './lib/types';
+import { Asset, Snapshot, MarketData, AssetCategory, Currency } from './lib/types';
 import { getMarketData } from '@/app/actions/market';
 import { AssetForm } from '@/components/AssetForm';
 import { PortfolioCharts } from '@/components/PortfolioCharts';
@@ -13,7 +13,8 @@ import {
   History, 
   Trash2, 
   RefreshCw, 
-  Plus
+  Plus,
+  ArrowRightLeft
 } from 'lucide-react';
 import { 
   Card, 
@@ -31,11 +32,13 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AssetTrackerPage() {
   const { toast } = useToast();
   const [assets, setAssets] = useState<Asset[]>([]);
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+  const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
   const [marketData, setMarketData] = useState<MarketData>({
     exchangeRate: 32.5,
     cryptoPrices: {},
@@ -146,21 +149,31 @@ export default function AssetTrackerPage() {
       totalTWD += valueInTWD;
       allocationMap[asset.category] += valueInTWD;
 
+      // 轉換為當前顯示幣別的價值
+      const valueInDisplay = displayCurrency === 'TWD' ? valueInTWD : valueInTWD / marketData.exchangeRate;
+
       return {
         ...asset,
         calculatedPrice: price,
-        valueInTWD
+        valueInTWD,
+        valueInDisplay
       };
     });
 
+    const totalDisplay = displayCurrency === 'TWD' ? totalTWD : totalTWD / marketData.exchangeRate;
+
     return { 
       processedAssets, 
-      totalTWD, 
+      totalTWD,
+      totalDisplay,
       allocationData: Object.entries(allocationMap)
         .filter(([_, value]) => value > 0)
-        .map(([name, value]) => ({ name, value }))
+        .map(([name, value]) => ({ 
+          name, 
+          value: displayCurrency === 'TWD' ? value : value / marketData.exchangeRate 
+        }))
     };
-  }, [assets, marketData]);
+  }, [assets, marketData, displayCurrency]);
 
   const addAsset = (newAsset: Omit<Asset, 'id'>) => {
     const id = crypto.randomUUID();
@@ -176,7 +189,7 @@ export default function AssetTrackerPage() {
       id: crypto.randomUUID(),
       date: new Date().toISOString(),
       totalTWD: assetCalculations.totalTWD,
-      allocations: assetCalculations.allocationData.map(d => ({ category: d.name as AssetCategory, value: d.value }))
+      allocations: assetCalculations.processedAssets.map(a => ({ category: a.category, value: a.valueInTWD }))
     };
     setSnapshots(prev => [...prev, newSnapshot].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
     toast({
@@ -185,7 +198,7 @@ export default function AssetTrackerPage() {
     });
   };
 
-  const portfolioSummary = `Current portfolio: Total NT$${assetCalculations.totalTWD.toLocaleString()}. Allocation: ${assetCalculations.allocationData.map(d => `${d.name}: ${((d.value/assetCalculations.totalTWD)*100).toFixed(1)}%`).join(', ')}.`;
+  const portfolioSummary = `Current portfolio: Total NT$${assetCalculations.totalTWD.toLocaleString()}. Allocation: ${assetCalculations.allocationData.map(d => `${d.name}: ${((d.value/assetCalculations.totalDisplay)*100).toFixed(1)}%`).join(', ')}.`;
   const marketConditions = `USD/TWD rate is ${marketData.exchangeRate.toFixed(2)}. Market prices are live.`;
 
   return (
@@ -199,7 +212,13 @@ export default function AssetTrackerPage() {
           </h1>
           <p className="text-muted-foreground mt-1">追蹤您的全球與台灣資產組合。</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
+            <TabsList className="bg-slate-100">
+              <TabsTrigger value="TWD">TWD</TabsTrigger>
+              <TabsTrigger value="USD">USD</TabsTrigger>
+            </TabsList>
+          </Tabs>
           <Button 
             variant="outline" 
             onClick={updateMarketData} 
@@ -207,7 +226,7 @@ export default function AssetTrackerPage() {
             className="flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            更新市場數據
+            更新數據
           </Button>
           <Button 
             onClick={takeSnapshot} 
@@ -221,25 +240,30 @@ export default function AssetTrackerPage() {
 
       {/* Main Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="shadow-sm border-l-4 border-l-primary">
+        <Card className="shadow-sm border-l-4 border-l-primary bg-primary/5">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">總資產估值 (TWD)</CardTitle>
+            <CardTitle className="text-xs font-semibold text-primary uppercase tracking-wider">
+              總資產估值 ({displayCurrency})
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold font-headline">NT$ {assetCalculations.totalTWD.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              匯率基準：1 USD = {marketData.exchangeRate.toFixed(2)} TWD
-            </p>
+            <div className="text-2xl font-bold font-headline">
+              {displayCurrency === 'USD' ? '$' : 'NT$'} {assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'USD' ? 2 : 0 })}
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2 bg-white/50 w-fit px-2 py-1 rounded">
+              <ArrowRightLeft className="h-3 w-3" />
+              <span>1 USD = {marketData.exchangeRate.toFixed(2)} TWD</span>
+            </div>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">資產數量</CardTitle>
+            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">資產數量</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center gap-2">
             <div className="text-2xl font-bold font-headline">
-              {assets.length} <span className="text-sm font-normal text-muted-foreground">項資產</span>
+              {assets.length} <span className="text-sm font-normal text-muted-foreground">項</span>
             </div>
           </CardContent>
         </Card>
@@ -255,6 +279,8 @@ export default function AssetTrackerPage() {
       <PortfolioCharts 
         allocationData={assetCalculations.allocationData} 
         historicalData={snapshots} 
+        displayCurrency={displayCurrency}
+        exchangeRate={marketData.exchangeRate}
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -288,7 +314,7 @@ export default function AssetTrackerPage() {
                     <TableHead>分類</TableHead>
                     <TableHead>持有量</TableHead>
                     <TableHead>市場單價</TableHead>
-                    <TableHead className="text-right">估值 (TWD)</TableHead>
+                    <TableHead className="text-right">估值 ({displayCurrency})</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -325,7 +351,7 @@ export default function AssetTrackerPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-bold text-primary">
-                        NT$ {asset.valueInTWD.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        {displayCurrency === 'USD' ? '$' : 'NT$'} {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'USD' ? 2 : 0 })}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button 
