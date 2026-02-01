@@ -7,7 +7,6 @@ import * as z from 'zod';
 import { Asset, AssetCategory, Currency } from '@/app/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -53,13 +52,14 @@ export function AssetForm({ onAdd }: AssetFormProps) {
   const category = form.watch('category');
   const symbol = form.watch('symbol');
   
-  // 邏輯判定
-  const isTWStock = category === 'Stock' && /^\d+$/.test(symbol || '');
-  const isUSStock = category === 'Stock' && symbol && !/^\d+$/.test(symbol);
+  // Logic for automatic currency detection
+  const isNumericSymbol = /^\d+$/.test(symbol || '');
+  const isTWStock = category === 'Stock' && isNumericSymbol && symbol !== '';
+  const isUSStock = category === 'Stock' && symbol && !isNumericSymbol;
   const isCrypto = category === 'Crypto';
   const isSavings = category === 'Savings';
 
-  // 自動設定幣別與代號
+  // Automatically set currency based on category and symbol
   useEffect(() => {
     if (isTWStock) {
       form.setValue('currency', 'TWD');
@@ -68,6 +68,7 @@ export function AssetForm({ onAdd }: AssetFormProps) {
     }
   }, [isTWStock, isUSStock, isCrypto, form]);
 
+  // Handle savings/cash defaults
   useEffect(() => {
     if (isSavings) {
       form.setValue('symbol', 'CASH');
@@ -76,7 +77,8 @@ export function AssetForm({ onAdd }: AssetFormProps) {
     }
   }, [isSavings, form]);
 
-  // 是否應該隱藏幣別選擇器 (加密貨幣與股票已有明確市場規則)
+  // Determine if currency selector should be hidden
+  // For Stocks and Crypto, we derive the currency automatically
   const shouldHideCurrency = category === 'Stock' || category === 'Crypto';
 
   function onSubmit(values: z.infer<typeof formSchema>) {
