@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect } from 'react';
@@ -54,15 +53,20 @@ export function AssetForm({ onAdd }: AssetFormProps) {
   const category = form.watch('category');
   const symbol = form.watch('symbol');
   
-  // 自動判定台股邏輯
+  // 邏輯判定
   const isTWStock = category === 'Stock' && /^\d+$/.test(symbol || '');
+  const isUSStock = category === 'Stock' && symbol && !/^\d+$/.test(symbol);
+  const isCrypto = category === 'Crypto';
   const isSavings = category === 'Savings';
 
+  // 自動設定幣別與代號
   useEffect(() => {
     if (isTWStock) {
       form.setValue('currency', 'TWD');
+    } else if (isUSStock || isCrypto) {
+      form.setValue('currency', 'USD');
     }
-  }, [isTWStock, form]);
+  }, [isTWStock, isUSStock, isCrypto, form]);
 
   useEffect(() => {
     if (isSavings) {
@@ -72,8 +76,10 @@ export function AssetForm({ onAdd }: AssetFormProps) {
     }
   }, [isSavings, form]);
 
+  // 是否應該隱藏幣別選擇器 (加密貨幣與股票已有明確市場規則)
+  const shouldHideCurrency = category === 'Stock' || category === 'Crypto';
+
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // 確保必填欄位存在
     const assetData = {
       ...values,
       symbol: values.symbol || (values.category === 'Savings' ? 'CASH' : 'N/A')
@@ -113,7 +119,7 @@ export function AssetForm({ onAdd }: AssetFormProps) {
               name="symbol"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>代號 (台股請輸入數字)</FormLabel>
+                  <FormLabel>代號 (台股數字, 美股/加密代碼)</FormLabel>
                   <FormControl>
                     <Input placeholder="BTC, AAPL, 2330" {...field} />
                   </FormControl>
@@ -150,8 +156,7 @@ export function AssetForm({ onAdd }: AssetFormProps) {
             )}
           />
 
-          {/* 如果是台股則隱藏幣別選擇，因為鎖定 TWD */}
-          {!isTWStock && (
+          {!shouldHideCurrency && (
             <FormField
               control={form.control}
               name="currency"
@@ -179,7 +184,7 @@ export function AssetForm({ onAdd }: AssetFormProps) {
             control={form.control}
             name="amount"
             render={({ field }) => (
-              <FormItem className={isTWStock ? "md:col-span-2" : ""}>
+              <FormItem className={shouldHideCurrency ? "md:col-span-2" : ""}>
                 <FormLabel>持有數量 / 金額</FormLabel>
                 <FormControl>
                   <Input 
