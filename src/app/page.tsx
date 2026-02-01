@@ -80,10 +80,10 @@ export default function AssetTrackerPage() {
       const initialAssets: Asset[] = [
         {
           id: 'default-0050',
-          name: '富邦/大昌/元大',
+          name: '元大台灣50',
           symbol: '0050',
           category: 'Stock',
-          amount: 19885,
+          amount: 1000,
           currency: 'TWD'
         }
       ];
@@ -237,8 +237,8 @@ export default function AssetTrackerPage() {
       allocations: assetCalculations.processedAssets.map(a => ({ category: a.category, value: a.valueInTWD })),
       assets: assetCalculations.processedAssets.map(a => ({
         ...a,
-        price: a.calculatedPrice, // 存檔時捕捉價格
-        valueInTWD: a.valueInTWD    // 存檔時捕捉台幣價值
+        price: a.calculatedPrice, // 存檔時捕捉當時市場單價 (Base Currency)
+        valueInTWD: a.valueInTWD    // 存檔時捕捉台幣總價值
       }))
     };
     setSnapshots(prev => [...prev, newSnapshot].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
@@ -369,7 +369,7 @@ export default function AssetTrackerPage() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>快照詳情 - {new Date(s.date).toLocaleString()}</DialogTitle>
                           </DialogHeader>
@@ -386,21 +386,32 @@ export default function AssetTrackerPage() {
                               <TableHeader>
                                 <TableRow>
                                   <TableHead>資產</TableHead>
+                                  <TableHead>當時單價</TableHead>
                                   <TableHead>當時數量</TableHead>
                                   <TableHead className="text-right">當時估值 ({displayCurrency})</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
                                 {s.assets?.map((a, idx) => {
-                                  // 使用儲存時的台幣價值進行當前幣別換算，確保與總額一致
                                   const displayValue = convertTWDToDisplay(a.valueInTWD || 0);
+                                  const isMarketAsset = a.category === 'Stock' || a.category === 'Crypto';
                                   return (
                                     <TableRow key={idx}>
                                       <TableCell>
                                         <div className="text-sm font-medium">{a.name}</div>
-                                        <div className="text-[10px] text-muted-foreground">{a.symbol}</div>
+                                        <div className="text-[10px] text-muted-foreground uppercase">{a.symbol}</div>
                                       </TableCell>
-                                      <TableCell className="text-sm">
+                                      <TableCell className="text-sm font-mono text-muted-foreground">
+                                        {isMarketAsset && a.price ? (
+                                          <>
+                                            {getCurrencySymbol(a.category === 'Stock' && /^\d+$/.test(a.symbol) ? 'TWD' : 'USD')}
+                                            {a.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                                          </>
+                                        ) : (
+                                          '--'
+                                        )}
+                                      </TableCell>
+                                      <TableCell className="text-sm font-mono">
                                         {a.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })} 
                                         <span className="ml-1 text-[10px] text-muted-foreground">
                                           {a.category === 'Stock' ? '股' : a.category === 'Crypto' ? a.symbol : a.currency}
