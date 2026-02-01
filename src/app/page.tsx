@@ -55,7 +55,7 @@ export default function AssetTrackerPage() {
     if (savedAssets) {
       setAssets(JSON.parse(savedAssets));
     } else {
-      // Pre-populate with the user's 0050 stock data if empty
+      // 根據您的需求預設 0050 數據
       const initialAssets: Asset[] = [
         {
           id: 'default-0050',
@@ -91,6 +91,10 @@ export default function AssetTrackerPage() {
     try {
       const data = await fetchMarketData({ cryptos, stocks });
       setMarketData(data);
+      toast({
+        title: "行情已更新",
+        description: `匯率：${data.exchangeRate.toFixed(2)}，股票/加密貨幣已同步。`
+      });
     } catch (error) {
       console.error('Market update failed', error);
     } finally {
@@ -117,7 +121,7 @@ export default function AssetTrackerPage() {
     };
 
     const processedAssets = assets.map(asset => {
-      let price = 1; // Default for TWD cash
+      let price = 1; 
       
       if (asset.category === 'Crypto') {
         price = marketData.cryptoPrices[asset.symbol.toUpperCase()] || 0;
@@ -127,15 +131,13 @@ export default function AssetTrackerPage() {
 
       let valueInTWD = 0;
       if (asset.currency === 'USD') {
-        // If it's a USD Stock/Crypto, price is in USD
         if (asset.category === 'Stock' || asset.category === 'Crypto') {
           valueInTWD = asset.amount * price * marketData.exchangeRate;
         } else {
-          // If it's USD Cash/Deposit
           valueInTWD = asset.amount * marketData.exchangeRate;
         }
       } else {
-        // Base is TWD (e.g., 0050 price is in TWD)
+        // TWD 計價資產 (如 0050) 直接乘上 TWD 價格
         valueInTWD = asset.amount * price;
       }
 
@@ -174,13 +176,13 @@ export default function AssetTrackerPage() {
     };
     setSnapshots(prev => [...prev, newSnapshot].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
     toast({
-      title: "Snapshot saved",
-      description: `Total assets of NT$${assetCalculations.totalTWD.toLocaleString()} recorded.`
+      title: "快照已存檔",
+      description: `當前總資產 NT$${assetCalculations.totalTWD.toLocaleString()}。`
     });
   };
 
   const portfolioSummary = `Current portfolio: Total NT$${assetCalculations.totalTWD.toLocaleString()}. Allocation: ${assetCalculations.allocationData.map(d => `${d.name}: ${((d.value/assetCalculations.totalTWD)*100).toFixed(1)}%`).join(', ')}.`;
-  const marketConditions = `USD/TWD rate is ${marketData.exchangeRate}. Cryptocurrencies are experiencing varied volatility. Major tech stocks and local ETFs like 0050 are used as benchmark pricing.`;
+  const marketConditions = `USD/TWD rate is ${marketData.exchangeRate}. 0050 is trading around ${marketData.stockPrices['0050']} TWD.`;
 
   return (
     <div className="min-h-screen p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
@@ -191,7 +193,7 @@ export default function AssetTrackerPage() {
             <TrendingUp className="h-8 w-8 text-accent" />
             Asset Insights
           </h1>
-          <p className="text-muted-foreground mt-1">Track and optimize your personal wealth journey.</p>
+          <p className="text-muted-foreground mt-1">追蹤並優化您的個人資產組合。</p>
         </div>
         <div className="flex items-center gap-3">
           <Button 
@@ -201,14 +203,14 @@ export default function AssetTrackerPage() {
             className="flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Update Rates
+            更新行情
           </Button>
           <Button 
             onClick={takeSnapshot} 
             className="bg-accent hover:bg-accent/90 flex items-center gap-2"
           >
             <History className="h-4 w-4" />
-            Save Snapshot
+            存儲快照
           </Button>
         </div>
       </header>
@@ -217,31 +219,25 @@ export default function AssetTrackerPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="shadow-sm border-l-4 border-l-primary">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Assets (TWD)</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">總資產估值 (TWD)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">NT$ {assetCalculations.totalTWD.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground mt-1">Converted from USD/TWD @ {marketData.exchangeRate}</p>
+            <p className="text-xs text-muted-foreground mt-1">匯率參考：USD/TWD @ {marketData.exchangeRate.toFixed(2)}</p>
           </CardContent>
         </Card>
 
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Portfolio Diversification</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">資產類別多樣性</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center gap-2">
             <div className="text-2xl font-bold font-headline">
-              {assets.length} <span className="text-sm font-normal text-muted-foreground">Assets</span>
-            </div>
-            <div className="flex -space-x-2">
-              <Badge className="bg-blue-500 rounded-full border-2 border-white w-6 h-6 p-0 flex items-center justify-center"><Briefcase className="w-3 h-3" /></Badge>
-              <Badge className="bg-orange-500 rounded-full border-2 border-white w-6 h-6 p-0 flex items-center justify-center"><Coins className="w-3 h-3" /></Badge>
-              <Badge className="bg-green-500 rounded-full border-2 border-white w-6 h-6 p-0 flex items-center justify-center"><Banknote className="w-3 h-3" /></Badge>
+              {assets.length} <span className="text-sm font-normal text-muted-foreground">項資產</span>
             </div>
           </CardContent>
         </Card>
 
-        {/* AI Tip Integration */}
         <div className="md:col-span-2">
           <AITipCard 
             portfolioSummary={portfolioSummary} 
@@ -250,21 +246,18 @@ export default function AssetTrackerPage() {
         </div>
       </div>
 
-      {/* Charts Section */}
       <PortfolioCharts 
         allocationData={assetCalculations.allocationData} 
         historicalData={snapshots} 
       />
 
-      {/* Management Section */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Form */}
         <div className="xl:col-span-1 space-y-6">
           <Card className="shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-headline">
                 <Plus className="h-5 w-5 text-primary" />
-                Add New Asset
+                新增資產
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -273,24 +266,23 @@ export default function AssetTrackerPage() {
           </Card>
         </div>
 
-        {/* Table */}
         <div className="xl:col-span-2">
           <Card className="shadow-sm overflow-hidden">
             <CardHeader className="bg-slate-50 border-b">
               <CardTitle className="flex items-center gap-2 font-headline">
                 <Wallet className="h-5 w-5 text-primary" />
-                Asset List
+                資產明細
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Asset</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Holdings</TableHead>
-                    <TableHead>Price (Base)</TableHead>
-                    <TableHead className="text-right">Value (TWD)</TableHead>
+                    <TableHead>資產名稱</TableHead>
+                    <TableHead>分類</TableHead>
+                    <TableHead>持有量</TableHead>
+                    <TableHead>市場單價</TableHead>
+                    <TableHead className="text-right">估值 (TWD)</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -332,13 +324,6 @@ export default function AssetTrackerPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {assets.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                        No assets added yet. Start by adding your first investment above!
-                      </TableCell>
-                    </TableRow>
-                  )}
                 </TableBody>
               </Table>
             </CardContent>
