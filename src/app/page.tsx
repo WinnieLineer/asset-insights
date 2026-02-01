@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -288,7 +287,7 @@ export default function AssetTrackerPage() {
                     <TableHead>資產名稱 / 代號</TableHead>
                     <TableHead>分類</TableHead>
                     <TableHead>持有量</TableHead>
-                    <TableHead>單價</TableHead>
+                    <TableHead>市場單價</TableHead>
                     <TableHead className="text-right">估值 (TWD)</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -309,18 +308,24 @@ export default function AssetTrackerPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="font-mono">{asset.amount.toLocaleString()}</div>
-                        <div className="text-xs text-muted-foreground">{asset.currency}</div>
+                        <div className="font-mono flex items-baseline gap-1">
+                          <span>{asset.amount.toLocaleString()}</span>
+                          <span className="text-[10px] text-muted-foreground font-sans">
+                            {asset.category === 'Stock' ? '股' : 
+                             asset.category === 'Crypto' ? asset.symbol.toUpperCase() : 
+                             asset.currency}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="font-mono">
                           {asset.category === 'Stock' || asset.category === 'Crypto' 
-                            ? `${asset.currency === 'USD' ? '$' : 'NT$'}${asset.calculatedPrice?.toLocaleString()}` 
+                            ? `${asset.currency === 'USD' ? '$' : 'NT$'}${asset.calculatedPrice?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
                             : '-'}
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-bold text-primary">
-                        NT$ {asset.valueInTWD.toLocaleString()}
+                        NT$ {asset.valueInTWD.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button 
