@@ -119,6 +119,7 @@ export default function AssetTrackerPage() {
       'Crypto': 0,
       'Bank': 0,
       'Fixed Deposit': 0,
+      'Savings': 0,
     };
 
     const processedAssets = assets.map(asset => {
@@ -138,8 +139,9 @@ export default function AssetTrackerPage() {
           valueInTWD = asset.amount * marketData.exchangeRate;
         }
       } else {
-        // TWD 資產直接使用抓取到的價格 (例如台股 2330 抓到的是 TWD)
-        valueInTWD = asset.amount * (asset.category === 'Stock' ? price : 1);
+        // TWD 資產
+        const multiplier = (asset.category === 'Stock' ? price : 1);
+        valueInTWD = asset.amount * multiplier;
       }
 
       totalTWD += valueInTWD;
@@ -155,7 +157,9 @@ export default function AssetTrackerPage() {
     return { 
       processedAssets, 
       totalTWD, 
-      allocationData: Object.entries(allocationMap).map(([name, value]) => ({ name, value }))
+      allocationData: Object.entries(allocationMap)
+        .filter(([_, value]) => value > 0)
+        .map(([name, value]) => ({ name, value }))
     };
   }, [assets, marketData]);
 
@@ -183,7 +187,7 @@ export default function AssetTrackerPage() {
   };
 
   const portfolioSummary = `Current portfolio: Total NT$${assetCalculations.totalTWD.toLocaleString()}. Allocation: ${assetCalculations.allocationData.map(d => `${d.name}: ${((d.value/assetCalculations.totalTWD)*100).toFixed(1)}%`).join(', ')}.`;
-  const marketConditions = `USD/TWD rate is ${marketData.exchangeRate.toFixed(2)}. Many stock prices are being fetched live.`;
+  const marketConditions = `USD/TWD rate is ${marketData.exchangeRate.toFixed(2)}. Market prices are live.`;
 
   return (
     <div className="min-h-screen p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
@@ -232,7 +236,7 @@ export default function AssetTrackerPage() {
 
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">監控中項目</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">資產數量</CardTitle>
           </CardHeader>
           <CardContent className="flex items-center gap-2">
             <div className="text-2xl font-bold font-headline">
@@ -258,7 +262,7 @@ export default function AssetTrackerPage() {
         <div className="xl:col-span-1 space-y-6">
           <Card className="shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-headline">
+              <CardTitle className="flex items-center gap-2 font-headline text-lg">
                 <Plus className="h-5 w-5 text-primary" />
                 新增資產
               </CardTitle>
@@ -272,19 +276,19 @@ export default function AssetTrackerPage() {
         <div className="xl:col-span-2">
           <Card className="shadow-sm overflow-hidden">
             <CardHeader className="bg-slate-50 border-b">
-              <CardTitle className="flex items-center gap-2 font-headline">
-                <Wallet className="h-5 w-5 text-primary" />
-                資產明細 (台股代碼直接輸入數字)
+              <CardTitle className="flex items-center gap-2 font-headline text-lg text-primary">
+                <Wallet className="h-5 w-5" />
+                資產明細
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>資產名稱</TableHead>
+                    <TableHead>資產名稱 / 代號</TableHead>
                     <TableHead>分類</TableHead>
                     <TableHead>持有量</TableHead>
-                    <TableHead>市場單價</TableHead>
+                    <TableHead>單價</TableHead>
                     <TableHead className="text-right">估值 (TWD)</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
@@ -298,7 +302,10 @@ export default function AssetTrackerPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="font-normal">
-                          {asset.category}
+                          {asset.category === 'Savings' ? '活期存款' : 
+                           asset.category === 'Stock' ? '股票' : 
+                           asset.category === 'Crypto' ? '加密貨幣' : 
+                           asset.category === 'Fixed Deposit' ? '定期存款' : '其他'}
                         </Badge>
                       </TableCell>
                       <TableCell>

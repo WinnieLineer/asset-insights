@@ -1,7 +1,7 @@
 
 export type Currency = 'TWD' | 'USD';
 
-export type AssetCategory = 'Stock' | 'Crypto' | 'Bank' | 'Fixed Deposit';
+export type AssetCategory = 'Stock' | 'Crypto' | 'Bank' | 'Fixed Deposit' | 'Savings';
 
 export interface Asset {
   id: string;
