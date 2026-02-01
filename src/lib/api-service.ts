@@ -40,14 +40,15 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
   }
 
   // 3. Stock prices (Placeholder/Mock as most stock APIs require API keys or have strict limits)
-  // In a real app, you'd use Polygon.io or Alpha Vantage here.
+  // Added 0050 as a supported ticker
   const stockFallbacks: Record<string, number> = {
     'QQQ': 445.5,
     'VTI': 260.2,
     'SCHG': 95.8,
     'NVDA': 140.5,
     'AAPL': 225.0,
-    'TSLA': 350.0
+    'TSLA': 350.0,
+    '0050': 100.0 // User specified price point
   };
 
   symbols.stocks.forEach(s => {

@@ -51,14 +51,35 @@ export default function AssetTrackerPage() {
   useEffect(() => {
     const savedAssets = localStorage.getItem('assets');
     const savedSnapshots = localStorage.getItem('snapshots');
-    if (savedAssets) setAssets(JSON.parse(savedAssets));
+    
+    if (savedAssets) {
+      setAssets(JSON.parse(savedAssets));
+    } else {
+      // Pre-populate with the user's 0050 stock data if empty
+      const initialAssets: Asset[] = [
+        {
+          id: 'default-0050',
+          name: '富邦/大昌/元大',
+          symbol: '0050',
+          category: 'Stock',
+          amount: 19885,
+          currency: 'TWD'
+        }
+      ];
+      setAssets(initialAssets);
+    }
+    
     if (savedSnapshots) setSnapshots(JSON.parse(savedSnapshots));
   }, []);
 
   // Save to LocalStorage
   useEffect(() => {
-    localStorage.setItem('assets', JSON.stringify(assets));
-    localStorage.setItem('snapshots', JSON.stringify(snapshots));
+    if (assets.length > 0) {
+      localStorage.setItem('assets', JSON.stringify(assets));
+    }
+    if (snapshots.length > 0) {
+      localStorage.setItem('snapshots', JSON.stringify(snapshots));
+    }
   }, [assets, snapshots]);
 
   // Fetch live data
@@ -114,7 +135,7 @@ export default function AssetTrackerPage() {
           valueInTWD = asset.amount * marketData.exchangeRate;
         }
       } else {
-        // Base is TWD
+        // Base is TWD (e.g., 0050 price is in TWD)
         valueInTWD = asset.amount * price;
       }
 
@@ -159,7 +180,7 @@ export default function AssetTrackerPage() {
   };
 
   const portfolioSummary = `Current portfolio: Total NT$${assetCalculations.totalTWD.toLocaleString()}. Allocation: ${assetCalculations.allocationData.map(d => `${d.name}: ${((d.value/assetCalculations.totalTWD)*100).toFixed(1)}%`).join(', ')}.`;
-  const marketConditions = `USD/TWD rate is ${marketData.exchangeRate}. Cryptocurrencies are experiencing varied volatility. Major tech stocks are currently used as benchmark pricing.`;
+  const marketConditions = `USD/TWD rate is ${marketData.exchangeRate}. Cryptocurrencies are experiencing varied volatility. Major tech stocks and local ETFs like 0050 are used as benchmark pricing.`;
 
   return (
     <div className="min-h-screen p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
@@ -292,7 +313,7 @@ export default function AssetTrackerPage() {
                       <TableCell>
                         <div className="font-mono">
                           {asset.category === 'Stock' || asset.category === 'Crypto' 
-                            ? `$${asset.calculatedPrice?.toLocaleString()}` 
+                            ? `${asset.currency === 'USD' ? '$' : 'NT$'}${asset.calculatedPrice?.toLocaleString()}` 
                             : '-'}
                         </div>
                       </TableCell>
