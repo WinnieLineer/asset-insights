@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -17,14 +18,18 @@ import {
   X, 
   Eye, 
   Calendar,
-  Languages
+  Languages,
+  ShieldCheck,
+  CreditCard,
+  Lock
 } from 'lucide-react';
 import { 
   Card, 
   CardContent, 
   CardHeader, 
   CardTitle,
-  CardDescription
+  CardDescription,
+  CardFooter
 } from '@/components/ui/card';
 import { 
   Table, 
@@ -43,7 +48,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
+  DialogFooter as UIDialogFooter
 } from "@/components/ui/dialog";
+import { Badge } from '@/components/ui/badge';
 
 type Language = 'en' | 'zh';
 
@@ -71,6 +79,15 @@ const translations = {
     snapshotSaved: 'Snapshot saved',
     snapshotDeleted: 'Snapshot deleted',
     invalidValue: 'Invalid value',
+    licenseTitle: 'Lifetime License',
+    licenseDesc: 'Unlock all pro features for life.',
+    licensePrice: 'NT$ 30',
+    buyNow: 'Buy Lifetime Access',
+    licensed: 'Activated',
+    unlicensed: 'Free Version',
+    licenseRequired: 'License Required',
+    licensePrompt: 'Please activate your lifetime license to start tracking your assets.',
+    activationSuccess: 'Activation Successful! Thank you for your support.',
   },
   zh: {
     title: 'Asset Insights',
@@ -95,6 +112,15 @@ const translations = {
     snapshotSaved: '快照已存檔',
     snapshotDeleted: '快照已刪除',
     invalidValue: '無效數值',
+    licenseTitle: '終身買斷授權',
+    licenseDesc: '一次性付費，解鎖所有專業追蹤與 AI 功能。',
+    licensePrice: 'NT$ 30',
+    buyNow: '立即買斷解鎖',
+    licensed: '已啟動 Pro',
+    unlicensed: '免費版',
+    licenseRequired: '需要授權',
+    licensePrompt: '請先啟用您的終身授權以開始管理您的個人資產。',
+    activationSuccess: '啟動成功！感謝您的支持。',
   }
 };
 
@@ -104,6 +130,8 @@ export default function AssetTrackerPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
+  const [isLicensed, setIsLicensed] = useState<boolean>(false);
+  const [isBuyDialogOpen, setIsBuyDialogOpen] = useState(false);
   const [marketData, setMarketData] = useState<MarketData>({
     exchangeRate: 32.5,
     rates: { TWD: 32.5, CNY: 7.2, USD: 1 },
@@ -122,7 +150,9 @@ export default function AssetTrackerPage() {
     const savedAssets = localStorage.getItem('assets');
     const savedSnapshots = localStorage.getItem('snapshots');
     const savedLang = localStorage.getItem('language');
+    const savedLicense = localStorage.getItem('app_license_v1');
     
+    if (savedLicense === 'true') setIsLicensed(true);
     if (savedLang) setLanguage(savedLang as Language);
     if (savedAssets) setAssets(JSON.parse(savedAssets));
     else {
@@ -145,6 +175,7 @@ export default function AssetTrackerPage() {
   }, [assets, snapshots, language]);
 
   const updateMarketData = async () => {
+    if (!isLicensed) return;
     setLoading(true);
     const cryptos = assets.filter(a => a.category === 'Crypto').map(a => a.symbol);
     const stocks = assets.filter(a => a.category === 'Stock').map(a => a.symbol);
@@ -164,9 +195,20 @@ export default function AssetTrackerPage() {
   };
 
   useEffect(() => {
-    if (assets.length > 0) updateMarketData();
+    if (isLicensed && assets.length > 0) updateMarketData();
     else setLoading(false);
-  }, [assets.length]);
+  }, [assets.length, isLicensed]);
+
+  const handlePurchase = () => {
+    // 模擬支付流程
+    localStorage.setItem('app_license_v1', 'true');
+    setIsLicensed(true);
+    setIsBuyDialogOpen(false);
+    toast({
+      title: t.activationSuccess,
+      description: t.licenseTitle,
+    });
+  };
 
   const assetCalculations = useMemo(() => {
     let totalTWD = 0;
@@ -210,6 +252,10 @@ export default function AssetTrackerPage() {
   }, [assets, marketData, displayCurrency]);
 
   const takeSnapshot = () => {
+    if (!isLicensed) {
+      setIsBuyDialogOpen(true);
+      return;
+    }
     const newSnapshot: Snapshot = {
       id: crypto.randomUUID(),
       date: new Date().toISOString(),
@@ -228,15 +274,70 @@ export default function AssetTrackerPage() {
     return twdVal;
   };
 
+  if (!isLicensed && !loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full shadow-2xl border-t-4 border-t-primary">
+          <CardHeader className="text-center space-y-4">
+            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+              <Lock className="h-8 w-8 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <CardTitle className="text-2xl font-headline font-bold">{t.licenseTitle}</CardTitle>
+              <CardDescription>{t.licensePrompt}</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="bg-slate-100 p-6 rounded-xl text-center">
+              <div className="text-sm text-muted-foreground mb-1 uppercase tracking-widest">{language === 'en' ? 'ONE TIME PAYMENT' : '一次性買斷價格'}</div>
+              <div className="text-4xl font-bold font-headline text-primary">{t.licensePrice}</div>
+            </div>
+            <ul className="space-y-3">
+              {[
+                language === 'zh' ? '無限制資產追蹤' : 'Unlimited Asset Tracking',
+                language === 'zh' ? '全球即時匯率與股市抓取' : 'Global Market Data Sync',
+                language === 'zh' ? 'AI 財務顧問問答' : 'Interactive AI Advisor',
+                language === 'zh' ? '歷史快照與趨勢分析' : 'Historical Snapshots & Trends'
+              ].map((text, i) => (
+                <li key={i} className="flex items-center gap-3 text-sm text-slate-600">
+                  <ShieldCheck className="h-5 w-5 text-green-500" />
+                  {text}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-3">
+            <Button className="w-full h-12 text-lg font-semibold" onClick={handlePurchase}>
+              <CreditCard className="mr-2 h-5 w-5" />
+              {t.buyNow}
+            </Button>
+            <Button variant="ghost" className="w-full text-xs text-muted-foreground" onClick={() => setLanguage(language === 'en' ? 'zh' : 'en')}>
+              <Languages className="mr-2 h-3 w-3" />
+              Switch to {language === 'en' ? '中文' : 'English'}
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border shadow-sm">
-        <div>
-          <h1 className="text-3xl font-headline font-bold text-primary flex items-center gap-2">
-            <TrendingUp className="h-8 w-8 text-accent" />
-            {t.title}
-          </h1>
-          <p className="text-muted-foreground mt-1">{t.subtitle}</p>
+        <div className="flex items-start gap-4">
+          <div>
+            <h1 className="text-3xl font-headline font-bold text-primary flex items-center gap-2">
+              <TrendingUp className="h-8 w-8 text-accent" />
+              {t.title}
+            </h1>
+            <p className="text-muted-foreground mt-1 flex items-center gap-2">
+              {t.subtitle}
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <ShieldCheck className="h-3 w-3 mr-1" />
+                {t.licensed}
+              </Badge>
+            </p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Tabs value={language} onValueChange={(v) => setLanguage(v as Language)}>
