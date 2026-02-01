@@ -449,11 +449,15 @@ export default function AssetTrackerPage() {
                     </TableCell>
                     <TableCell>
                       <div className="text-sm font-mono text-muted-foreground">
-                        {asset.calculatedPrice > 0 ? (
-                          <>
-                            {getCurrencySymbol(asset.category === 'Stock' && /^\d+$/.test(asset.symbol) ? 'TWD' : 'USD')}
-                            {asset.calculatedPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                          </>
+                        {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
+                          asset.calculatedPrice > 0 ? (
+                            <>
+                              {getCurrencySymbol(asset.category === 'Stock' && /^\d+$/.test(asset.symbol) ? 'TWD' : 'USD')}
+                              {asset.calculatedPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                            </>
+                          ) : (
+                            '抓取中...'
+                          )
                         ) : (
                           '--'
                         )}
