@@ -35,13 +35,17 @@ export async function getFinancialTip(input: FinancialTipInput): Promise<Financi
 
 const prompt = ai.definePrompt({
   name: 'financialTipPrompt',
-  input: {schema: FinancialTipInputSchema},
+  input: {
+    schema: FinancialTipInputSchema.extend({
+      languageName: z.string(),
+    }),
+  },
   output: {schema: FinancialTipOutputSchema},
   prompt: `You are a professional senior financial advisor. Provide a deep and specific analysis based on the user's portfolio and market conditions.
 
   Portfolio Summary: {{{portfolioSummary}}}
   Market Conditions: {{{marketConditions}}}
-  Output Language: {{#if (eq language "en")}}English{{else}}Traditional Chinese (Taiwan){{/if}}
+  Output Language: {{{languageName}}}
 
   Please provide the following structure:
   1. A brief professional analysis of the current state.
@@ -59,7 +63,11 @@ const financialTipFlow = ai.defineFlow(
     outputSchema: FinancialTipOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const languageName = input.language === 'en' ? 'English' : 'Traditional Chinese (Taiwan)';
+    const {output} = await prompt({
+      ...input,
+      languageName,
+    });
     return output!;
   }
 );
