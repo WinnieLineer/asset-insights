@@ -53,6 +53,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter as DialogFooterUI,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -75,6 +76,7 @@ const translations = {
     manageHistory: 'Manage your past asset records.',
     noSnapshots: 'No snapshots yet.',
     snapshotDetail: 'Snapshot Details',
+    snapshotDetailDesc: 'Detailed view of your asset allocation at this specific point in time.',
     assetName: 'Asset Name',
     marketPrice: 'Market Price',
     holdings: 'Holdings',
@@ -119,6 +121,7 @@ const translations = {
     manageHistory: '管理您過去儲存的資產記錄。',
     noSnapshots: '尚未有任何快照。',
     snapshotDetail: '快照詳情',
+    snapshotDetailDesc: '查看此特定時間點的詳細資產配置與價值。',
     assetName: '資產名稱',
     marketPrice: '市場單價',
     holdings: '持有量',
@@ -238,7 +241,6 @@ export default function AssetTrackerPage() {
 
   const handleProcessPayment = () => {
     setPaymentStep('processing');
-    // 模擬串接金流延遲
     setTimeout(() => {
       localStorage.setItem('app_license_v1', 'true');
       setIsLicensed(true);
@@ -247,7 +249,6 @@ export default function AssetTrackerPage() {
         title: t.activationSuccess,
         description: t.licenseTitle,
       });
-      // 延遲關閉視窗
       setTimeout(() => {
         setShowPaymentDialog(false);
       }, 1500);
@@ -377,6 +378,9 @@ export default function AssetTrackerPage() {
                     <ShieldCheck className="h-5 w-5 text-primary" />
                     {t.licenseTitle} - {t.licensePrice}
                   </DialogTitle>
+                  <DialogDescription>
+                    {t.licenseDesc}
+                  </DialogDescription>
                 </DialogHeader>
 
                 {paymentStep === 'selection' && (
@@ -590,7 +594,10 @@ export default function AssetTrackerPage() {
                       <Dialog>
                         <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedSnapshot(s)}><Eye className="h-4 w-4" /></Button></DialogTrigger>
                         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader><CardTitle>{t.snapshotDetail} - {new Date(s.date).toLocaleString(language === 'en' ? 'en-US' : 'zh-TW')}</CardTitle></DialogHeader>
+                          <DialogHeader>
+                            <DialogTitle>{t.snapshotDetail} - {new Date(s.date).toLocaleString(language === 'en' ? 'en-US' : 'zh-TW')}</DialogTitle>
+                            <DialogDescription>{t.snapshotDetailDesc}</DialogDescription>
+                          </DialogHeader>
                           <Table>
                             <TableHeader>
                               <TableRow>
