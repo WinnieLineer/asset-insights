@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -54,7 +53,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter as DialogFooterUI,
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
@@ -111,7 +109,7 @@ const translations = {
     jkopay: 'JKOPAY',
     scanQr: 'Please scan the QR code to pay',
     vsLast: 'vs. Last Snapshot',
-    change: 'Change',
+    change: 'Gain/Loss',
   },
   zh: {
     title: 'Asset Insights',
@@ -158,7 +156,7 @@ const translations = {
     jkopay: '街口支付',
     scanQr: '請使用手機掃描下方 QR Code 完成支付',
     vsLast: '較上次快照',
-    change: '漲跌幅度',
+    change: '估值漲跌',
   }
 };
 
@@ -184,7 +182,6 @@ export default function AssetTrackerPage() {
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState<string>('');
-  const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null);
 
   const t = translations[language];
 
@@ -631,7 +628,7 @@ export default function AssetTrackerPage() {
                     </div>
                     <div className="flex gap-1">
                       <Dialog>
-                        <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedSnapshot(s)}><Eye className="h-4 w-4" /></Button></DialogTrigger>
+                        <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="h-4 w-4" /></Button></DialogTrigger>
                         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>{t.snapshotDetail} - {new Date(s.date).toLocaleString(language === 'en' ? 'en-US' : 'zh-TW')}</DialogTitle>
@@ -729,4 +726,3 @@ export default function AssetTrackerPage() {
     </div>
   );
 }
-
