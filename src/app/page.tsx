@@ -1,8 +1,11 @@
+
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Asset, Snapshot, MarketData, AssetCategory, Currency } from './lib/types';
 import { getMarketData } from '@/app/actions/market';
+import { createCheckoutSession } from '@/app/actions/payment';
 import { AssetForm } from '@/components/AssetForm';
 import { PortfolioCharts } from '@/components/PortfolioCharts';
 import { AITipCard } from '@/components/AITipCard';
@@ -103,11 +106,11 @@ const translations = {
     upgradeToPro: 'Upgrade to Pro',
     paymentMethod: 'Select Payment Method',
     payNow: 'Complete Purchase',
-    processing: 'Processing Payment...',
-    creditCard: 'Credit Card',
-    linePay: 'Line Pay',
-    jkopay: 'JKOPAY',
-    scanQr: 'Please scan the QR code to pay',
+    processing: 'Redirecting to Secure Payment...',
+    creditCard: 'Credit Card / Global Pay',
+    linePay: 'LINE Pay (via Stripe)',
+    jkopay: 'JKOPAY (Demo)',
+    scanQr: 'Please complete the payment on the redirected page',
     vsLast: 'vs. Last Snapshot',
     change: 'Gain/Loss',
   },
@@ -148,17 +151,35 @@ const translations = {
     trialLimitAssets: '免費版限新增 3 項資產，升級 Pro 以解鎖無限資產追蹤。',
     trialLimitSnapshots: '免費版限儲存 1 份快照，升級 Pro 以查看完整歷史趨勢。',
     upgradeToPro: '升級解鎖完整版',
-    paymentMethod: '選擇支付方式',
-    payNow: '確認支付',
-    processing: '金流處理中...',
-    creditCard: '信用卡 / 金融卡',
-    linePay: 'LINE Pay',
-    jkopay: '街口支付',
-    scanQr: '請使用手機掃描下方 QR Code 完成支付',
+    paymentMethod: '金流支付方式',
+    payNow: '前往安全支付',
+    processing: '正在跳轉至安全支付頁面...',
+    creditCard: '信用卡 / 全球支付',
+    linePay: 'LINE Pay (經由 Stripe)',
+    jkopay: '街口支付 (模擬)',
+    scanQr: '請在跳轉出的頁面完成支付流程',
     vsLast: '較上次快照',
     change: '估值漲跌',
   }
 };
+
+function PaymentHandler({ onPaymentSuccess }: { onPaymentSuccess: () => void }) {
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (searchParams.get('payment_success') === 'true') {
+      onPaymentSuccess();
+      // 清除 URL 參數
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (searchParams.get('payment_cancel') === 'true') {
+      toast({ variant: 'destructive', title: 'Payment Canceled', description: 'Transaction was not completed.' });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [searchParams, onPaymentSuccess, toast]);
+
+  return null;
+}
 
 export default function AssetTrackerPage() {
   const { toast } = useToast();
@@ -243,20 +264,27 @@ export default function AssetTrackerPage() {
     if (assets.length > 0) updateMarketData();
   }, [assets.length]);
 
-  const handleProcessPayment = () => {
+  const handleProcessStripePayment = async () => {
     setPaymentStep('processing');
-    setTimeout(() => {
-      localStorage.setItem('app_license_v1', 'true');
-      setIsLicensed(true);
-      setPaymentStep('success');
-      toast({
-        title: t.activationSuccess,
-        description: t.licenseTitle,
-      });
-      setTimeout(() => {
-        setShowPaymentDialog(false);
-      }, 1500);
-    }, 2000);
+    try {
+      const baseUrl = window.location.origin;
+      const { url } = await createCheckoutSession(baseUrl);
+      if (url) {
+        window.location.href = url;
+      }
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Payment Error', description: error.message });
+      setPaymentStep('selection');
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    localStorage.setItem('app_license_v1', 'true');
+    setIsLicensed(true);
+    toast({
+      title: t.activationSuccess,
+      description: t.licenseTitle,
+    });
   };
 
   const handleStartTrial = () => {
@@ -303,7 +331,6 @@ export default function AssetTrackerPage() {
       if (displayCurrency === 'USD') valueInDisplay = valueInTWD / marketData.rates.TWD;
       else if (displayCurrency === 'CNY') valueInDisplay = valueInTWD * (marketData.rates.CNY / marketData.rates.TWD);
 
-      // Compare with last snapshot
       const previousAsset = lastSnapshot?.assets?.find(pa => pa.id === asset.id);
       const diffTWD = previousAsset ? valueInTWD - (previousAsset.valueInTWD || 0) : 0;
       const diffPercent = previousAsset && previousAsset.valueInTWD ? (diffTWD / previousAsset.valueInTWD) * 100 : 0;
@@ -362,6 +389,9 @@ export default function AssetTrackerPage() {
   if (!isLicensed && !hasStartedTrial && !loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <Suspense fallback={<Loader2 className="animate-spin" />}>
+          <PaymentHandler onPaymentSuccess={handlePaymentSuccess} />
+        </Suspense>
         <Card className="max-w-md w-full shadow-2xl border-t-4 border-t-primary">
           <CardHeader className="text-center space-y-4">
             <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
@@ -420,22 +450,8 @@ export default function AssetTrackerPage() {
                           <CreditCard className="h-5 w-5 text-slate-400" />
                         </Label>
                       </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                        <RadioGroupItem value="linepay" id="linepay" />
-                        <Label htmlFor="linepay" className="flex flex-1 items-center justify-between cursor-pointer">
-                          <span className="font-medium">{t.linePay}</span>
-                          <Smartphone className="h-5 w-5 text-green-500" />
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                        <RadioGroupItem value="jkopay" id="jkopay" />
-                        <Label htmlFor="jkopay" className="flex flex-1 items-center justify-between cursor-pointer">
-                          <span className="font-medium">{t.jkopay}</span>
-                          <div className="bg-red-500 text-white text-[10px] px-1 rounded font-bold">JKO</div>
-                        </Label>
-                      </div>
                     </RadioGroup>
-                    <Button onClick={handleProcessPayment} className="w-full h-11 bg-primary">
+                    <Button onClick={handleProcessStripePayment} className="w-full h-11 bg-primary">
                       {t.payNow}
                     </Button>
                   </div>
@@ -445,21 +461,6 @@ export default function AssetTrackerPage() {
                   <div className="py-12 flex flex-col items-center justify-center space-y-4">
                     <Loader2 className="h-10 w-10 text-primary animate-spin" />
                     <p className="text-sm font-medium animate-pulse">{t.processing}</p>
-                    {selectedMethod !== 'credit' && (
-                      <div className="mt-4 p-4 bg-slate-50 rounded-lg flex flex-col items-center">
-                        <QrCode className="h-32 w-32 text-slate-800" />
-                        <p className="text-[10px] text-muted-foreground mt-2">{t.scanQr}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {paymentStep === 'success' && (
-                  <div className="py-12 flex flex-col items-center justify-center space-y-4">
-                    <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center">
-                      <Check className="h-10 w-10 text-green-600" />
-                    </div>
-                    <p className="text-lg font-bold text-green-600">{t.activationSuccess}</p>
                   </div>
                 )}
               </DialogContent>
@@ -469,10 +470,6 @@ export default function AssetTrackerPage() {
               {t.startTrial}
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
-            <Button variant="ghost" className="w-full text-xs text-muted-foreground" onClick={() => setLanguage(language === 'en' ? 'zh' : 'en')}>
-              <Languages className="mr-2 h-3 w-3" />
-              Switch to {language === 'en' ? '中文' : 'English'}
-            </Button>
           </CardFooter>
         </Card>
       </div>
@@ -481,6 +478,9 @@ export default function AssetTrackerPage() {
 
   return (
     <div className="min-h-screen p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
+      <Suspense fallback={null}>
+        <PaymentHandler onPaymentSuccess={handlePaymentSuccess} />
+      </Suspense>
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border shadow-sm">
         <div className="flex items-start gap-4">
           <div>
@@ -536,7 +536,7 @@ export default function AssetTrackerPage() {
           <AlertTitle className="text-primary font-bold">{t.upgradeToPro}</AlertTitle>
           <AlertDescription className="flex items-center justify-between">
             <span>{assets.length >= 3 ? t.trialLimitAssets : snapshots.length >= 1 ? t.trialLimitSnapshots : t.licensePrompt}</span>
-            <Button size="sm" className="ml-4" onClick={() => { setHasStartedTrial(false); setPaymentStep('selection'); }}>{t.buyNow}</Button>
+            <Button size="sm" className="ml-4" onClick={() => { setHasStartedTrial(false); setPaymentStep('selection'); setShowPaymentDialog(true); }}>{t.buyNow}</Button>
           </AlertDescription>
         </Alert>
       )}
@@ -562,9 +562,6 @@ export default function AssetTrackerPage() {
                 <span className="text-muted-foreground font-normal ml-1">{t.vsLast}</span>
               </div>
             )}
-            <div className="text-xs text-muted-foreground mt-2 bg-white/50 w-fit px-2 py-1 rounded">
-              1 USD = {marketData.rates.TWD.toFixed(2)} TWD / {marketData.rates.CNY.toFixed(2)} CNY
-            </div>
           </CardContent>
         </Card>
 
