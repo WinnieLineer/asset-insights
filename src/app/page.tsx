@@ -25,7 +25,9 @@ import {
   Info,
   QrCode,
   Smartphone,
-  Loader2
+  Loader2,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react';
 import { 
   Card, 
@@ -59,6 +61,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { cn } from '@/lib/utils';
 
 type Language = 'en' | 'zh';
 
@@ -107,6 +110,8 @@ const translations = {
     linePay: 'LINE Pay',
     jkopay: 'JKOPAY',
     scanQr: 'Please scan the QR code to pay',
+    vsLast: 'vs. Last Snapshot',
+    change: 'Change',
   },
   zh: {
     title: 'Asset Insights',
@@ -152,6 +157,8 @@ const translations = {
     linePay: 'LINE Pay',
     jkopay: '街口支付',
     scanQr: '請使用手機掃描下方 QR Code 完成支付',
+    vsLast: '較上次快照',
+    change: '漲跌幅度',
   }
 };
 
@@ -260,6 +267,8 @@ export default function AssetTrackerPage() {
     setHasStartedTrial(true);
   };
 
+  const lastSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
+
   const assetCalculations = useMemo(() => {
     let totalTWD = 0;
     const allocationMap: Record<AssetCategory, number> = {
@@ -289,17 +298,37 @@ export default function AssetTrackerPage() {
       if (displayCurrency === 'USD') valueInDisplay = valueInTWD / marketData.rates.TWD;
       else if (displayCurrency === 'CNY') valueInDisplay = valueInTWD * (marketData.rates.CNY / marketData.rates.TWD);
 
-      return { ...asset, calculatedPrice: currentPrice, valueInTWD, valueInDisplay };
+      // Compare with last snapshot
+      const previousAsset = lastSnapshot?.assets?.find(pa => pa.id === asset.id);
+      const diffTWD = previousAsset ? valueInTWD - (previousAsset.valueInTWD || 0) : 0;
+      const diffPercent = previousAsset && previousAsset.valueInTWD ? (diffTWD / previousAsset.valueInTWD) * 100 : 0;
+
+      return { 
+        ...asset, 
+        calculatedPrice: currentPrice, 
+        valueInTWD, 
+        valueInDisplay,
+        diffTWD,
+        diffPercent,
+        hasHistory: !!previousAsset
+      };
     });
 
+    const totalDiffTWD = lastSnapshot ? totalTWD - lastSnapshot.totalTWD : 0;
+    const totalDiffPercent = lastSnapshot && lastSnapshot.totalTWD ? (totalDiffTWD / lastSnapshot.totalTWD) * 100 : 0;
+
     return { 
-      processedAssets, totalTWD,
+      processedAssets, 
+      totalTWD,
+      totalDiffTWD,
+      totalDiffPercent,
       totalDisplay: displayCurrency === 'USD' ? totalTWD / marketData.rates.TWD : displayCurrency === 'CNY' ? totalTWD * (marketData.rates.CNY / marketData.rates.TWD) : totalTWD,
+      totalDiffDisplay: displayCurrency === 'USD' ? totalDiffTWD / marketData.rates.TWD : displayCurrency === 'CNY' ? totalDiffTWD * (marketData.rates.CNY / marketData.rates.TWD) : totalDiffTWD,
       allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({
         name, value: displayCurrency === 'USD' ? value / marketData.rates.TWD : displayCurrency === 'CNY' ? value * (marketData.rates.CNY / marketData.rates.TWD) : value
       }))
     };
-  }, [assets, marketData, displayCurrency]);
+  }, [assets, marketData, displayCurrency, lastSnapshot]);
 
   const takeSnapshot = () => {
     if (!isLicensed && snapshots.length >= 1) {
@@ -525,6 +554,16 @@ export default function AssetTrackerPage() {
             <div className="text-2xl font-bold font-headline">
               {getCurrencySymbol(displayCurrency)} {assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
             </div>
+            {lastSnapshot && (
+              <div className={cn(
+                "text-xs font-semibold mt-1 flex items-center gap-1",
+                assetCalculations.totalDiffTWD >= 0 ? "text-green-600" : "text-red-600"
+              )}>
+                {assetCalculations.totalDiffTWD >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                {getCurrencySymbol(displayCurrency)}{Math.abs(assetCalculations.totalDiffDisplay).toLocaleString(undefined, { maximumFractionDigits: 2 })} ({assetCalculations.totalDiffPercent.toFixed(2)}%)
+                <span className="text-muted-foreground font-normal ml-1">{t.vsLast}</span>
+              </div>
+            )}
             <div className="text-xs text-muted-foreground mt-2 bg-white/50 w-fit px-2 py-1 rounded">
               1 USD = {marketData.rates.TWD.toFixed(2)} TWD / {marketData.rates.CNY.toFixed(2)} CNY
             </div>
@@ -639,6 +678,7 @@ export default function AssetTrackerPage() {
                   <TableHead>{t.assetName}</TableHead>
                   <TableHead>{t.marketPrice}</TableHead>
                   <TableHead>{t.holdings}</TableHead>
+                  <TableHead className="text-right">{t.change}</TableHead>
                   <TableHead className="text-right">{t.valuation} ({displayCurrency})</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -665,6 +705,18 @@ export default function AssetTrackerPage() {
                         </div>
                       )}
                     </TableCell>
+                    <TableCell className="text-right">
+                      {asset.hasHistory ? (
+                        <div className={cn(
+                          "text-xs font-semibold",
+                          asset.diffTWD >= 0 ? "text-green-600" : "text-red-600"
+                        )}>
+                          {asset.diffTWD >= 0 ? '+' : ''}{asset.diffPercent.toFixed(2)}%
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">--</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-right font-bold text-primary">{asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}</TableCell>
                     <TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => setAssets(prev => prev.filter(a => a.id !== asset.id))} className="text-destructive"><Trash2 className="h-4 w-4" /></Button></TableCell>
                   </TableRow>
@@ -677,3 +729,4 @@ export default function AssetTrackerPage() {
     </div>
   );
 }
+
