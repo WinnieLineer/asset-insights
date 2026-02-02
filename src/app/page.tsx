@@ -105,7 +105,7 @@ const translations = {
     payNow: 'Complete Purchase',
     processing: 'Processing Payment...',
     creditCard: 'Credit Card',
-    linePay: 'LINE Pay',
+    linePay: 'Line Pay',
     jkopay: 'JKOPAY',
     scanQr: 'Please scan the QR code to pay',
     vsLast: 'vs. Last Snapshot',
@@ -266,6 +266,14 @@ export default function AssetTrackerPage() {
 
   const lastSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
 
+  const getCurrencySymbol = (cur: Currency) => cur === 'USD' ? '$' : cur === 'CNY' ? '¥' : 'NT$';
+
+  const convertTWDToDisplay = (twdVal: number) => {
+    if (displayCurrency === 'USD') return twdVal / marketData.rates.TWD;
+    if (displayCurrency === 'CNY') return twdVal * (marketData.rates.CNY / marketData.rates.TWD);
+    return twdVal;
+  };
+
   const assetCalculations = useMemo(() => {
     let totalTWD = 0;
     const allocationMap: Record<AssetCategory, number> = {
@@ -349,13 +357,6 @@ export default function AssetTrackerPage() {
       return;
     }
     setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }]);
-  };
-
-  const getCurrencySymbol = (cur: Currency) => cur === 'USD' ? '$' : cur === 'CNY' ? '¥' : 'NT$';
-  const convertTWDToDisplay = (twdVal: number) => {
-    if (displayCurrency === 'USD') return twdVal / marketData.rates.TWD;
-    if (displayCurrency === 'CNY') return twdVal * (marketData.rates.CNY / marketData.rates.TWD);
-    return twdVal;
   };
 
   if (!isLicensed && !hasStartedTrial && !loading) {
@@ -705,10 +706,13 @@ export default function AssetTrackerPage() {
                     <TableCell className="text-right">
                       {asset.hasHistory ? (
                         <div className={cn(
-                          "text-xs font-semibold",
+                          "text-xs font-semibold whitespace-nowrap",
                           asset.diffTWD >= 0 ? "text-green-600" : "text-red-600"
                         )}>
-                          {asset.diffTWD >= 0 ? '+' : ''}{asset.diffPercent.toFixed(2)}%
+                          {asset.diffTWD >= 0 ? '+' : ''}{getCurrencySymbol(displayCurrency)}{Math.abs(convertTWDToDisplay(asset.diffTWD)).toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
+                          <span className="block text-[10px] opacity-80">
+                            ({asset.diffTWD >= 0 ? '+' : ''}{asset.diffPercent.toFixed(2)}%)
+                          </span>
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">--</span>
