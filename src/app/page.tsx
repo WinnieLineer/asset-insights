@@ -25,8 +25,6 @@ import {
   Lock,
   ArrowRight,
   Info,
-  QrCode,
-  Smartphone,
   Loader2,
   ArrowUpRight,
   ArrowDownRight
@@ -90,7 +88,6 @@ const translations = {
     dataUpdated: 'Market data updated',
     snapshotSaved: 'Snapshot saved',
     snapshotDeleted: 'Snapshot deleted',
-    invalidValue: 'Invalid value',
     licenseTitle: 'Lifetime License',
     licenseDesc: 'Unlock all pro features for life.',
     licensePrice: 'NT$ 30',
@@ -108,11 +105,8 @@ const translations = {
     payNow: 'Complete Purchase',
     processing: 'Redirecting to Secure Payment...',
     creditCard: 'Credit Card / Global Pay',
-    linePay: 'LINE Pay (via Stripe)',
-    jkopay: 'JKOPAY (Demo)',
-    scanQr: 'Please complete the payment on the redirected page',
     vsLast: 'vs. Last Snapshot',
-    change: 'Gain/Loss',
+    valuationChange: 'Valuation Change',
   },
   zh: {
     title: 'Asset Insights',
@@ -137,7 +131,6 @@ const translations = {
     dataUpdated: '市場數據已更新',
     snapshotSaved: '快照已存檔',
     snapshotDeleted: '快照已刪除',
-    invalidValue: '無效數值',
     licenseTitle: '終身買斷授權',
     licenseDesc: '一次性付費，解鎖所有專業追蹤與 AI 功能。',
     licensePrice: 'NT$ 30',
@@ -155,11 +148,8 @@ const translations = {
     payNow: '前往安全支付',
     processing: '正在跳轉至安全支付頁面...',
     creditCard: '信用卡 / 全球支付',
-    linePay: 'LINE Pay (經由 Stripe)',
-    jkopay: '街口支付 (模擬)',
-    scanQr: '請在跳轉出的頁面完成支付流程',
     vsLast: '較上次快照',
-    change: '估值漲跌',
+    valuationChange: '估值漲跌',
   }
 };
 
@@ -170,7 +160,6 @@ function PaymentHandler({ onPaymentSuccess }: { onPaymentSuccess: () => void }) 
   useEffect(() => {
     if (searchParams.get('payment_success') === 'true') {
       onPaymentSuccess();
-      // 清除 URL 參數
       window.history.replaceState({}, '', window.location.pathname);
     } else if (searchParams.get('payment_cancel') === 'true') {
       toast({ variant: 'destructive', title: 'Payment Canceled', description: 'Transaction was not completed.' });
@@ -217,18 +206,9 @@ export default function AssetTrackerPage() {
     if (savedTrial === 'true') setHasStartedTrial(true);
     if (savedLang) setLanguage(savedLang as Language);
     
-    if (savedAssets) {
-      setAssets(JSON.parse(savedAssets));
-    } else {
-      setAssets([{
-        id: 'default-0050',
-        name: '元大台灣50',
-        symbol: '0050',
-        category: 'Stock',
-        amount: 1000,
-        currency: 'TWD'
-      }]);
-    }
+    if (savedAssets) setAssets(JSON.parse(savedAssets));
+    else setAssets([{ id: 'default-0050', name: '元大台灣50', symbol: '0050', category: 'Stock', amount: 1000, currency: 'TWD' }]);
+    
     if (savedSnapshots) setSnapshots(JSON.parse(savedSnapshots));
     setLoading(false);
   }, []);
@@ -249,10 +229,7 @@ export default function AssetTrackerPage() {
     try {
       const data = await getMarketData({ cryptos, stocks });
       setMarketData(data);
-      toast({
-        title: t.dataUpdated,
-        description: `1 USD = ${data.rates.TWD.toFixed(2)} TWD`
-      });
+      toast({ title: t.dataUpdated, description: `1 USD = ${data.rates.TWD.toFixed(2)} TWD` });
     } catch (error) {
       console.error('Market update failed', error);
     } finally {
@@ -269,9 +246,7 @@ export default function AssetTrackerPage() {
     try {
       const baseUrl = window.location.origin;
       const { url } = await createCheckoutSession(baseUrl);
-      if (url) {
-        window.location.href = url;
-      }
+      if (url) window.location.href = url;
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Payment Error', description: error.message });
       setPaymentStep('selection');
@@ -281,10 +256,7 @@ export default function AssetTrackerPage() {
   const handlePaymentSuccess = () => {
     localStorage.setItem('app_license_v1', 'true');
     setIsLicensed(true);
-    toast({
-      title: t.activationSuccess,
-      description: t.licenseTitle,
-    });
+    toast({ title: t.activationSuccess, description: t.licenseTitle });
   };
 
   const handleStartTrial = () => {
@@ -297,8 +269,9 @@ export default function AssetTrackerPage() {
   const getCurrencySymbol = (cur: Currency) => cur === 'USD' ? '$' : cur === 'CNY' ? '¥' : 'NT$';
 
   const convertTWDToDisplay = (twdVal: number) => {
-    if (displayCurrency === 'USD') return twdVal / marketData.rates.TWD;
-    if (displayCurrency === 'CNY') return twdVal * (marketData.rates.CNY / marketData.rates.TWD);
+    const rate = marketData.rates.TWD || 32.5;
+    if (displayCurrency === 'USD') return twdVal / rate;
+    if (displayCurrency === 'CNY') return twdVal * (marketData.rates.CNY / rate);
     return twdVal;
   };
 
@@ -314,11 +287,12 @@ export default function AssetTrackerPage() {
       else if (asset.category === 'Stock') currentPrice = marketData.stockPrices[asset.symbol.toUpperCase()] || 0;
 
       let valueInTWD = 0;
+      const rate = marketData.rates.TWD || 32.5;
       if (asset.currency === 'USD') {
         const usdValue = (asset.category === 'Stock' || asset.category === 'Crypto') ? asset.amount * currentPrice : asset.amount;
-        valueInTWD = usdValue * marketData.rates.TWD;
+        valueInTWD = usdValue * rate;
       } else if (asset.currency === 'CNY') {
-        valueInTWD = asset.amount * (marketData.rates.TWD / marketData.rates.CNY);
+        valueInTWD = asset.amount * (rate / (marketData.rates.CNY || 7.2));
       } else {
         const multiplier = (asset.category === 'Stock' ? (currentPrice || 1) : 1);
         valueInTWD = asset.amount * multiplier;
@@ -327,9 +301,7 @@ export default function AssetTrackerPage() {
       totalTWD += valueInTWD;
       allocationMap[asset.category] += valueInTWD;
 
-      let valueInDisplay = valueInTWD;
-      if (displayCurrency === 'USD') valueInDisplay = valueInTWD / marketData.rates.TWD;
-      else if (displayCurrency === 'CNY') valueInDisplay = valueInTWD * (marketData.rates.CNY / marketData.rates.TWD);
+      let valueInDisplay = convertTWDToDisplay(valueInTWD);
 
       const previousAsset = lastSnapshot?.assets?.find(pa => pa.id === asset.id);
       const diffTWD = previousAsset ? valueInTWD - (previousAsset.valueInTWD || 0) : 0;
@@ -354,10 +326,10 @@ export default function AssetTrackerPage() {
       totalTWD,
       totalDiffTWD,
       totalDiffPercent,
-      totalDisplay: displayCurrency === 'USD' ? totalTWD / marketData.rates.TWD : displayCurrency === 'CNY' ? totalTWD * (marketData.rates.CNY / marketData.rates.TWD) : totalTWD,
-      totalDiffDisplay: displayCurrency === 'USD' ? totalDiffTWD / marketData.rates.TWD : displayCurrency === 'CNY' ? totalDiffTWD * (marketData.rates.CNY / marketData.rates.TWD) : totalDiffTWD,
+      totalDisplay: convertTWDToDisplay(totalTWD),
+      totalDiffDisplay: convertTWDToDisplay(totalDiffTWD),
       allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({
-        name, value: displayCurrency === 'USD' ? value / marketData.rates.TWD : displayCurrency === 'CNY' ? value * (marketData.rates.CNY / marketData.rates.TWD) : value
+        name, value: convertTWDToDisplay(value)
       }))
     };
   }, [assets, marketData, displayCurrency, lastSnapshot]);
@@ -404,7 +376,7 @@ export default function AssetTrackerPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="bg-slate-100 p-6 rounded-xl text-center">
-              <div className="text-sm text-muted-foreground mb-1 uppercase tracking-widest">{language === 'en' ? 'ONE TIME PAYMENT' : '一次性買斷價格'}</div>
+              <div className="text-sm text-muted-foreground mb-1 uppercase tracking-widest">{language === 'en' ? 'ONE TIME PURCHASE' : '一次性買斷'}</div>
               <div className="text-4xl font-bold font-headline text-primary">{t.licensePrice}</div>
             </div>
             <ul className="space-y-3">
@@ -435,11 +407,8 @@ export default function AssetTrackerPage() {
                     <ShieldCheck className="h-5 w-5 text-primary" />
                     {t.licenseTitle} - {t.licensePrice}
                   </DialogTitle>
-                  <DialogDescription>
-                    {t.licenseDesc}
-                  </DialogDescription>
+                  <DialogDescription>{t.licenseDesc}</DialogDescription>
                 </DialogHeader>
-
                 {paymentStep === 'selection' && (
                   <div className="py-4 space-y-6">
                     <RadioGroup defaultValue="credit" onValueChange={setSelectedMethod} className="space-y-3">
@@ -451,12 +420,9 @@ export default function AssetTrackerPage() {
                         </Label>
                       </div>
                     </RadioGroup>
-                    <Button onClick={handleProcessStripePayment} className="w-full h-11 bg-primary">
-                      {t.payNow}
-                    </Button>
+                    <Button onClick={handleProcessStripePayment} className="w-full h-11 bg-primary">{t.payNow}</Button>
                   </div>
                 )}
-
                 {paymentStep === 'processing' && (
                   <div className="py-12 flex flex-col items-center justify-center space-y-4">
                     <Loader2 className="h-10 w-10 text-primary animate-spin" />
@@ -465,7 +431,6 @@ export default function AssetTrackerPage() {
                 )}
               </DialogContent>
             </Dialog>
-
             <Button variant="outline" className="w-full h-12 text-lg" onClick={handleStartTrial}>
               {t.startTrial}
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -496,7 +461,7 @@ export default function AssetTrackerPage() {
                   {t.licensed}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 cursor-pointer" onClick={() => { setHasStartedTrial(false); setPaymentStep('selection'); }}>
+                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 cursor-pointer" onClick={() => setShowPaymentDialog(true)}>
                   <Info className="h-3 w-3 mr-1" />
                   {t.unlicensed}
                 </Badge>
@@ -536,7 +501,7 @@ export default function AssetTrackerPage() {
           <AlertTitle className="text-primary font-bold">{t.upgradeToPro}</AlertTitle>
           <AlertDescription className="flex items-center justify-between">
             <span>{assets.length >= 3 ? t.trialLimitAssets : snapshots.length >= 1 ? t.trialLimitSnapshots : t.licensePrompt}</span>
-            <Button size="sm" className="ml-4" onClick={() => { setHasStartedTrial(false); setPaymentStep('selection'); setShowPaymentDialog(true); }}>{t.buyNow}</Button>
+            <Button size="sm" className="ml-4" onClick={() => setShowPaymentDialog(true)}>{t.buyNow}</Button>
           </AlertDescription>
         </Alert>
       )}
@@ -544,9 +509,7 @@ export default function AssetTrackerPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="shadow-sm border-l-4 border-l-primary bg-primary/5">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold text-primary uppercase tracking-wider">
-              {t.totalValue} ({displayCurrency})
-            </CardTitle>
+            <CardTitle className="text-xs font-semibold text-primary uppercase tracking-wider">{t.totalValue} ({displayCurrency})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold font-headline">
@@ -558,7 +521,7 @@ export default function AssetTrackerPage() {
                 assetCalculations.totalDiffTWD >= 0 ? "text-green-600" : "text-red-600"
               )}>
                 {assetCalculations.totalDiffTWD >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                {getCurrencySymbol(displayCurrency)}{Math.abs(assetCalculations.totalDiffDisplay).toLocaleString(undefined, { maximumFractionDigits: 2 })} ({assetCalculations.totalDiffPercent.toFixed(2)}%)
+                {getCurrencySymbol(displayCurrency)}{Math.abs(assetCalculations.totalDiffDisplay).toLocaleString(undefined, { maximumFractionDigits: 2 })} ({assetCalculations.totalDiffPercent >= 0 ? '+' : ''}{assetCalculations.totalDiffPercent.toFixed(2)}%)
                 <span className="text-muted-foreground font-normal ml-1">{t.vsLast}</span>
               </div>
             )}
@@ -577,17 +540,9 @@ export default function AssetTrackerPage() {
         <div className="md:col-span-2">
           <AITipCard 
             language={language} 
-            assets={assetCalculations.processedAssets.map(a => ({
-              name: a.name,
-              symbol: a.symbol,
-              category: a.category,
-              amount: a.amount,
-              currency: a.currency,
-              price: a.calculatedPrice,
-              valueInTWD: a.valueInTWD
-            }))}
+            assets={assetCalculations.processedAssets.map(a => ({ name: a.name, symbol: a.symbol, category: a.category, amount: a.amount, currency: a.currency, price: a.calculatedPrice, valueInTWD: a.valueInTWD }))}
             totalTWD={assetCalculations.totalTWD}
-            marketConditions={`1 USD = ${marketData.rates.TWD.toFixed(2)} TWD`} 
+            marketConditions={`1 USD = ${(marketData.rates.TWD || 32.5).toFixed(2)} TWD`} 
           />
         </div>
       </div>
@@ -673,7 +628,7 @@ export default function AssetTrackerPage() {
                   <TableHead>{t.assetName}</TableHead>
                   <TableHead>{t.marketPrice}</TableHead>
                   <TableHead>{t.holdings}</TableHead>
-                  <TableHead className="text-right">{t.change}</TableHead>
+                  <TableHead className="text-right">{t.valuationChange}</TableHead>
                   <TableHead className="text-right">{t.valuation} ({displayCurrency})</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
