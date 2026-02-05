@@ -3,7 +3,6 @@ import { MarketData } from '@/app/lib/types';
 const COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price';
 const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
-// 加密貨幣代號與 CoinGecko ID 的對照表
 const CRYPTO_ID_MAP: Record<string, string> = {
   'BTC': 'bitcoin',
   'ETH': 'ethereum',
@@ -20,10 +19,6 @@ const CRYPTO_ID_MAP: Record<string, string> = {
   'AVAX': 'avalanche-2',
 };
 
-/**
- * 抓取最新市場數據
- * 包含加密貨幣、股票價格與匯率
- */
 export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: string[] }): Promise<MarketData> => {
   let exchangeRate = 32.5; 
   let rates = { TWD: 32.5, CNY: 7.2, USD: 1 };
@@ -46,7 +41,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     console.error('Exchange rate fetch error:', error);
   }
 
-  // 2. 抓取加密貨幣 (CoinGecko)
+  // 2. 抓取加密貨幣
   try {
     const cryptoSymbols = [...new Set(symbols.cryptos.map(s => s.toUpperCase()))];
     if (cryptoSymbols.length > 0) {
@@ -67,7 +62,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     console.error('Crypto fetch error:', error);
   }
 
-  // 3. 抓取股票價格 (使用 AllOrigins 代理解析 Yahoo Finance)
+  // 3. 抓取股票價格 (使用 AllOrigins 解析 Yahoo Finance)
   const stockSymbols = [...new Set(symbols.stocks.map(s => s.toUpperCase()))];
   for (const symbol of stockSymbols) {
     const isNumeric = /^\d+$/.test(symbol);
@@ -75,7 +70,6 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     
     try {
       const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
-      // 使用 allorigins 代理並加上隨機參數避免緩存
       const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&cb=${Date.now()}`;
       
       const response = await fetch(proxyUrl);
