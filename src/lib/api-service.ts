@@ -1,4 +1,3 @@
-
 import { MarketData } from '@/app/lib/types';
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price';
@@ -50,13 +49,11 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
   }
 
   // 3. 抓取股票價格 (使用 Yahoo Finance 搭配 CORS Proxy)
-  // 注意：GitHub Pages 是靜態站點，直接 fetch Yahoo 會被 CORS 擋住
   for (const s of symbols.stocks) {
     const symbol = s.toUpperCase();
     const yahooSymbol = /^\d+$/.test(symbol) ? `${symbol}.TW` : symbol;
     
     try {
-      // 使用公共代理繞過 CORS 限制獲取即時數據
       const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`)}`;
       const response = await fetch(proxyUrl);
       if (response.ok) {
@@ -70,7 +67,6 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
       }
     } catch (e) {
       console.error(`Stock fetch error for ${symbol}:`, e);
-      // Fallback
       stockPrices[symbol] = 0;
     }
   }
