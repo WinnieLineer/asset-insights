@@ -283,6 +283,11 @@ export default function MonochromeAssetPage() {
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <Card className="lg:col-span-8 modern-card p-10 flex flex-col justify-between overflow-hidden relative border-slate-200">
+            {/* Wallet Icon - 置於最高層級 z-50 確保壓在分隔線上 */}
+            <div className="absolute -bottom-10 -right-10 opacity-[0.12] pointer-events-none z-50">
+              <Wallet className="w-80 h-80 text-black drop-shadow-sm" />
+            </div>
+
             <div className="space-y-4 z-20 relative">
               <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
                 <Globe className="w-3.5 h-3.5" />
@@ -318,11 +323,6 @@ export default function MonochromeAssetPage() {
                   <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Connected</span>
                 </div>
               </div>
-            </div>
-
-            {/* Wallet Icon - 設定較高的 z-index 以壓在分隔線上方 */}
-            <div className="absolute -bottom-10 -right-10 opacity-[0.12] pointer-events-none z-50">
-              <Wallet className="w-80 h-80 text-black drop-shadow-sm" />
             </div>
           </Card>
 
