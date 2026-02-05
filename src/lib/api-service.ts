@@ -25,7 +25,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
   const cryptoPrices: Record<string, number> = {};
   const stockPrices: Record<string, number> = {};
 
-  // 1. 抓取匯率 (Exchange Rate)
+  // 1. Fetch Exchange Rates
   try {
     const erResponse = await fetch(`${EXCHANGE_RATE_API}?cb=${Date.now()}`);
     if (erResponse.ok) {
@@ -41,7 +41,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     console.error('Exchange rate fetch error:', error);
   }
 
-  // 2. 抓取加密貨幣 (CoinGecko)
+  // 2. Fetch Crypto Prices (CoinGecko) as fallback or secondary source
   try {
     const cryptoSymbols = [...new Set(symbols.cryptos.map(s => s.toUpperCase()))];
     if (cryptoSymbols.length > 0) {
@@ -62,26 +62,41 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     console.error('Crypto fetch error:', error);
   }
 
-  // 3. 抓取股票價格 (使用 AllOrigins 代理 Yahoo Finance)
-  const stockSymbols = [...new Set(symbols.stocks.map(s => s.toUpperCase()))];
-  for (const symbol of stockSymbols) {
+  // 3. Batch Fetch Stock and Crypto Prices via Yahoo Finance (Efficient & Stable)
+  const stockSymbols = [...new Set(symbols.stocks.map(s => {
+    const isNumeric = /^\d+$/.test(s);
+    return isNumeric ? `${s}.TW` : s.toUpperCase();
+  }))];
+
+  const cryptoYahooSymbols = symbols.cryptos.map(s => `${s.toUpperCase()}-USD`);
+  const allYahooSymbols = [...new Set([...stockSymbols, ...cryptoYahooSymbols])].join(',');
+
+  if (allYahooSymbols) {
     try {
-      const isNumeric = /^\d+$/.test(symbol);
-      const yahooSymbol = isNumeric ? `${symbol}.TW` : symbol;
-      const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
-      // 使用 AllOrigins raw 模式直接獲取內容
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}&cb=${Date.now()}`;
+      const targetUrl = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${allYahooSymbols}`;
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&cb=${Date.now()}`;
       
       const response = await fetch(proxyUrl);
       if (response.ok) {
-        const data = await response.json();
-        const price = data.chart?.result?.[0]?.meta?.regularMarketPrice;
-        if (price) {
-          stockPrices[symbol] = price;
+        const wrapper = await response.json();
+        if (wrapper.contents) {
+          const data = JSON.parse(wrapper.contents);
+          const results = data.quoteResponse?.result || [];
+          results.forEach((res: any) => {
+            const sym = res.symbol;
+            if (sym.includes('-USD')) {
+              const baseSym = sym.replace('-USD', '');
+              cryptoPrices[baseSym] = res.regularMarketPrice;
+            } else {
+              // Extract original symbol from Yahoo format (e.g., 2330.TW -> 2330)
+              const baseSym = sym.split('.')[0];
+              stockPrices[baseSym] = res.regularMarketPrice;
+            }
+          });
         }
       }
     } catch (e) {
-      console.error(`Stock fetch error for ${symbol}:`, e);
+      console.error('Yahoo batch fetch error:', e);
     }
   }
 
