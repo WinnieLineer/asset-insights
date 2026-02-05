@@ -66,7 +66,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     console.error('Crypto fetch error:', error);
   }
 
-  // 3. 抓取股票價格 (使用 Yahoo Finance 搭配 CORS Proxy)
+  // 3. 抓取股票價格 (使用 Yahoo Finance 搭配 AllOrigins Proxy)
   for (const s of symbols.stocks) {
     const symbol = s.toUpperCase();
     const isNumeric = /^\d+$/.test(symbol);
@@ -74,10 +74,13 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     const yahooSymbol = isNumeric ? `${symbol}.TW` : symbol;
     
     try {
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`)}`;
+      const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+      
       const response = await fetch(proxyUrl);
       if (response.ok) {
-        const data = await response.json();
+        const wrapper = await response.json();
+        const data = JSON.parse(wrapper.contents);
         const price = data.chart?.result?.[0]?.meta?.regularMarketPrice;
         if (price) {
           stockPrices[symbol] = price;
