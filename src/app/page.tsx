@@ -282,11 +282,6 @@ export default function MonochromeAssetPage() {
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <Card className="lg:col-span-8 modern-card p-10 flex flex-col justify-between overflow-hidden relative border-slate-200">
-            {/* Wallet Icon - Enlarged and placed on top layer (z-30) to overlap the divider */}
-            <div className="absolute -bottom-10 -right-10 opacity-[0.08] pointer-events-none z-30">
-              <Wallet className="w-80 h-80 text-black" />
-            </div>
-
             <div className="space-y-4 z-20 relative">
               <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
                 <Globe className="w-3.5 h-3.5" />
@@ -310,7 +305,7 @@ export default function MonochromeAssetPage() {
               )}
             </div>
 
-            <div className="flex gap-10 pt-10 mt-10 border-t border-slate-100 z-10 relative bg-white/40 backdrop-blur-[2px]">
+            <div className="flex gap-10 pt-10 mt-10 border-t border-slate-100 z-10 relative">
               <div>
                 <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">{t.assetCount}</p>
                 <p className="text-xl font-bold">{assets.length} <span className="text-xs font-medium text-slate-400">{t.items}</span></p>
@@ -322,6 +317,11 @@ export default function MonochromeAssetPage() {
                   <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Connected</span>
                 </div>
               </div>
+            </div>
+
+            {/* Wallet Icon - Placed at end of container and given highest z-index to stay on top of the divider line */}
+            <div className="absolute -bottom-10 -right-10 opacity-[0.08] pointer-events-none z-30">
+              <Wallet className="w-80 h-80 text-black" />
             </div>
           </Card>
 
