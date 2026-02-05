@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#3b82f6',
+  themeColor: '#1e3a8a',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -35,8 +35,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-        {/* 模擬 Favicon，實際建議用戶放置圖示檔案 */}
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📈</text></svg>" />
+        {/* 使用用戶指定的 Favicon */}
+        <link rel="icon" href="/favicon.ico?favicon.7ed73651.ico" />
       </head>
       <body className="font-body antialiased selection:bg-primary selection:text-white bg-[#F8FAFC]">
         {children}
