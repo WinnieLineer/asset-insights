@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useMemo } from 'react';
@@ -27,11 +28,11 @@ const t = {
   en: {
     name: 'Asset Name',
     namePlaceholder: 'e.g., Salary Account',
-    symbol: 'Symbol (Ticker or Stock Code)',
+    symbol: 'Symbol / Ticker',
     symbolPlaceholder: 'BTC, AAPL, 2330',
     category: 'Category',
     currency: 'Currency',
-    amount: 'Holdings / Amount',
+    amount: 'Balance / Amount',
     submit: 'Add Asset',
     categories: {
       Stock: 'Stock',
@@ -51,16 +52,16 @@ const t = {
     namePlaceholder: '例如：薪資戶',
     symbol: '代號 (台股數字, 美股代碼)',
     symbolPlaceholder: 'BTC, AAPL, 2330',
-    category: '分類',
-    currency: '幣別',
+    category: '資產分類',
+    currency: '主要幣別',
     amount: '持有數量 / 金額',
-    submit: '新增資產',
+    submit: '確認新增資產',
     categories: {
-      Stock: '股票',
+      Stock: '股票 / 證券',
       Crypto: '加密貨幣',
       Savings: '活期存款',
       FixedDeposit: '定期存款',
-      Bank: '其他銀行資產'
+      Bank: '其他資產'
     },
     errors: {
       nameTooShort: '資產名稱太短囉（至少需要 2 個字）',
@@ -91,12 +92,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     defaultValues: { name: '', symbol: '', category: 'Stock', amount: 0, currency: 'TWD' },
   });
 
-  useEffect(() => {
-    if (form.formState.isSubmitted) {
-      form.trigger();
-    }
-  }, [language, form]);
-
   const category = form.watch('category');
   const symbol = form.watch('symbol');
   
@@ -112,31 +107,33 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
       <form onSubmit={form.handleSubmit((v) => { onAdd(v as Omit<Asset, 'id'>); form.reset(); })} className="space-y-4">
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
-            <FormLabel>{lang.name}</FormLabel>
+            <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{lang.name}</FormLabel>
             <FormControl>
-              <Input placeholder={lang.namePlaceholder} {...field} />
+              <Input placeholder={lang.namePlaceholder} {...field} className="bg-slate-50/50 border-slate-200 focus:bg-white transition-all h-11" />
             </FormControl>
-            <FormMessage />
+            <FormMessage className="text-[10px]" />
           </FormItem>
         )} />
+        
         {category !== 'Savings' && (
           <FormField control={form.control} name="symbol" render={({ field }) => (
             <FormItem>
-              <FormLabel>{lang.symbol}</FormLabel>
+              <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{lang.symbol}</FormLabel>
               <FormControl>
-                <Input placeholder={lang.symbolPlaceholder} {...field} />
+                <Input placeholder={lang.symbolPlaceholder} {...field} className="bg-slate-50/50 border-slate-200 focus:bg-white transition-all h-11 font-mono uppercase" />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-[10px]" />
             </FormItem>
           )} />
         )}
+
         <div className="grid grid-cols-2 gap-4">
           <FormField control={form.control} name="category" render={({ field }) => (
             <FormItem>
-              <FormLabel>{lang.category}</FormLabel>
+              <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{lang.category}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11 bg-slate-50/50">
                     <SelectValue />
                   </SelectTrigger>
                 </FormControl>
@@ -148,40 +145,41 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                   <SelectItem value="Bank">{lang.categories.Bank}</SelectItem>
                 </SelectContent>
               </Select>
-              <FormMessage />
             </FormItem>
           )} />
-          {category !== 'Stock' && category !== 'Crypto' && (
-            <FormField control={form.control} name="currency" render={({ field }) => (
-              <FormItem>
-                <FormLabel>{lang.currency}</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="TWD">TWD</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="CNY">CNY</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
-          )}
+          
+          <FormField control={form.control} name="currency" render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{lang.currency}</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value} disabled={category === 'Crypto'}>
+                <FormControl>
+                  <SelectTrigger className="h-11 bg-slate-50/50">
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="TWD">TWD</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="CNY">CNY</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormItem>
+          )} />
         </div>
+
         <FormField control={form.control} name="amount" render={({ field }) => (
           <FormItem>
-            <FormLabel>{lang.amount}</FormLabel>
+            <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{lang.amount}</FormLabel>
             <FormControl>
-              <Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+              <Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-11 font-mono text-lg bg-slate-50/50" />
             </FormControl>
-            <FormMessage />
+            <FormMessage className="text-[10px]" />
           </FormItem>
         )} />
-        <Button type="submit" className="w-full">{lang.submit}</Button>
+        
+        <Button type="submit" className="w-full h-12 text-md font-bold shadow-lg shadow-primary/20">
+          {lang.submit}
+        </Button>
       </form>
     </Form>
   );

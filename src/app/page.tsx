@@ -2,10 +2,8 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Asset, Snapshot, MarketData, AssetCategory, Currency } from './lib/types';
 import { getMarketData } from '@/app/actions/market';
-import { createCheckoutSession } from '@/app/actions/payment';
 import { AssetForm } from '@/components/AssetForm';
 import { PortfolioCharts } from '@/components/PortfolioCharts';
 import { AITipCard } from '@/components/AITipCard';
@@ -20,14 +18,14 @@ import {
   Eye, 
   Calendar,
   Languages,
-  ShieldCheck,
-  CreditCard,
-  Lock,
   ArrowRight,
   Info,
   Loader2,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Wallet,
+  LayoutDashboard,
+  Plus
 } from 'lucide-react';
 import { 
   Card, 
@@ -53,13 +51,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogDescription,
+  DialogTrigger
 } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { cn } from '@/lib/utils';
 
 type Language = 'en' | 'zh';
@@ -67,108 +62,61 @@ type Language = 'en' | 'zh';
 const translations = {
   en: {
     title: 'Asset Insights',
-    subtitle: 'Track your global portfolio and historical changes.',
-    updateData: 'Update Data',
-    takeSnapshot: 'Take Snapshot',
-    totalValue: 'Total Estimated Value',
-    assetCount: 'Asset Count',
+    subtitle: 'Professional Grade Asset Tracking & Analysis',
+    updateData: 'Refresh Market',
+    takeSnapshot: 'Snapshot',
+    totalValue: 'Net Worth',
+    assetCount: 'Assets',
     items: 'items',
-    addAsset: 'Add Asset',
-    snapshotHistory: 'Snapshot History',
-    manageHistory: 'Manage your past asset records.',
-    noSnapshots: 'No snapshots yet.',
-    snapshotDetail: 'Snapshot Details',
-    snapshotDetailDesc: 'Detailed view of your asset allocation at this specific point in time.',
-    assetName: 'Asset Name',
-    marketPrice: 'Market Price',
-    holdings: 'Holdings',
-    valuation: 'Valuation',
-    fetching: 'Fetching...',
-    stockUnit: 'shares',
-    dataUpdated: 'Market data updated',
-    snapshotSaved: 'Snapshot saved',
-    snapshotDeleted: 'Snapshot deleted',
-    licenseTitle: 'Lifetime License',
-    licenseDesc: 'Unlock all pro features for life.',
-    licensePrice: 'NT$ 30',
-    buyNow: 'Unlock Pro (NT$ 30)',
-    startTrial: 'Start Free Trial',
-    licensed: 'Pro Active',
-    unlicensed: 'Free Version',
-    licenseRequired: 'License Required',
-    licensePrompt: 'Experience the power of professional asset tracking.',
-    activationSuccess: 'Activation Successful! Thank you for your support.',
-    trialLimitAssets: 'Free version limited to 3 assets. Upgrade to Pro for unlimited tracking.',
-    trialLimitSnapshots: 'Free version limited to 1 snapshot. Upgrade to Pro for history trends.',
-    upgradeToPro: 'Upgrade to Pro',
-    paymentMethod: 'Select Payment Method',
-    payNow: 'Complete Purchase',
-    processing: 'Redirecting to Secure Payment...',
-    creditCard: 'Credit Card / Global Pay',
-    vsLast: 'vs. Last Snapshot',
-    valuationChange: 'Valuation Change',
+    addAsset: 'New Asset',
+    snapshotHistory: 'Snapshots',
+    manageHistory: 'Historical portfolio data.',
+    noSnapshots: 'No data yet.',
+    snapshotDetail: 'Snapshot Detail',
+    snapshotDetailDesc: 'Portfolio breakdown at this specific time.',
+    assetName: 'Asset',
+    marketPrice: 'Price',
+    holdings: 'Amount',
+    valuation: 'Value',
+    fetching: 'Syncing...',
+    stockUnit: 'sh',
+    dataUpdated: 'Market data synced',
+    snapshotSaved: 'Snapshot archived',
+    snapshotDeleted: 'Snapshot removed',
+    vsLast: 'vs. Previous',
+    valuationChange: 'Change',
+    dashboard: 'Dashboard',
+    history: 'History'
   },
   zh: {
     title: 'Asset Insights',
-    subtitle: '追蹤全球資產組合與歷史變動。',
-    updateData: '更新數據',
+    subtitle: '專業級個人資產配置與深度分析',
+    updateData: '更新市場數據',
     takeSnapshot: '儲存快照',
-    totalValue: '總資產估值',
-    assetCount: '資產數量',
-    items: '項',
-    addAsset: '新增資產',
-    snapshotHistory: '歷史快照清單',
-    manageHistory: '管理您過去儲存的資產記錄。',
-    noSnapshots: '尚未有任何快照。',
-    snapshotDetail: '快照詳情',
-    snapshotDetailDesc: '查看此特定時間點的詳細資產配置與價值。',
+    totalValue: '資產淨值估計',
+    assetCount: '持有項目',
+    items: '個項目',
+    addAsset: '新增資產項目',
+    snapshotHistory: '歷史數據快照',
+    manageHistory: '查看過去儲存的配置紀錄。',
+    noSnapshots: '尚無歷史快照。',
+    snapshotDetail: '快照詳細資訊',
+    snapshotDetailDesc: '查看此時間點的詳細資產價值。',
     assetName: '資產名稱',
     marketPrice: '市場單價',
-    holdings: '持有量',
+    holdings: '持有數量',
     valuation: '估值',
-    fetching: '抓取中...',
+    fetching: '同步中...',
     stockUnit: '股',
     dataUpdated: '市場數據已更新',
-    snapshotSaved: '快照已存檔',
+    snapshotSaved: '已儲存歷史快照',
     snapshotDeleted: '快照已刪除',
-    licenseTitle: '終身買斷授權',
-    licenseDesc: '一次性付費，解鎖所有專業追蹤與 AI 功能。',
-    licensePrice: 'NT$ 30',
-    buyNow: '立即解鎖 Pro (NT$ 30)',
-    startTrial: '先試用看看',
-    licensed: 'Pro 已啟動',
-    unlicensed: '試用中 (免費版)',
-    licenseRequired: '需要授權',
-    licensePrompt: '立即體驗專業資產追蹤與 AI 深度分析。',
-    activationSuccess: '啟動成功！感謝您的支持。',
-    trialLimitAssets: '免費版限新增 3 項資產，升級 Pro 以解鎖無限資產追蹤。',
-    trialLimitSnapshots: '免費版限儲存 1 份快照，升級 Pro 以查看完整歷史趨勢。',
-    upgradeToPro: '升級解鎖完整版',
-    paymentMethod: '金流支付方式',
-    payNow: '前往安全支付',
-    processing: '正在跳轉至安全支付頁面...',
-    creditCard: '信用卡 / 全球支付',
-    vsLast: '較上次快照',
+    vsLast: '較前次快照',
     valuationChange: '估值漲跌',
+    dashboard: '資產儀表板',
+    history: '歷史紀錄'
   }
 };
-
-function PaymentHandler({ onPaymentSuccess }: { onPaymentSuccess: () => void }) {
-  const searchParams = useSearchParams();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    if (searchParams.get('payment_success') === 'true') {
-      onPaymentSuccess();
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (searchParams.get('payment_cancel') === 'true') {
-      toast({ variant: 'destructive', title: 'Payment Canceled', description: 'Transaction was not completed.' });
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, [searchParams, onPaymentSuccess, toast]);
-
-  return null;
-}
 
 export default function AssetTrackerPage() {
   const { toast } = useToast();
@@ -176,11 +124,6 @@ export default function AssetTrackerPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
-  const [isLicensed, setIsLicensed] = useState<boolean>(false);
-  const [hasStartedTrial, setHasStartedTrial] = useState<boolean>(false);
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [paymentStep, setPaymentStep] = useState<'selection' | 'processing' | 'success'>('selection');
-  const [selectedMethod, setSelectedMethod] = useState('credit');
   
   const [marketData, setMarketData] = useState<MarketData>({
     exchangeRate: 32.5,
@@ -199,11 +142,7 @@ export default function AssetTrackerPage() {
     const savedAssets = localStorage.getItem('assets');
     const savedSnapshots = localStorage.getItem('snapshots');
     const savedLang = localStorage.getItem('language');
-    const savedLicense = localStorage.getItem('app_license_v1');
-    const savedTrial = localStorage.getItem('app_trial_started');
     
-    if (savedLicense === 'true') setIsLicensed(true);
-    if (savedTrial === 'true') setHasStartedTrial(true);
     if (savedLang) setLanguage(savedLang as Language);
     
     if (savedAssets) setAssets(JSON.parse(savedAssets));
@@ -240,29 +179,6 @@ export default function AssetTrackerPage() {
   useEffect(() => {
     if (assets.length > 0) updateMarketData();
   }, [assets.length]);
-
-  const handleProcessStripePayment = async () => {
-    setPaymentStep('processing');
-    try {
-      const baseUrl = window.location.origin;
-      const { url } = await createCheckoutSession(baseUrl);
-      if (url) window.location.href = url;
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Payment Error', description: error.message });
-      setPaymentStep('selection');
-    }
-  };
-
-  const handlePaymentSuccess = () => {
-    localStorage.setItem('app_license_v1', 'true');
-    setIsLicensed(true);
-    toast({ title: t.activationSuccess, description: t.licenseTitle });
-  };
-
-  const handleStartTrial = () => {
-    localStorage.setItem('app_trial_started', 'true');
-    setHasStartedTrial(true);
-  };
 
   const lastSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
 
@@ -335,10 +251,6 @@ export default function AssetTrackerPage() {
   }, [assets, marketData, displayCurrency, lastSnapshot]);
 
   const takeSnapshot = () => {
-    if (!isLicensed && snapshots.length >= 1) {
-      toast({ variant: "destructive", title: t.trialLimitSnapshots });
-      return;
-    }
     const newSnapshot: Snapshot = {
       id: crypto.randomUUID(),
       date: new Date().toISOString(),
@@ -351,334 +263,274 @@ export default function AssetTrackerPage() {
   };
 
   const handleAddAsset = (a: Omit<Asset, 'id'>) => {
-    if (!isLicensed && assets.length >= 3) {
-      toast({ variant: "destructive", title: t.trialLimitAssets });
-      return;
-    }
     setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }]);
   };
 
-  if (!isLicensed && !hasStartedTrial && !loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <Suspense fallback={<Loader2 className="animate-spin" />}>
-          <PaymentHandler onPaymentSuccess={handlePaymentSuccess} />
-        </Suspense>
-        <Card className="max-w-md w-full shadow-2xl border-t-4 border-t-primary">
-          <CardHeader className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-              <Lock className="h-8 w-8 text-primary" />
-            </div>
-            <div className="space-y-1">
-              <CardTitle className="text-2xl font-headline font-bold">{t.licenseTitle}</CardTitle>
-              <CardDescription>{t.licensePrompt}</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="bg-slate-100 p-6 rounded-xl text-center">
-              <div className="text-sm text-muted-foreground mb-1 uppercase tracking-widest">{language === 'en' ? 'ONE TIME PURCHASE' : '一次性買斷'}</div>
-              <div className="text-4xl font-bold font-headline text-primary">{t.licensePrice}</div>
-            </div>
-            <ul className="space-y-3">
-              {[
-                language === 'zh' ? '無限制資產追蹤' : 'Unlimited Asset Tracking',
-                language === 'zh' ? '全球即時匯率與股市抓取' : 'Global Market Data Sync',
-                language === 'zh' ? 'AI 財務顧問對話' : 'Interactive AI Advisor',
-                language === 'zh' ? '完整歷史趨勢分析' : 'Full Historical Trends'
-              ].map((text, i) => (
-                <li key={i} className="flex items-center gap-3 text-sm text-slate-600">
-                  <ShieldCheck className="h-5 w-5 text-green-500" />
-                  {text}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-3">
-            <Dialog open={showPaymentDialog} onOpenChange={(open) => { setShowPaymentDialog(open); if(!open) setPaymentStep('selection'); }}>
-              <DialogTrigger asChild>
-                <Button className="w-full h-12 text-lg font-semibold">
-                  <CreditCard className="mr-2 h-5 w-5" />
-                  {t.buyNow}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[400px]">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
-                    {t.licenseTitle} - {t.licensePrice}
-                  </DialogTitle>
-                  <DialogDescription>{t.licenseDesc}</DialogDescription>
-                </DialogHeader>
-                {paymentStep === 'selection' && (
-                  <div className="py-4 space-y-6">
-                    <RadioGroup defaultValue="credit" onValueChange={setSelectedMethod} className="space-y-3">
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-slate-50">
-                        <RadioGroupItem value="credit" id="credit" />
-                        <Label htmlFor="credit" className="flex flex-1 items-center justify-between cursor-pointer">
-                          <span className="font-medium">{t.creditCard}</span>
-                          <CreditCard className="h-5 w-5 text-slate-400" />
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                    <Button onClick={handleProcessStripePayment} className="w-full h-11 bg-primary">{t.payNow}</Button>
-                  </div>
-                )}
-                {paymentStep === 'processing' && (
-                  <div className="py-12 flex flex-col items-center justify-center space-y-4">
-                    <Loader2 className="h-10 w-10 text-primary animate-spin" />
-                    <p className="text-sm font-medium animate-pulse">{t.processing}</p>
-                  </div>
-                )}
-              </DialogContent>
-            </Dialog>
-            <Button variant="outline" className="w-full h-12 text-lg" onClick={handleStartTrial}>
-              {t.startTrial}
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
-      <Suspense fallback={null}>
-        <PaymentHandler onPaymentSuccess={handlePaymentSuccess} />
-      </Suspense>
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border shadow-sm">
-        <div className="flex items-start gap-4">
-          <div>
-            <h1 className="text-3xl font-headline font-bold text-primary flex items-center gap-2">
-              <TrendingUp className="h-8 w-8 text-accent" />
-              {t.title}
-            </h1>
-            <div className="flex items-center gap-2 mt-1">
-              <p className="text-muted-foreground">{t.subtitle}</p>
-              {isLicensed ? (
-                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  <ShieldCheck className="h-3 w-3 mr-1" />
-                  {t.licensed}
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 cursor-pointer" onClick={() => setShowPaymentDialog(true)}>
-                  <Info className="h-3 w-3 mr-1" />
-                  {t.unlicensed}
-                </Badge>
-              )}
+    <div className="min-h-screen bg-background pb-20">
+      <header className="sticky top-0 z-30 w-full bg-white/80 backdrop-blur-xl border-b">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-primary p-1.5 rounded-lg">
+              <TrendingUp className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-headline font-bold text-foreground">{t.title}</h1>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest hidden md:block">{t.subtitle}</p>
             </div>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <Tabs value={language} onValueChange={(v) => setLanguage(v as Language)}>
-            <TabsList className="bg-slate-100">
-              <TabsTrigger value="en" className="flex items-center gap-1"><Languages className="h-3 w-3" /> ENG</TabsTrigger>
-              <TabsTrigger value="zh" className="flex items-center gap-1"><Languages className="h-3 w-3" /> 中文</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <div className="w-px h-6 bg-border mx-1" />
-          <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
-            <TabsList className="bg-slate-100">
-              <TabsTrigger value="TWD">TWD</TabsTrigger>
-              <TabsTrigger value="USD">USD</TabsTrigger>
-              <TabsTrigger value="CNY">CNY</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <Button variant="outline" onClick={updateMarketData} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            {t.updateData}
-          </Button>
-          <Button onClick={takeSnapshot} className="bg-accent hover:bg-accent/90">
-            <History className="h-4 w-4 mr-2" />
-            {t.takeSnapshot}
-          </Button>
+          <div className="flex items-center gap-2 md:gap-4">
+            <Tabs value={language} onValueChange={(v) => setLanguage(v as Language)} className="hidden sm:block">
+              <TabsList className="h-8 bg-slate-100">
+                <TabsTrigger value="en" className="text-xs">EN</TabsTrigger>
+                <TabsTrigger value="zh" className="text-xs">中</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="h-8 w-px bg-border hidden sm:block" />
+            <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
+              <TabsList className="h-8 bg-slate-100">
+                <TabsTrigger value="TWD" className="text-xs">TWD</TabsTrigger>
+                <TabsTrigger value="USD" className="text-xs">USD</TabsTrigger>
+                <TabsTrigger value="CNY" className="text-xs">CNY</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button size="sm" onClick={takeSnapshot} className="hidden md:flex shadow-md shadow-primary/20">
+              <History className="h-4 w-4 mr-2" />
+              {t.takeSnapshot}
+            </Button>
+          </div>
         </div>
       </header>
 
-      {!isLicensed && (
-        <Alert className="bg-primary/5 border-primary/20">
-          <Info className="h-4 w-4 text-primary" />
-          <AlertTitle className="text-primary font-bold">{t.upgradeToPro}</AlertTitle>
-          <AlertDescription className="flex items-center justify-between">
-            <span>{assets.length >= 3 ? t.trialLimitAssets : snapshots.length >= 1 ? t.trialLimitSnapshots : t.licensePrompt}</span>
-            <Button size="sm" className="ml-4" onClick={() => setShowPaymentDialog(true)}>{t.buyNow}</Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="shadow-sm border-l-4 border-l-primary bg-primary/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold text-primary uppercase tracking-wider">{t.totalValue} ({displayCurrency})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">
-              {getCurrencySymbol(displayCurrency)} {assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
-            </div>
-            {lastSnapshot && (
-              <div className={cn(
-                "text-xs font-semibold mt-1 flex items-center gap-1",
-                assetCalculations.totalDiffTWD >= 0 ? "text-green-600" : "text-red-600"
-              )}>
-                {assetCalculations.totalDiffTWD >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                {getCurrencySymbol(displayCurrency)}{Math.abs(assetCalculations.totalDiffDisplay).toLocaleString(undefined, { maximumFractionDigits: 2 })} ({assetCalculations.totalDiffPercent >= 0 ? '+' : ''}{assetCalculations.totalDiffPercent.toFixed(2)}%)
-                <span className="text-muted-foreground font-normal ml-1">{t.vsLast}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t.assetCount}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{assets.length} <span className="text-sm font-normal">{t.items}</span></div>
-          </CardContent>
-        </Card>
-
-        <div className="md:col-span-2">
-          <AITipCard 
-            language={language} 
-            assets={assetCalculations.processedAssets.map(a => ({ name: a.name, symbol: a.symbol, category: a.category, amount: a.amount, currency: a.currency, price: a.calculatedPrice, valueInTWD: a.valueInTWD }))}
-            totalTWD={assetCalculations.totalTWD}
-            marketConditions={`1 USD = ${(marketData.rates.TWD || 32.5).toFixed(2)} TWD`} 
-          />
-        </div>
-      </div>
-
-      <PortfolioCharts 
-        language={language}
-        allocationData={assetCalculations.allocationData} 
-        historicalData={snapshots} 
-        displayCurrency={displayCurrency}
-        rates={marketData.rates}
-      />
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        <div className="xl:col-span-1 space-y-8">
-          <Card>
-            <CardHeader><CardTitle className="text-lg">{t.addAsset}</CardTitle></CardHeader>
-            <CardContent><AssetForm language={language} onAdd={handleAddAsset} /></CardContent>
+      <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="lg:col-span-2 border-none shadow-xl shadow-slate-200/50 bg-gradient-to-br from-primary via-blue-600 to-indigo-700 text-white overflow-hidden relative">
+             <div className="absolute top-0 right-0 p-8 opacity-10">
+               <Wallet className="h-32 w-32" />
+             </div>
+             <CardHeader className="pb-0">
+               <CardDescription className="text-white/70 font-medium">{t.totalValue}</CardDescription>
+               <CardTitle className="text-4xl md:text-5xl font-headline font-bold tracking-tight">
+                 {getCurrencySymbol(displayCurrency)} {assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
+               </CardTitle>
+             </CardHeader>
+             <CardContent className="pt-4">
+               {lastSnapshot && (
+                 <div className={cn(
+                   "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold",
+                   assetCalculations.totalDiffTWD >= 0 ? "bg-white/20 text-white" : "bg-red-500/30 text-white"
+                 )}>
+                   {assetCalculations.totalDiffTWD >= 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+                   {getCurrencySymbol(displayCurrency)}{Math.abs(assetCalculations.totalDiffDisplay).toLocaleString(undefined, { maximumFractionDigits: 2 })} 
+                   ({assetCalculations.totalDiffPercent >= 0 ? '+' : ''}{assetCalculations.totalDiffPercent.toFixed(2)}%)
+                   <span className="opacity-70 font-normal ml-1">since last</span>
+                 </div>
+               )}
+             </CardContent>
+             <CardFooter className="pt-0 flex gap-4">
+                <div className="bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-sm">
+                  <div className="text-[10px] uppercase opacity-70">Total Assets</div>
+                  <div className="text-sm font-bold">{assets.length} {t.items}</div>
+                </div>
+                <div className="bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-sm">
+                  <div className="text-[10px] uppercase opacity-70">FX Rate</div>
+                  <div className="text-sm font-bold">1:{marketData.rates.TWD.toFixed(2)}</div>
+                </div>
+             </CardFooter>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2"><Calendar className="h-5 w-5" /> {t.snapshotHistory}</CardTitle>
-              <CardDescription>{t.manageHistory}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {snapshots.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground text-sm">{t.noSnapshots}</div>
-              ) : (
-                snapshots.slice().reverse().map(s => (
-                  <div key={s.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50 transition-colors">
-                    <div>
-                      <div className="text-sm font-medium">{new Date(s.date).toLocaleDateString(language === 'en' ? 'en-US' : 'zh-TW')}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {getCurrencySymbol(displayCurrency)} {convertTWDToDisplay(s.totalTWD).toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Dialog>
-                        <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><Eye className="h-4 w-4" /></Button></DialogTrigger>
-                        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>{t.snapshotDetail} - {new Date(s.date).toLocaleString(language === 'en' ? 'en-US' : 'zh-TW')}</DialogTitle>
-                            <DialogDescription>{t.snapshotDetailDesc}</DialogDescription>
-                          </DialogHeader>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>{t.assetName}</TableHead>
-                                <TableHead>{t.marketPrice}</TableHead>
-                                <TableHead>{t.holdings}</TableHead>
-                                <TableHead className="text-right">{t.valuation} ({displayCurrency})</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {s.assets?.map((a, idx) => (
-                                <TableRow key={idx}>
-                                  <TableCell><div className="text-sm font-medium">{a.name}</div><div className="text-[10px] text-muted-foreground uppercase">{a.symbol}</div></TableCell>
-                                  <TableCell className="text-sm font-mono text-muted-foreground">
-                                    {(a.category === 'Stock' || a.category === 'Crypto') ? (a.price ? `${getCurrencySymbol(a.currency)}${a.price.toLocaleString()}` : '--') : '--'}
-                                  </TableCell>
-                                  <TableCell className="text-sm font-mono">{a.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</TableCell>
-                                  <TableCell className="text-right font-medium text-primary">{getCurrencySymbol(displayCurrency)} {convertTWDToDisplay(a.valueInTWD || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </DialogContent>
-                      </Dialog>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => { setSnapshots(prev => prev.filter(snap => snap.id !== s.id)); toast({ title: t.snapshotDeleted }); }}><Trash2 className="h-4 w-4" /></Button>
-                    </div>
+          <div className="lg:col-span-2 h-full">
+            <AITipCard 
+              language={language} 
+              assets={assetCalculations.processedAssets.map(a => ({ name: a.name, symbol: a.symbol, category: a.category, amount: a.amount, currency: a.currency, price: a.calculatedPrice, valueInTWD: a.valueInTWD }))}
+              totalTWD={assetCalculations.totalTWD}
+              marketConditions={`1 USD = ${(marketData.rates.TWD || 32.5).toFixed(2)} TWD`} 
+            />
+          </div>
+        </section>
+
+        <PortfolioCharts 
+          language={language}
+          allocationData={assetCalculations.allocationData} 
+          historicalData={snapshots} 
+          displayCurrency={displayCurrency}
+          rates={marketData.rates}
+        />
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="xl:col-span-1 space-y-8">
+            <Card className="border-none shadow-lg">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">{t.addAsset}</CardTitle>
+                  <CardDescription>Track new items in your portfolio</CardDescription>
+                </div>
+                <div className="bg-primary/10 p-2 rounded-full">
+                  <Plus className="h-4 w-4 text-primary" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <AssetForm language={language} onAdd={handleAddAsset} />
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-lg overflow-hidden">
+              <CardHeader className="bg-slate-50/50">
+                <CardTitle className="text-lg flex items-center gap-2"><History className="h-5 w-5 text-primary" /> {t.snapshotHistory}</CardTitle>
+                <CardDescription>{t.manageHistory}</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                {snapshots.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground text-sm">
+                    <History className="h-8 w-8 mx-auto mb-3 opacity-20" />
+                    {t.noSnapshots}
                   </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="xl:col-span-2">
-          <Card className="overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t.assetName}</TableHead>
-                  <TableHead>{t.marketPrice}</TableHead>
-                  <TableHead>{t.holdings}</TableHead>
-                  <TableHead className="text-right">{t.valuationChange}</TableHead>
-                  <TableHead className="text-right">{t.valuation} ({displayCurrency})</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assetCalculations.processedAssets.map(asset => (
-                  <TableRow key={asset.id} className="group">
-                    <TableCell><div className="font-medium">{asset.name}</div><div className="text-xs text-muted-foreground uppercase">{asset.symbol}</div></TableCell>
-                    <TableCell>
-                      <div className="text-sm font-mono text-muted-foreground">
-                        {(asset.category === 'Stock' || asset.category === 'Crypto') ? (asset.calculatedPrice > 0 ? `${getCurrencySymbol(asset.currency)}${asset.calculatedPrice.toLocaleString()}` : t.fetching) : '--'}
+                ) : (
+                  <div className="divide-y">
+                    {snapshots.slice().reverse().map(s => (
+                      <div key={s.id} className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 bg-primary/5 rounded-full flex items-center justify-center text-primary">
+                            <Calendar className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold">{new Date(s.date).toLocaleDateString(language === 'en' ? 'en-US' : 'zh-TW')}</div>
+                            <div className="text-xs text-muted-foreground font-mono">
+                              {getCurrencySymbol(displayCurrency)} {convertTWDToDisplay(s.totalTWD).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white"><Eye className="h-4 w-4" /></Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl">
+                              <DialogHeader>
+                                <DialogTitle>{t.snapshotDetail} - {new Date(s.date).toLocaleString(language === 'en' ? 'en-US' : 'zh-TW')}</DialogTitle>
+                                <DialogDescription>{t.snapshotDetailDesc}</DialogDescription>
+                              </DialogHeader>
+                              <div className="max-h-[60vh] overflow-y-auto">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow className="bg-slate-50">
+                                      <TableHead className="font-bold text-xs uppercase">{t.assetName}</TableHead>
+                                      <TableHead className="font-bold text-xs uppercase text-right">{t.holdings}</TableHead>
+                                      <TableHead className="font-bold text-xs uppercase text-right">{t.valuation} ({displayCurrency})</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {s.assets?.map((a, idx) => (
+                                      <TableRow key={idx}>
+                                        <TableCell>
+                                          <div className="font-bold text-sm">{a.name}</div>
+                                          <div className="text-[10px] text-muted-foreground uppercase">{a.symbol}</div>
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono text-sm">{a.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</TableCell>
+                                        <TableCell className="text-right font-bold text-primary">{getCurrencySymbol(displayCurrency)} {convertTWDToDisplay(a.valueInTWD || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive hover:bg-white" onClick={() => { setSnapshots(prev => prev.filter(snap => snap.id !== s.id)); toast({ title: t.snapshotDeleted }); }}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {editingId === asset.id ? (
-                        <div className="flex items-center gap-2">
-                          <Input type="number" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} className="h-8 w-24 text-sm font-mono" step="any" />
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={() => { setAssets(prev => prev.map(a => a.id === editingId ? { ...a, amount: parseFloat(editAmount) || 0 } : a)); setEditingId(null); }}><Check className="h-4 w-4" /></Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 group/amount">
-                          <div className="font-mono text-sm">{asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })} <span className="text-[10px] text-muted-foreground">{asset.category === 'Stock' ? t.stockUnit : asset.symbol}</span></div>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover/amount:opacity-100" onClick={() => { setEditingId(asset.id); setEditAmount(asset.amount.toString()); }}><Edit2 className="h-3 w-3" /></Button>
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {asset.hasHistory ? (
-                        <div className={cn(
-                          "text-xs font-semibold whitespace-nowrap",
-                          asset.diffTWD >= 0 ? "text-green-600" : "text-red-600"
-                        )}>
-                          {asset.diffTWD >= 0 ? '+' : ''}{getCurrencySymbol(displayCurrency)}{Math.abs(convertTWDToDisplay(asset.diffTWD)).toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
-                          <span className="block text-[10px] opacity-80">
-                            ({asset.diffTWD >= 0 ? '+' : ''}{asset.diffPercent.toFixed(2)}%)
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">--</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right font-bold text-primary">{asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}</TableCell>
-                    <TableCell className="text-right"><Button variant="ghost" size="icon" onClick={() => setAssets(prev => prev.filter(a => a.id !== asset.id))} className="text-destructive"><Trash2 className="h-4 w-4" /></Button></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="xl:col-span-2">
+            <Card className="border-none shadow-lg overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between border-b bg-slate-50/50">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2"><LayoutDashboard className="h-5 w-5 text-primary" /> {t.dashboard}</CardTitle>
+                </div>
+                <Button variant="outline" size="sm" onClick={updateMarketData} disabled={loading} className="bg-white h-8 text-xs">
+                  <RefreshCw className={cn("h-3 w-3 mr-2", loading && "animate-spin")} />
+                  {t.updateData}
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50/30">
+                      <TableHead className="font-bold text-xs uppercase py-4">{t.assetName}</TableHead>
+                      <TableHead className="font-bold text-xs uppercase hidden md:table-cell">{t.marketPrice}</TableHead>
+                      <TableHead className="font-bold text-xs uppercase">{t.holdings}</TableHead>
+                      <TableHead className="font-bold text-xs uppercase text-right">{t.valuationChange}</TableHead>
+                      <TableHead className="font-bold text-xs uppercase text-right">{t.valuation} ({displayCurrency})</TableHead>
+                      <TableHead className="w-10"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assetCalculations.processedAssets.map(asset => (
+                      <TableRow key={asset.id} className="group hover:bg-blue-50/30 transition-colors">
+                        <TableCell>
+                          <div className="font-bold text-sm">{asset.name}</div>
+                          <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{asset.symbol}</div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="text-xs font-mono text-muted-foreground">
+                            {(asset.category === 'Stock' || asset.category === 'Crypto') ? (asset.calculatedPrice > 0 ? `${getCurrencySymbol(asset.currency)}${asset.calculatedPrice.toLocaleString()}` : t.fetching) : '--'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {editingId === asset.id ? (
+                            <div className="flex items-center gap-1">
+                              <Input type="number" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} className="h-8 w-20 text-xs font-mono" step="any" autoFocus />
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-green-600" onClick={() => { setAssets(prev => prev.map(a => a.id === editingId ? { ...a, amount: parseFloat(editAmount) || 0 } : a)); setEditingId(null); }}><Check className="h-3 w-3" /></Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 group/amount cursor-pointer" onClick={() => { setEditingId(asset.id); setEditAmount(asset.amount.toString()); }}>
+                              <div className="font-mono text-sm font-semibold">{asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</div>
+                              <Edit2 className="h-3 w-3 text-muted-foreground opacity-0 group-hover/amount:opacity-100 transition-opacity" />
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {asset.hasHistory ? (
+                            <div className={cn(
+                              "text-[11px] font-bold whitespace-nowrap px-2 py-0.5 rounded-md inline-block",
+                              asset.diffTWD >= 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                            )}>
+                              {asset.diffTWD >= 0 ? '+' : ''}{getCurrencySymbol(displayCurrency)}{Math.abs(convertTWDToDisplay(asset.diffTWD)).toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
+                              <span className="ml-1 opacity-80">
+                                ({asset.diffTWD >= 0 ? '+' : ''}{asset.diffPercent.toFixed(2)}%)
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground opacity-30">--</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-slate-900">
+                          {getCurrencySymbol(displayCurrency)} {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" onClick={() => setAssets(prev => prev.filter(a => a.id !== asset.id))} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-red-50">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {assets.length === 0 && (
+                  <div className="py-20 text-center">
+                    <Wallet className="h-12 w-12 mx-auto mb-4 opacity-10 text-primary" />
+                    <p className="text-muted-foreground text-sm font-medium">No assets tracked yet. Start by adding one!</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
