@@ -78,7 +78,6 @@ interface AssetFormProps {
 export function AssetForm({ onAdd, language }: AssetFormProps) {
   const lang = t[language];
 
-  // 動態建立 schema 以便支援多語系錯誤訊息
   const formSchema = useMemo(() => z.object({
     name: z.string().min(2, { message: lang.errors.nameTooShort }),
     symbol: z.string().optional(),
@@ -92,7 +91,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     defaultValues: { name: '', symbol: '', category: 'Stock', amount: 0, currency: 'TWD' },
   });
 
-  // 當語系切換時，如果已經有錯誤顯示，則重新觸發驗證以更新錯誤訊息語系
   useEffect(() => {
     if (form.formState.isSubmitted) {
       form.trigger();

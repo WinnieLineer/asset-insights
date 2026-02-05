@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI financial advisor that analyzes the user's full portfolio and answers specific questions.
@@ -52,26 +51,20 @@ const prompt = ai.definePrompt({
     }),
   },
   output: {schema: FinancialTipOutputSchema},
-  prompt: `You are a professional senior financial advisor. Analyze the user's FULL portfolio details and answer their specific question.
-
-  Portfolio Details:
-  {{{assetListString}}}
-  Total Portfolio Value: NT\${{{totalTWD}}}
-  
-  Market Conditions: {{{marketConditions}}}
-  
-  User Question: {{#if userQuestion}}{{{userQuestion}}}{{else}}Please provide a general portfolio analysis and suggestions for improvement.{{/if}}
-
-  Output Language: {{{languageName}}}
-
-  Please provide the following structure:
-  1. A direct "answer" to the user's question in a conversational but professional tone.
-  2. A brief professional "analysis" of the current asset allocation.
-  3. "riskLevel" assessment (e.g., "Conservative", "Moderate", "Aggressive").
-  4. "diversificationScore" (0-100).
-  5. "recommendations": At least 3 specific, actionable steps based on their current holdings.
-
-  Ensure the entire output is in the requested language.`,
+  prompt: 'You are a professional senior financial advisor. Analyze the user\'s FULL portfolio details and answer their specific question.\n\n' +
+    'Portfolio Details:\n' +
+    '{{{assetListString}}}\n' +
+    'Total Portfolio Value: NT${{{totalTWD}}}\n\n' +
+    'Market Conditions: {{{marketConditions}}}\n\n' +
+    'User Question: {{#if userQuestion}}{{{userQuestion}}}{{else}}Please provide a general portfolio analysis and suggestions for improvement.{{/if}}\n\n' +
+    'Output Language: {{{languageName}}}\n\n' +
+    'Please provide the following structure:\n' +
+    '1. A direct "answer" to the user\'s question in a conversational but professional tone.\n' +
+    '2. A brief professional "analysis" of the current asset allocation.\n' +
+    '3. "riskLevel" assessment (e.g., "Conservative", "Moderate", "Aggressive").\n' +
+    '4. "diversificationScore" (0-100).\n' +
+    '5. "recommendations": At least 3 specific, actionable steps based on their current holdings.\n\n' +
+    'Ensure the entire output is in the requested language.',
 });
 
 const financialTipFlow = ai.defineFlow(
