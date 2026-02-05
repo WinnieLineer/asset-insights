@@ -3,6 +3,23 @@ import { MarketData } from '@/app/lib/types';
 const COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price';
 const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
+// 加密貨幣代號與 CoinGecko ID 的對照表
+const CRYPTO_ID_MAP: Record<string, string> = {
+  'BTC': 'bitcoin',
+  'ETH': 'ethereum',
+  'SOL': 'solana',
+  'BNB': 'binancecoin',
+  'XRP': 'ripple',
+  'ADA': 'cardano',
+  'DOGE': 'dogecoin',
+  'DOT': 'polkadot',
+  'MATIC': 'polygon-ecosystem-native',
+  'USDT': 'tether',
+  'USDC': 'usd-coin',
+  'LINK': 'chainlink',
+  'AVAX': 'avalanche-2',
+};
+
 /**
  * 抓取最新市場數據
  * 包含加密貨幣、股票價格與匯率
@@ -32,14 +49,15 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
   // 2. 抓取加密貨幣 (CoinGecko)
   try {
     if (symbols.cryptos.length > 0) {
-      const ids = symbols.cryptos.map(s => s.toLowerCase()).join(',');
-      const cgResponse = await fetch(`${COINGECKO_API}?ids=${ids}&vs_currencies=usd`);
+      const mappedIds = symbols.cryptos.map(s => CRYPTO_ID_MAP[s.toUpperCase()] || s.toLowerCase());
+      const idString = mappedIds.join(',');
+      const cgResponse = await fetch(`${COINGECKO_API}?ids=${idString}&vs_currencies=usd`);
       if (cgResponse.ok) {
         const data = await cgResponse.json();
-        symbols.cryptos.forEach(id => {
-          const lowerId = id.toLowerCase();
-          if (data[lowerId]) {
-            cryptoPrices[id.toUpperCase()] = data[lowerId].usd;
+        symbols.cryptos.forEach((id, index) => {
+          const mappedId = mappedIds[index];
+          if (data[mappedId]) {
+            cryptoPrices[id.toUpperCase()] = data[mappedId].usd;
           }
         });
       }
@@ -51,7 +69,9 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
   // 3. 抓取股票價格 (使用 Yahoo Finance 搭配 CORS Proxy)
   for (const s of symbols.stocks) {
     const symbol = s.toUpperCase();
-    const yahooSymbol = /^\d+$/.test(symbol) ? `${symbol}.TW` : symbol;
+    const isNumeric = /^\d+$/.test(symbol);
+    // 台股若輸入數字，自動補上 .TW
+    const yahooSymbol = isNumeric ? `${symbol}.TW` : symbol;
     
     try {
       const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`)}`;

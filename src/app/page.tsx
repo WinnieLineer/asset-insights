@@ -332,7 +332,7 @@ export default function MonochromeAssetPage() {
               )}
             </div>
 
-            <div className="flex gap-10 pt-10 mt-10 border-t border-slate-100 z-20 relative">
+            <div className="flex gap-10 pt-10 mt-10 border-t border-slate-100 z-20 relative bg-white">
               <div>
                 <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">{t.assetCount}</p>
                 <p className="text-xl font-bold">{assets.length} <span className="text-xs font-medium text-slate-400">{t.items}</span></p>
@@ -346,7 +346,7 @@ export default function MonochromeAssetPage() {
               </div>
             </div>
 
-            {/* Wallet Icon - 提升至最頂層 z-50 確保壓在分隔線之上 */}
+            {/* Wallet Icon - 提升至最高層 z-50 確保壓在所有元素之上 */}
             <div className="absolute -bottom-10 -right-10 opacity-[0.1] pointer-events-none z-50">
               <Wallet className="w-80 h-80 text-black drop-shadow-sm" />
             </div>
