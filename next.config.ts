@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
     ],
   },
   typescript: {
-    ignoreBuildErrors: false, // 改回 false 以確保開發品質，我們已在代碼中修復錯誤
+    ignoreBuildErrors: false,
   },
   eslint: {
     ignoreDuringBuilds: true,
