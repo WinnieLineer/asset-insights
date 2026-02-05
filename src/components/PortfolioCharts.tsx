@@ -6,18 +6,19 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import { Snapshot, Currency } from '@/app/lib/types';
+import { cn } from '@/lib/utils';
 
 const COLORS = [
-  '#4F46E5', // Indigo
-  '#06B6D4', // Cyan
-  '#10B981', // Emerald
-  '#F59E0B', // Amber
-  '#EC4899', // Pink
+  '#3b82f6', // blue-500
+  '#6366f1', // indigo-500
+  '#8b5cf6', // violet-500
+  '#a855f7', // purple-500
+  '#ec4899', // pink-500
 ];
 
 const t = {
-  en: { allocation: 'Portfolio Allocation', trend: 'Valuation Trend', total: 'Net Value', ratio: 'Ratio' },
-  zh: { allocation: '資產配置比例', trend: '資產價值走勢', total: '淨資產', ratio: '佔比' }
+  en: { allocation: 'Portfolio Allocation', trend: 'Valuation Trend', total: 'Total', ratio: 'Ratio' },
+  zh: { allocation: '資產配置比例', trend: '資產價值走勢', total: '總計', ratio: '佔比' }
 };
 
 const renderActiveShape = (props: any) => {
@@ -28,12 +29,12 @@ const renderActiveShape = (props: any) => {
         cx={cx}
         cy={cy}
         innerRadius={innerRadius}
-        outerRadius={outerRadius + 6}
+        outerRadius={outerRadius + 8}
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
       />
-      <circle cx={cx} cy={cy} r={innerRadius - 4} fill={fill} opacity={0.1} />
+      <circle cx={cx} cy={cy} r={innerRadius - 4} fill={fill} opacity={0.05} />
     </g>
   );
 };
@@ -62,13 +63,14 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div className="modern-card p-8 flex flex-col items-center min-h-[400px] rounded-2xl bg-white">
-        <div className="w-full mb-4">
-          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">{lang.allocation}</h3>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Distribution by category</p>
+      {/* Allocation Pie Chart */}
+      <div className="modern-card p-8 flex flex-col items-center min-h-[420px] rounded-2xl bg-white relative">
+        <div className="w-full mb-2">
+          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">{lang.allocation}</h3>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Asset diversification</p>
         </div>
         
-        <div className="h-[260px] w-full relative">
+        <div className="h-[280px] w-full relative">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -77,14 +79,14 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 data={allocationData}
                 cx="50%"
                 cy="50%"
-                innerRadius={70}
-                outerRadius={90}
-                paddingAngle={4}
+                innerRadius={80}
+                outerRadius={100}
+                paddingAngle={5}
                 dataKey="value"
                 stroke="transparent"
                 onMouseEnter={(_, index) => setActiveIndex(index)}
                 onMouseLeave={() => setActiveIndex(null)}
-                animationDuration={800}
+                animationDuration={600}
               >
                 {allocationData.map((_: any, i: number) => (
                   <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
@@ -95,7 +97,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                   if (active && payload && payload.length) {
                     const val = Number(payload[0].value);
                     return (
-                      <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-3 rounded-lg shadow-xl">
+                      <div className="bg-white/95 backdrop-blur-md border border-slate-100 p-3 rounded-lg shadow-xl animate-fade-in">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{payload[0].name}</p>
                         <p className="text-sm font-bold text-slate-900">{symbol}{val.toLocaleString()}</p>
                       </div>
@@ -107,30 +109,32 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
             </PieChart>
           </ResponsiveContainer>
           
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none w-full">
-            {activeIndex !== null ? (
-              <div className="animate-in fade-in zoom-in-95 duration-300">
-                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-0.5 truncate max-w-[120px] mx-auto">
+          {/* Centered Dynamic Label - Fixed Text Collision */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none w-full max-w-[140px] px-2 flex flex-col items-center justify-center">
+            {activeIndex !== null && allocationData[activeIndex] ? (
+              <div className="animate-fade-in space-y-0.5">
+                <p className="text-[10px] font-bold text-primary uppercase tracking-widest truncate max-w-full">
                   {allocationData[activeIndex].name}
                 </p>
-                <p className="text-2xl font-bold text-slate-900 tracking-tight">
-                  {((allocationData[activeIndex].value / totalAllocationValue) * 100).toFixed(1)}%
+                <p className="text-3xl font-extrabold text-slate-900 tracking-tighter">
+                  {((allocationData[activeIndex].value / (totalAllocationValue || 1)) * 100).toFixed(1)}%
                 </p>
               </div>
             ) : (
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{lang.ratio}</p>
-                <p className="text-2xl font-bold text-slate-200 tracking-tight">100%</p>
+              <div className="animate-fade-in space-y-0.5">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{lang.total}</p>
+                <p className="text-3xl font-extrabold text-slate-300 tracking-tighter">100%</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="modern-card p-8 flex flex-col min-h-[400px] rounded-2xl bg-white">
-        <div className="w-full mb-6">
-          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">{lang.trend}</h3>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Net worth evolution</p>
+      {/* Trend Area Chart */}
+      <div className="modern-card p-8 flex flex-col min-h-[420px] rounded-2xl bg-white">
+        <div className="w-full mb-8">
+          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">{lang.trend}</h3>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Historical valuation</p>
         </div>
 
         <div className="h-[240px] w-full mt-auto">
@@ -138,8 +142,8 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.15}/>
-                  <stop offset="95%" stopColor="#4F46E5" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -148,15 +152,16 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 600 }}
+                dy={10}
               />
               <YAxis hide domain={['auto', 'auto']} />
               <RechartsTooltip 
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-3 rounded-lg shadow-xl">
+                      <div className="bg-white/95 backdrop-blur-md border border-slate-100 p-3 rounded-lg shadow-xl animate-fade-in">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-                        <p className="text-sm font-bold text-indigo-600">{symbol}{payload[0].value.toLocaleString()}</p>
+                        <p className="text-sm font-bold text-primary">{symbol}{payload[0].value.toLocaleString()}</p>
                       </div>
                     );
                   }
@@ -166,10 +171,11 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
               <Area 
                 type="monotone" 
                 dataKey="totalValue" 
-                stroke="#4F46E5" 
-                strokeWidth={2.5} 
+                stroke="#3b82f6" 
+                strokeWidth={3} 
                 fill="url(#colorValue)" 
                 animationDuration={1000}
+                activeDot={{ r: 6, strokeWidth: 0, fill: '#3b82f6' }}
               />
             </AreaChart>
           </ResponsiveContainer>
