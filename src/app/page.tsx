@@ -79,11 +79,11 @@ const translations = {
     snapshotSaved: 'Snapshot archived successfully',
     snapshotDeleted: 'Archive removed',
     dashboard: 'Asset Dashboard',
-    valuationChange: 'Net Gain/Loss'
+    valuationChange: 'Valuation Change'
   },
   zh: {
     title: 'Asset Insights',
-    subtitle: '現代化資產管理專家',
+    subtitle: '專業資產追蹤專家',
     updateData: '同步市場行情',
     takeSnapshot: '儲存目前快照',
     totalValue: '總資產淨值估計',
@@ -256,7 +256,6 @@ export default function AssetTrackerPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-24 font-body selection:bg-primary/20 animate-in fade-in duration-1000">
-      {/* 類 App 毛玻璃導航欄 */}
       <header className="sticky top-0 z-50 w-full glass-panel transition-all duration-300">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -285,11 +284,10 @@ export default function AssetTrackerPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-10 space-y-10">
-        {/* 英雄區塊：資產淨值 */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in slide-in-from-bottom-10 duration-700">
           <Card className="lg:col-span-8 hero-gradient border-none text-white p-2 overflow-hidden relative group glow-effect">
              <div className="absolute -top-12 -right-12 p-8 opacity-10 transition-transform duration-1000 group-hover:scale-125 group-hover:rotate-12">
-               <Sparkles className="h-64 w-64" />
+               <Wallet className="h-64 w-64" />
              </div>
              <CardHeader className="relative z-10 pt-10 px-8">
                <div className="flex items-center gap-2 text-white/70 mb-2 text-sm font-bold tracking-wide">
@@ -352,7 +350,6 @@ export default function AssetTrackerPage() {
           </div>
         </section>
 
-        {/* 圖表區塊 */}
         <section className="animate-in slide-in-from-bottom-10 delay-150 duration-700">
           <PortfolioCharts 
             language={language}
@@ -363,9 +360,7 @@ export default function AssetTrackerPage() {
           />
         </section>
 
-        {/* 工作區：管理與儀表板 */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-          {/* 左側管理欄 */}
           <div className="xl:col-span-4 space-y-10 animate-in slide-in-from-left-10 duration-700">
             <Card className="neo-card overflow-hidden group">
               <CardHeader className="pb-6 border-b border-slate-50">
@@ -469,12 +464,11 @@ export default function AssetTrackerPage() {
             </Card>
           </div>
           
-          {/* 右側儀表板 */}
           <div className="xl:col-span-8 animate-in slide-in-from-right-10 duration-700">
             <Card className="neo-card overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between border-b border-slate-50 pb-8 px-8 pt-8">
                 <CardTitle className="text-2xl font-bold flex items-center gap-4">
-                  <div className="bg-indigo-600/10 p-3 rounded-3xl"><LayoutDashboard className="h-7 w-7 text-indigo-600" /></div>
+                  <div className="bg-primary/10 p-3 rounded-3xl"><LayoutDashboard className="h-7 w-7 text-primary" /></div>
                   {t.dashboard}
                 </CardTitle>
               </CardHeader>
@@ -550,7 +544,6 @@ export default function AssetTrackerPage() {
           </div>
         </div>
 
-        {/* AI 分析區：寬幅底部佈局 */}
         <section className="pt-12 animate-in slide-in-from-bottom-10 duration-1000">
            <AITipCard 
               language={language} 
@@ -561,7 +554,6 @@ export default function AssetTrackerPage() {
         </section>
       </main>
 
-      {/* 類 App 底部空間補強 */}
       <footer className="h-20 flex items-center justify-center text-slate-300 text-[10px] font-bold uppercase tracking-[0.3em] opacity-50">
         Asset Insights • Professional Portfolio Advisor
       </footer>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -92,11 +91,11 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
 
   return (
     <Card className="neo-card border-none bg-white shadow-2xl shadow-blue-900/5 overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600/5 to-indigo-600/5 p-8 border-b border-slate-50">
+      <div className="bg-gradient-to-r from-primary/5 to-indigo-600/5 p-8 border-b border-slate-50">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <CardTitle className="flex items-center gap-3 text-blue-600 font-headline text-2xl">
-              <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-600/20">
+            <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
+              <div className="bg-primary p-2 rounded-xl shadow-lg shadow-primary/20">
                 <Sparkles className="h-6 w-6 text-white" />
               </div>
               {lang.title}
@@ -104,7 +103,7 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
             <CardDescription className="text-slate-500 font-medium">{lang.desc}</CardDescription>
           </div>
           {insight && (
-            <Button variant="outline" size="sm" onClick={() => { setInsight(null); setQuestion(''); }} className="rounded-xl border-blue-100 text-blue-600 hover:bg-blue-50">
+            <Button variant="outline" size="sm" onClick={() => { setInsight(null); setQuestion(''); }} className="rounded-xl border-primary/20 text-primary hover:bg-primary/5">
               <RefreshCw className="h-4 w-4 mr-2" />
               {language === 'en' ? 'New Analysis' : '重新分析'}
             </Button>
@@ -117,19 +116,19 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
             <div className="lg:col-span-9 space-y-3">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 px-1">
-                <MessageSquare className="h-3.5 w-3.5 text-blue-400" />
+                <MessageSquare className="h-3.5 w-3.5 text-primary/60" />
                 {lang.ask}
               </label>
               <Textarea 
                 placeholder={lang.placeholder}
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                className="resize-none h-24 rounded-[1.5rem] bg-slate-50 border-none focus-visible:ring-blue-200 text-base p-5 transition-all"
+                className="resize-none h-24 rounded-[1.5rem] bg-slate-50 border-none focus-visible:ring-primary/20 text-base p-5 transition-all"
               />
             </div>
             <div className="lg:col-span-3">
               <Button 
-                className="w-full h-24 rounded-[1.5rem] bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-600/20 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                className="w-full h-24 rounded-[1.5rem] bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/20 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02]"
                 onClick={fetchTip}
                 disabled={loading || assets.length === 0}
               >
@@ -140,14 +139,13 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
-            {/* Answer Column */}
             <div className="lg:col-span-1 space-y-6">
               <div className="space-y-3">
-                <h4 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                   <MessageSquare className="h-4 w-4" />
                   {lang.answer}
                 </h4>
-                <div className="text-sm text-slate-700 leading-relaxed bg-blue-50/50 p-6 rounded-[2rem] border border-blue-100 italic shadow-inner">
+                <div className="text-sm text-slate-700 leading-relaxed bg-primary/5 p-6 rounded-[2rem] border border-primary/10 italic shadow-inner">
                   "{insight.answer}"
                 </div>
               </div>
@@ -163,14 +161,13 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
                 <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
                   <div className="flex justify-between items-center mb-2">
                     <h4 className="text-[10px] font-bold text-slate-400 uppercase">{lang.diversification}</h4>
-                    <span className="text-xs font-bold text-blue-600">{insight.diversificationScore}%</span>
+                    <span className="text-xs font-bold text-primary">{insight.diversificationScore}%</span>
                   </div>
                   <Progress value={insight.diversificationScore} className="h-2 bg-slate-200" />
                 </div>
               </div>
             </div>
 
-            {/* Analysis & Recs Column */}
             <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-4">
                 <h4 className="text-sm font-bold flex items-center gap-2 text-slate-900">
@@ -190,7 +187,7 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
                 <ul className="space-y-4">
                   {insight.recommendations.map((rec, i) => (
                     <li key={i} className="text-sm flex gap-3 text-slate-600 group items-start">
-                      <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-blue-600 group-hover:text-white transition-colors font-bold text-[10px]">{i+1}</div>
+                      <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-primary group-hover:text-white transition-colors font-bold text-[10px]">{i+1}</div>
                       {rec}
                     </li>
                   ))}
