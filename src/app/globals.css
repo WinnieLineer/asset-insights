@@ -4,36 +4,36 @@
 
 @layer base {
   :root {
-    --background: 30 20% 97%; /* 溫潤暖白 */
-    --foreground: 210 20% 20%; /* 深岩石色 */
+    --background: 200 50% 98%; /* 極淺藍背景 */
+    --foreground: 200 60% 20%;
     --card: 0 0% 100%;
-    --card-foreground: 210 20% 20%;
+    --card-foreground: 200 60% 20%;
     --popover: 0 0% 100%;
-    --popover-foreground: 210 20% 20%;
-    --primary: 210 15% 45%; /* 大地岩板灰 */
-    --primary-foreground: 30 20% 97%;
-    --secondary: 30 10% 90%;
-    --secondary-foreground: 210 20% 20%;
-    --muted: 30 10% 90%;
-    --muted-foreground: 210 10% 50%;
-    --accent: 35 15% 92%;
-    --accent-foreground: 210 20% 20%;
-    --destructive: 0 50% 50%;
-    --destructive-foreground: 30 20% 97%;
-    --border: 30 10% 85%;
-    --input: 30 10% 85%;
-    --ring: 210 15% 45%;
-    --radius: 1.5rem;
+    --popover-foreground: 200 60% 20%;
+    --primary: 204 70% 66%; /* 咖波藍 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 350 70% 88%; /* 肉墊粉 */
+    --secondary-foreground: 350 60% 30%;
+    --muted: 200 30% 95%;
+    --muted-foreground: 200 30% 50%;
+    --accent: 45 90% 85%; /* 雞肉黃 */
+    --accent-foreground: 45 90% 30%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 204 40% 90%;
+    --input: 204 40% 90%;
+    --ring: 204 70% 66%;
+    --radius: 2rem;
   }
 
   .dark {
-    --background: 210 20% 12%;
-    --foreground: 30 20% 90%;
-    --card: 210 20% 15%;
-    --card-foreground: 30 20% 90%;
-    --primary: 210 10% 60%;
-    --primary-foreground: 210 20% 12%;
-    --border: 210 15% 25%;
+    --background: 200 50% 10%;
+    --foreground: 200 20% 98%;
+    --card: 200 50% 15%;
+    --card-foreground: 200 20% 98%;
+    --primary: 204 70% 66%;
+    --primary-foreground: 0 0% 100%;
+    --border: 200 30% 25%;
   }
 }
 
@@ -43,37 +43,35 @@
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
-    letter-spacing: -0.01em;
   }
 }
 
-.glass-panel {
-  @apply bg-white/60 backdrop-blur-xl border border-white/40 shadow-sm;
+.capoo-card {
+  @apply bg-white rounded-[2.5rem] border-4 border-primary/20 shadow-[0_12px_0_0_rgba(108,183,230,0.1)] transition-all duration-300 hover:translate-y-[-4px] hover:shadow-[0_18px_0_0_rgba(108,183,230,0.15)];
 }
 
-.wabi-card {
-  @apply bg-white/80 rounded-[2rem] border border-slate-200/40 shadow-[0_8px_30px_rgb(0,0,0,0.02)] transition-all duration-500 hover:shadow-[0_15px_45px_rgb(0,0,0,0.04)] hover:translate-y-[-2px];
+.capoo-gradient {
+  background: linear-gradient(135deg, #6CB7E6 0%, #A5D8FF 100%);
 }
 
-.hero-zen-gradient {
-  background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
+.bouncy-button {
+  @apply transition-transform active:scale-90 duration-200;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+.animate-wiggle {
+  animation: wiggle 0.5s ease-in-out infinite;
 }
 
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 8px;
 }
 ::-webkit-scrollbar-track {
   @apply bg-transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-300/50 rounded-full hover:bg-slate-400/50;
-}
-
-/* 數據變動微動畫 */
-@keyframes value-change {
-  0% { opacity: 0.5; transform: translateY(2px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-.animate-value {
-  animation: value-change 0.3s ease-out forwards;
+  @apply bg-primary/30 rounded-full hover:bg-primary/50;
 }

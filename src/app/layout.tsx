@@ -3,13 +3,13 @@ import './globals.css';
 import {Toaster} from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'Asset Insights | 專業資產追蹤',
-  description: '現代化、私密的個人資產管理專家，搭載 AI 財務分析建議。',
+  title: 'Capoo Wealth | 咖波財富小助手',
+  description: '咖波幫你嗅嗅行情，囤積肉肉資產！最可愛的個人資產追蹤專家。',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Asset Insights',
+    title: 'Capoo Wealth',
   },
   formatDetection: {
     telephone: false,
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#1e3a8a',
+  themeColor: '#6CB7E6',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -34,11 +34,10 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
-        {/* 使用用戶指定的 Favicon */}
+        <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet" />
         <link rel="icon" href="/favicon.ico?favicon.7ed73651.ico" />
       </head>
-      <body className="font-body antialiased selection:bg-primary selection:text-white bg-[#F8FAFC]">
+      <body className="font-body antialiased selection:bg-primary/30 bg-[#F0F9FF] selection:text-primary">
         {children}
         <Toaster />
       </body>
