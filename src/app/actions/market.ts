@@ -6,11 +6,29 @@ import { MarketData } from '@/app/lib/types';
 const COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price';
 const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
+// 加密貨幣代號與 CoinGecko ID 的對照表
+const CRYPTO_ID_MAP: Record<string, string> = {
+  'BTC': 'bitcoin',
+  'ETH': 'ethereum',
+  'SOL': 'solana',
+  'BNB': 'binancecoin',
+  'XRP': 'ripple',
+  'ADA': 'cardano',
+  'DOGE': 'dogecoin',
+  'DOT': 'polkadot',
+  'MATIC': 'polygon-ecosystem-native',
+  'USDT': 'tether',
+  'USDC': 'usd-coin',
+  'LINK': 'chainlink',
+  'AVAX': 'avalanche-2',
+};
+
 /**
  * 從 Yahoo Finance 抓取價格
  */
 async function fetchYahooStockPrice(symbol: string): Promise<number | null> {
   const isNumeric = /^\d+$/.test(symbol);
+  // 台股若輸入數字，自動補上 .TW
   const yahooSymbol = isNumeric ? `${symbol}.TW` : symbol.toUpperCase();
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
   
@@ -52,18 +70,24 @@ export async function getMarketData(symbols: { cryptos: string[]; stocks: string
   // 2. 抓取加密貨幣價格 (CoinGecko)
   try {
     if (symbols.cryptos.length > 0) {
-      const ids = symbols.cryptos.join(',').toLowerCase();
-      const cgResponse = await fetch(`${COINGECKO_API}?ids=${ids}&vs_currencies=usd`);
+      // 將代號轉換為 ID，如果找不到則嘗試原字串
+      const mappedIds = symbols.cryptos.map(s => CRYPTO_ID_MAP[s.toUpperCase()] || s.toLowerCase());
+      const idString = mappedIds.join(',');
+      
+      const cgResponse = await fetch(`${COINGECKO_API}?ids=${idString}&vs_currencies=usd`);
       if (cgResponse.ok) {
         const data = await cgResponse.json();
-        symbols.cryptos.forEach(id => {
-          if (data[id.toLowerCase()]) {
-            cryptoPrices[id.toUpperCase()] = data[id.toLowerCase()].usd;
+        symbols.cryptos.forEach((symbol, index) => {
+          const id = mappedIds[index];
+          if (data[id]) {
+            cryptoPrices[symbol.toUpperCase()] = data[id].usd;
           }
         });
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error('Crypto fetch error:', e);
+  }
 
   // 3. 抓取股票價格
   for (const s of symbols.stocks) {
