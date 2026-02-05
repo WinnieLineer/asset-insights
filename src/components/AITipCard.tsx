@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Cpu, RefreshCw, AlertCircle, TrendingUp, ShieldCheck, Zap, BrainCircuit, Terminal } from 'lucide-react';
+import { Brain, RefreshCw, ChevronRight, ShieldCheck, TrendingUp, Sparkles, LayoutPanelLeft } from 'lucide-react';
 import { getFinancialTip, type FinancialTipOutput } from '@/ai/flows/financial-tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -29,30 +29,30 @@ interface AITipCardProps {
 
 const t = {
   en: {
-    title: 'Nexus Intelligence',
-    desc: 'Autonomous financial matrix analysis and predictive guidance.',
-    analysis: 'System Vulnerability Assessment',
-    risk: 'Risk Vector Classification',
-    diversification: 'Composition Entropy',
-    recommendations: 'Strategic Optimization Protocols',
-    ctaButton: 'Initialize Insight',
-    loading: 'Processing matrix data...',
-    placeholder: 'Input custom parameters or queries for deep analysis...',
+    title: 'AI Financial Advisor',
+    desc: 'Intelligent portfolio analysis and personalized strategic guidance.',
+    analysis: 'Strategic Analysis',
+    risk: 'Portfolio Risk Level',
+    diversification: 'Diversification Score',
+    recommendations: 'Actionable Recommendations',
+    ctaButton: 'Generate AI Insight',
+    loading: 'Analyzing Portfolio...',
+    placeholder: 'Ask a specific question about your assets (e.g., "Is my portfolio too tech-heavy?")...',
     ask: 'Custom Query',
-    answer: 'Nexus Protocol Decree',
+    answer: 'AI Analysis Report',
   },
   zh: {
-    title: 'Nexus Intelligence',
-    desc: '自主化財務矩陣分析與預測性導引',
-    analysis: '系統性脆弱度評估',
-    risk: '風險向量分級',
-    diversification: '結構熵值指數',
-    recommendations: '戰略優化協議',
-    ctaButton: '初始化數據洞察',
-    loading: '正在處理矩陣數據...',
-    placeholder: '輸入自定義參數或查詢以進行深度分析...',
+    title: 'AI 財務智庫',
+    desc: '基於大數據與市場動態的個人化資產分析建議',
+    analysis: '核心戰略分析',
+    risk: '投資組合風險等級',
+    diversification: '多樣化評分',
+    recommendations: '具體優化建議',
+    ctaButton: '生成 AI 洞察',
+    loading: '正在分析投資組合...',
+    placeholder: '輸入關於資產的具體問題（例如：「我的科技股佔比是否過高？」）...',
     ask: '自定義查詢',
-    answer: 'Nexus 協議決議',
+    answer: 'AI 分析報告',
   }
 };
 
@@ -75,7 +75,7 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
       });
       setInsight(response);
     } catch (error) {
-      console.error('Core failure:', error);
+      console.error('Analysis failure:', error);
     } finally {
       setLoading(false);
     }
@@ -83,30 +83,26 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
 
   const getRiskColor = (level: string) => {
     const l = level.toLowerCase();
-    if (l.includes('safe') || l.includes('low') || l.includes('低') || l.includes('安全')) return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
-    if (l.includes('medium') || l.includes('moderate') || l.includes('中')) return 'text-amber-400 bg-amber-400/10 border-amber-400/20';
-    return 'text-rose-400 bg-rose-400/10 border-rose-400/20';
+    if (l.includes('safe') || l.includes('low') || l.includes('低') || l.includes('安全')) return 'text-emerald-600 bg-emerald-50 border-emerald-100';
+    if (l.includes('medium') || l.includes('moderate') || l.includes('中')) return 'text-amber-600 bg-amber-50 border-amber-100';
+    return 'text-rose-600 bg-rose-50 border-rose-100';
   };
 
   return (
-    <Card className="pro-card border-none overflow-hidden relative">
-      <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-        <BrainCircuit className="w-64 h-64 text-primary" />
-      </div>
-
-      <CardHeader className="p-10 border-b border-border/40 bg-secondary/20">
+    <Card className="modern-card border-none bg-white overflow-hidden shadow-xl shadow-slate-200/50">
+      <CardHeader className="px-10 py-8 border-b border-slate-50 bg-slate-50/30">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <CardTitle className="flex items-center gap-3 text-2xl font-bold tracking-tight">
-              <Terminal className="w-6 h-6 text-primary" />
-              <span className="nexus-gradient">{lang.title}</span>
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2 text-2xl font-bold text-slate-900">
+              <Sparkles className="w-6 h-6 text-indigo-600" />
+              {lang.title}
             </CardTitle>
-            <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">{lang.desc}</CardDescription>
+            <CardDescription className="text-sm font-medium text-slate-500">{lang.desc}</CardDescription>
           </div>
           {insight && (
-            <Button variant="outline" size="sm" onClick={() => { setInsight(null); setQuestion(''); }} className="h-9 px-4 text-[11px] font-bold tracking-widest uppercase border-primary/30 text-primary hover:bg-primary/10 rounded-full">
-              <RefreshCw className="h-3 w-3 mr-2" />
-              Reset Matrix
+            <Button variant="ghost" size="sm" onClick={() => { setInsight(null); setQuestion(''); }} className="text-indigo-600 hover:bg-indigo-50">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              重新分析
             </Button>
           )}
         </div>
@@ -114,74 +110,76 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
       
       <CardContent className="p-10">
         {!insight ? (
-          <div className="flex flex-col lg:flex-row gap-8 items-stretch">
-            <div className="flex-1 space-y-4">
-              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">{lang.ask}</label>
+          <div className="flex flex-col lg:flex-row gap-8">
+            <div className="flex-1 space-y-3">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{lang.ask}</label>
               <Textarea 
                 placeholder={lang.placeholder}
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                className="resize-none h-40 bg-secondary/30 border-border/50 focus:border-primary/50 text-base font-medium rounded-xl p-6 transition-all"
+                className="resize-none h-32 bg-slate-50 border-slate-100 focus:border-indigo-300 rounded-xl text-base p-5 transition-all shadow-inner"
               />
             </div>
-            <Button 
-              className="w-full lg:w-60 bg-primary hover:bg-primary/90 text-primary-foreground font-bold flex flex-col items-center justify-center gap-4 group rounded-xl"
-              onClick={fetchTip}
-              disabled={loading || assets.length === 0}
-            >
-              <div className={cn("p-4 rounded-full bg-white/10", loading && "animate-spin")}>
-                {loading ? <RefreshCw className="w-6 h-6" /> : <Cpu className="w-6 h-6" />}
-              </div>
-              <span className="text-[11px] uppercase tracking-widest">{loading ? lang.loading : lang.ctaButton}</span>
-            </Button>
+            <div className="flex flex-col justify-end">
+              <Button 
+                className="w-full lg:w-56 h-32 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex flex-col gap-3 shadow-lg shadow-indigo-100 transition-all hover:-translate-y-1"
+                onClick={fetchTip}
+                disabled={loading || assets.length === 0}
+              >
+                <div className={cn("p-3 rounded-full bg-white/10", loading && "animate-spin")}>
+                  {loading ? <RefreshCw className="w-6 h-6" /> : <Brain className="w-6 h-6" />}
+                </div>
+                <span className="text-sm tracking-tight">{loading ? lang.loading : lang.ctaButton}</span>
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 animate-in fade-in duration-700">
             <div className="xl:col-span-5 space-y-8">
               <div className="space-y-4">
-                <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest">{lang.answer}</h4>
-                <div className="text-lg text-white leading-relaxed bg-secondary/30 p-8 rounded-xl border border-primary/20 font-medium italic">
+                <h4 className="text-xs font-bold text-indigo-600 uppercase tracking-widest">{lang.answer}</h4>
+                <div className="text-lg text-slate-800 leading-relaxed bg-indigo-50/50 p-8 rounded-2xl border border-indigo-100 font-medium italic shadow-sm">
                   "{insight.answer}"
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
-                <div className="bg-secondary/20 p-6 rounded-xl border border-border/40">
-                  <h4 className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-3">{lang.risk}</h4>
-                  <Badge variant="outline" className={cn("text-xs font-bold py-2 px-4 rounded-full w-full justify-center tracking-wide", getRiskColor(insight.riskLevel))}>
+                <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">{lang.risk}</h4>
+                  <Badge variant="outline" className={cn("text-xs font-bold py-1.5 px-4 rounded-full w-full justify-center", getRiskColor(insight.riskLevel))}>
                     {insight.riskLevel}
                   </Badge>
                 </div>
-                <div className="bg-secondary/20 p-6 rounded-xl border border-border/40">
+                <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{lang.diversification}</h4>
-                    <span className="text-xs font-bold text-primary">{insight.diversificationScore}%</span>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{lang.diversification}</h4>
+                    <span className="text-xs font-bold text-indigo-600">{insight.diversificationScore}%</span>
                   </div>
-                  <Progress value={insight.diversificationScore} className="h-1.5 bg-white/5 rounded-full" />
+                  <Progress value={insight.diversificationScore} className="h-2 bg-slate-100 rounded-full" />
                 </div>
               </div>
             </div>
 
             <div className="xl:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-12">
               <div className="space-y-6">
-                <h4 className="text-sm font-bold flex items-center gap-3 text-white uppercase tracking-wider">
-                  <ShieldCheck className="w-4 h-4 text-primary" />
+                <h4 className="text-sm font-bold flex items-center gap-2 text-slate-800">
+                  <ShieldCheck className="w-5 h-5 text-indigo-600" />
                   {lang.analysis}
                 </h4>
-                <p className="text-sm text-muted-foreground leading-relaxed font-medium">
+                <p className="text-sm text-slate-600 leading-relaxed font-medium">
                   {insight.analysis}
                 </p>
               </div>
 
               <div className="space-y-6">
-                <h4 className="text-sm font-bold flex items-center gap-3 text-white uppercase tracking-wider">
-                  <TrendingUp className="w-4 h-4 text-primary" />
+                <h4 className="text-sm font-bold flex items-center gap-2 text-slate-800">
+                  <TrendingUp className="w-5 h-5 text-indigo-600" />
                   {lang.recommendations}
                 </h4>
                 <ul className="space-y-4">
                   {insight.recommendations.map((rec, i) => (
-                    <li key={i} className="text-xs flex gap-4 text-muted-foreground items-start">
-                      <div className="w-6 h-6 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold text-[10px] border border-primary/20">
+                    <li key={i} className="text-xs flex gap-4 text-slate-600 items-start">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold text-[10px] border border-indigo-100">
                         {i + 1}
                       </div>
                       <span className="pt-1 font-medium leading-normal">{rec}</span>

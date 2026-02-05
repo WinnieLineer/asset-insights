@@ -8,16 +8,16 @@ import {
 import { Snapshot, Currency } from '@/app/lib/types';
 
 const COLORS = [
-  '#00f5ff', // Cyber Cyan
-  '#7000ff', // Electric Purple
-  '#00ff9d', // Neon Green
-  '#ff0055', // Matrix Pink
-  '#006eff', // Deep Blue
+  '#4F46E5', // Indigo
+  '#06B6D4', // Cyan
+  '#10B981', // Emerald
+  '#F59E0B', // Amber
+  '#EC4899', // Pink
 ];
 
 const t = {
-  en: { allocation: 'Asset Distribution', trend: 'Portfolio Evolution', total: 'Net Value', ratio: 'Ratio' },
-  zh: { allocation: '資產配置比例', trend: '投資組合演化', total: '淨資產', ratio: '配置比' }
+  en: { allocation: 'Portfolio Allocation', trend: 'Valuation Trend', total: 'Net Value', ratio: 'Ratio' },
+  zh: { allocation: '資產配置比例', trend: '資產價值走勢', total: '淨資產', ratio: '佔比' }
 };
 
 const renderActiveShape = (props: any) => {
@@ -28,19 +28,19 @@ const renderActiveShape = (props: any) => {
         cx={cx}
         cy={cy}
         innerRadius={innerRadius}
-        outerRadius={outerRadius + 8}
+        outerRadius={outerRadius + 6}
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
       />
-      <circle cx={cx} cy={cy} r={innerRadius - 6} fill={fill} opacity={0.05} />
+      <circle cx={cx} cy={cy} r={innerRadius - 4} fill={fill} opacity={0.1} />
     </g>
   );
 };
 
-export function PortfolioCharts({ allocationData, historicalData, displayCurrency, rates, language }: PortfolioChartsProps) {
+export function PortfolioCharts({ allocationData, historicalData, displayCurrency, rates, language }: any) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const lang = t[language];
+  const lang = t[language as keyof typeof t] || t.zh;
   const symbol = displayCurrency === 'USD' ? '$' : displayCurrency === 'CNY' ? '¥' : 'NT$';
   
   const convert = (val: number) => {
@@ -50,25 +50,25 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
     return val;
   };
 
-  const chartData = historicalData.map(d => ({
+  const chartData = historicalData.map((d: any) => ({
     ...d,
     displayDate: new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
     totalValue: convert(d.totalTWD)
   }));
 
   const totalAllocationValue = useMemo(() => {
-    return allocationData.reduce((acc, curr) => acc + curr.value, 0);
+    return allocationData.reduce((acc: number, curr: any) => acc + curr.value, 0);
   }, [allocationData]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="pro-card p-10 flex flex-col items-center min-h-[420px] rounded-2xl">
-        <div className="w-full mb-6">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-white">{lang.allocation}</h3>
-          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Matrix composition analysis</p>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="modern-card p-8 flex flex-col items-center min-h-[400px] rounded-2xl bg-white">
+        <div className="w-full mb-4">
+          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">{lang.allocation}</h3>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Distribution by category</p>
         </div>
         
-        <div className="h-[280px] w-full relative">
+        <div className="h-[260px] w-full relative">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -77,8 +77,8 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 data={allocationData}
                 cx="50%"
                 cy="50%"
-                innerRadius={75}
-                outerRadius={95}
+                innerRadius={70}
+                outerRadius={90}
                 paddingAngle={4}
                 dataKey="value"
                 stroke="transparent"
@@ -86,7 +86,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 onMouseLeave={() => setActiveIndex(null)}
                 animationDuration={800}
               >
-                {allocationData.map((_, i) => (
+                {allocationData.map((_: any, i: number) => (
                   <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
                 ))}
               </Pie>
@@ -95,9 +95,9 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                   if (active && payload && payload.length) {
                     const val = Number(payload[0].value);
                     return (
-                      <div className="bg-card/90 backdrop-blur-md border border-border/50 p-4 rounded-xl shadow-2xl">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{payload[0].name}</p>
-                        <p className="text-base font-bold text-white">{symbol}{val.toLocaleString()}</p>
+                      <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-3 rounded-lg shadow-xl">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{payload[0].name}</p>
+                        <p className="text-sm font-bold text-slate-900">{symbol}{val.toLocaleString()}</p>
                       </div>
                     );
                   }
@@ -110,27 +110,27 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none w-full">
             {activeIndex !== null ? (
               <div className="animate-in fade-in zoom-in-95 duration-300">
-                <p className="text-[9px] font-bold text-primary uppercase tracking-[0.2em] mb-1 truncate max-w-[100px] mx-auto">
+                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest mb-0.5 truncate max-w-[120px] mx-auto">
                   {allocationData[activeIndex].name}
                 </p>
-                <p className="text-3xl font-bold text-white tracking-tighter">
-                  {((allocationData[activeIndex].value / totalAllocationValue) * 100).toFixed(0)}%
+                <p className="text-2xl font-bold text-slate-900 tracking-tight">
+                  {((allocationData[activeIndex].value / totalAllocationValue) * 100).toFixed(1)}%
                 </p>
               </div>
             ) : (
               <div>
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">{lang.ratio}</p>
-                <p className="text-3xl font-bold text-white/40 tracking-tighter">100%</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{lang.ratio}</p>
+                <p className="text-2xl font-bold text-slate-200 tracking-tight">100%</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="pro-card p-10 flex flex-col min-h-[420px] rounded-2xl">
-        <div className="w-full mb-10">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-white">{lang.trend}</h3>
-          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">Growth progression logs</p>
+      <div className="modern-card p-8 flex flex-col min-h-[400px] rounded-2xl bg-white">
+        <div className="w-full mb-6">
+          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">{lang.trend}</h3>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Net worth evolution</p>
         </div>
 
         <div className="h-[240px] w-full mt-auto">
@@ -138,25 +138,25 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#00f5ff" stopOpacity={0.2}/>
-                  <stop offset="95%" stopColor="#00f5ff" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.15}/>
+                  <stop offset="95%" stopColor="#4F46E5" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff05" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis 
                 dataKey="displayDate" 
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 9, fill: '#666', fontWeight: 700 }}
+                tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 600 }}
               />
               <YAxis hide domain={['auto', 'auto']} />
               <RechartsTooltip 
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-card/90 backdrop-blur-md border border-border/50 p-4 rounded-xl shadow-2xl">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">{label}</p>
-                        <p className="text-base font-bold text-primary">{symbol}{payload[0].value.toLocaleString()}</p>
+                      <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-3 rounded-lg shadow-xl">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+                        <p className="text-sm font-bold text-indigo-600">{symbol}{payload[0].value.toLocaleString()}</p>
                       </div>
                     );
                   }
@@ -166,8 +166,8 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
               <Area 
                 type="monotone" 
                 dataKey="totalValue" 
-                stroke="#00f5ff" 
-                strokeWidth={2} 
+                stroke="#4F46E5" 
+                strokeWidth={2.5} 
                 fill="url(#colorValue)" 
                 animationDuration={1000}
               />

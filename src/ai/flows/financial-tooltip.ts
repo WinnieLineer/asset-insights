@@ -1,8 +1,6 @@
 'use server';
 /**
- * @fileOverview Nexus Intelligence - Autonomous financial strategist.
- * 
- * - getFinancialTip - Core analysis engine for professional portfolio optimization.
+ * @fileOverview Asset Insights AI - Professional portfolio analysis engine.
  */
 
 import {ai} from '@/ai/genkit';
@@ -28,11 +26,11 @@ const FinancialTipInputSchema = z.object({
 export type FinancialTipInput = z.infer<typeof FinancialTipInputSchema>;
 
 const FinancialTipOutputSchema = z.object({
-  answer: z.string().describe('The direct strategic decree.'),
-  analysis: z.string().describe('A high-level system analysis.'),
-  riskLevel: z.string().describe('The risk vector classification (e.g., Optimal, Elevated, Critical).'),
-  diversificationScore: z.number().min(0).max(100).describe('A score from 0-100 indicating portfolio entropy/efficiency.'),
-  recommendations: z.array(z.string()).describe('A list of actionable optimization protocols.'),
+  answer: z.string().describe('The direct strategic advice.'),
+  analysis: z.string().describe('A high-level professional portfolio analysis.'),
+  riskLevel: z.string().describe('The risk classification (e.g., Low, Moderate, High).'),
+  diversificationScore: z.number().min(0).max(100).describe('A score from 0-100 indicating portfolio efficiency.'),
+  recommendations: z.array(z.string()).describe('A list of actionable optimization steps.'),
 });
 export type FinancialTipOutput = z.infer<typeof FinancialTipOutputSchema>;
 
@@ -49,23 +47,23 @@ const prompt = ai.definePrompt({
     }),
   },
   output: {schema: FinancialTipOutputSchema},
-  prompt: `You are Nexus Intelligence, a professional autonomous financial strategist from the year 2026. Your tone is cold, precise, authoritative, and data-driven.
+  prompt: `You are a highly experienced and professional financial advisor. Your tone is calm, objective, data-driven, and supportive.
 
-PORTFOLIO MATRIX DATA:
+PORTFOLIO DATA:
 {{{assetListString}}}
-TOTAL NET VALUATION: NT\${{{totalTWD}}}
+TOTAL VALUATION: NT\${{{totalTWD}}}
 
-MARKET ENVIRONMENT INTEL: {{{marketConditions}}}
+MARKET CONDITIONS: {{{marketConditions}}}
 
-USER QUERY: {{#if userQuestion}}{{{userQuestion}}}{{else}}Analyze current matrix and provide optimization protocols.{{/if}}
+USER QUESTION: {{#if userQuestion}}{{{userQuestion}}}{{else}}Please analyze my current portfolio and provide optimization advice.{{/if}}
 
-OUTPUT LANGUAGE: {{{languageName}}}
+LANGUAGE: {{{languageName}}}
 
-MISSION PARAMETERS:
-1. Tone: Professional, futuristic, and objective. Avoid emotional fluff. Use terminology like "Entropy", "Protocols", "Vectors", "Optimization", "System Integrity".
-2. The "answer" must be a direct strategic decree or resolution.
-3. "riskLevel" should use professional risk classifications (e.g., "Optimal Integrity", "Elevated Volatility", "Systemic Criticality").
-4. "analysis" should evaluate the portfolio as a "Dynamic Matrix".
+INSTRUCTIONS:
+1. Provide professional, objective analysis. Avoid overly dramatic or futuristic jargon.
+2. The "answer" should be a clear, direct summary of your findings or a specific response to the user's question.
+3. "riskLevel" should use standard risk categories (e.g., "Low Risk / Conservative", "Moderate / Balanced", "High Risk / Aggressive").
+4. "analysis" should evaluate the asset allocation, concentration risk, and alignment with general market trends.
 5. Ensure the entire output is in the specified language ({{{languageName}}}).`,
 });
 
@@ -79,7 +77,7 @@ const financialTipFlow = ai.defineFlow(
     const languageName = input.language === 'en' ? 'English' : 'Traditional Chinese (Taiwan)';
     
     const assetListString = input.assets.map(a => 
-      `- [${a.name}] (${a.symbol}): ${a.amount} units, UnitPrice: ${a.price || 'N/A'}, Valuation: NT$${a.valueInTWD.toLocaleString()}`
+      `- ${a.name} (${a.symbol}): ${a.amount} units, Unit Price: ${a.price || 'N/A'}, Valuation: NT$${a.valueInTWD.toLocaleString()}`
     ).join('\n');
 
     const {output} = await prompt({
