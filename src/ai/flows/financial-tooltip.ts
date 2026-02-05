@@ -1,10 +1,7 @@
+
 'use server';
 /**
- * @fileOverview An AI financial advisor that analyzes the user's full portfolio and answers specific questions.
- *
- * - getFinancialTip - A function that provides interactive financial analysis.
- * - FinancialTipInput - The input type for the getFinancialTip function.
- * - FinancialTipOutput - The return type for the getFinancialTip function.
+ * @fileOverview A Titan-themed strategic financial advisor (Commander Erwin persona).
  */
 
 import {ai} from '@/ai/genkit';
@@ -30,11 +27,11 @@ const FinancialTipInputSchema = z.object({
 export type FinancialTipInput = z.infer<typeof FinancialTipInputSchema>;
 
 const FinancialTipOutputSchema = z.object({
-  answer: z.string().describe('The direct answer to the user question or a general analysis if no question was provided.'),
-  analysis: z.string().describe('A brief professional analysis of the current portfolio state.'),
-  riskLevel: z.string().describe('The overall risk level of the portfolio (e.g., Low, Medium, High).'),
-  diversificationScore: z.number().min(0).max(100).describe('A score from 0-100 indicating how well the portfolio is diversified.'),
-  recommendations: z.array(z.string()).describe('A list of actionable financial recommendations.'),
+  answer: z.string().describe('The direct strategic command/answer.'),
+  analysis: z.string().describe('A tactical analysis of the wall defenses.'),
+  riskLevel: z.string().describe('The Titan threat level (e.g., E-Class, Abnormal, Colossal).'),
+  diversificationScore: z.number().min(0).max(100).describe('A score from 0-100 indicating tactical formation strength.'),
+  recommendations: z.array(z.string()).describe('A list of actionable military orders.'),
 });
 export type FinancialTipOutput = z.infer<typeof FinancialTipOutputSchema>;
 
@@ -51,20 +48,20 @@ const prompt = ai.definePrompt({
     }),
   },
   output: {schema: FinancialTipOutputSchema},
-  prompt: 'You are a professional senior financial advisor. Analyze the user\'s FULL portfolio details and answer their specific question.\n\n' +
-    'Portfolio Details:\n' +
+  prompt: 'You are Commander Erwin Smith from Attack on Titan. You are leading the humanity\'s struggle for financial freedom.\n\n' +
+    'Tactical Report:\n' +
     '{{{assetListString}}}\n' +
-    'Total Portfolio Value: NT${{{totalTWD}}}\n\n' +
-    'Market Conditions: {{{marketConditions}}}\n\n' +
-    'User Question: {{#if userQuestion}}{{{userQuestion}}}{{else}}Please provide a general portfolio analysis and suggestions for improvement.{{/if}}\n\n' +
-    'Output Language: {{{languageName}}}\n\n' +
-    'Please provide the following structure:\n' +
-    '1. A direct "answer" to the user\'s question in a conversational but professional tone.\n' +
-    '2. A brief professional "analysis" of the current asset allocation.\n' +
-    '3. "riskLevel" assessment (e.g., "Conservative", "Moderate", "Aggressive").\n' +
-    '4. "diversificationScore" (0-100).\n' +
-    '5. "recommendations": At least 3 specific, actionable steps based on their current holdings.\n\n' +
-    'Ensure the entire output is in the requested language.',
+    'Total Tactical Value: NT${{{totalTWD}}}\n\n' +
+    'Battlefield Intel: {{{marketConditions}}}\n\n' +
+    'Troop Inquiry: {{#if userQuestion}}{{{userQuestion}}}{{else}}Give us a general battle plan to reclaim our future.{{/if}}\n\n' +
+    'Language: {{{languageName}}}\n\n' +
+    'Tone Guidelines:\n' +
+    '- Be intensely serious, motivational, and strategic.\n' +
+    '- Use military and Attack on Titan metaphors (Walls Maria/Rose/Sina, Titans, Survey Corps, "Dedicate your heart").\n' +
+    '- The "answer" should be a direct command.\n' +
+    '- "riskLevel" should be themed (e.g. "Abnormal Titan Threat", "Colossal Vulnerability", "Safe within Wall Sina").\n' +
+    '- "analysis" should evaluate the "defensive formation".\n' +
+    'Ensure output is in the requested language.',
 });
 
 const financialTipFlow = ai.defineFlow(
@@ -76,9 +73,8 @@ const financialTipFlow = ai.defineFlow(
   async input => {
     const languageName = input.language === 'en' ? 'English' : 'Traditional Chinese (Taiwan)';
     
-    // Transform assets into a readable string for the prompt
     const assetListString = input.assets.map(a => 
-      `- ${a.name} (${a.symbol}): ${a.amount} units, Price: ${a.price || 'N/A'}, Value: NT$${a.valueInTWD.toLocaleString()}`
+      `- Division ${a.name} (${a.symbol}): ${a.amount} units, Intel: ${a.price || 'N/A'}, Strength: NT$${a.valueInTWD.toLocaleString()}`
     ).join('\n');
 
     const {output} = await prompt({

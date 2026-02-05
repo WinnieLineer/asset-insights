@@ -1,39 +1,30 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 200 50% 98%; /* 極淺藍背景 */
-    --foreground: 200 60% 20%;
-    --card: 0 0% 100%;
-    --card-foreground: 200 60% 20%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 200 60% 20%;
-    --primary: 204 70% 66%; /* 咖波藍 */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 350 70% 88%; /* 肉墊粉 */
-    --secondary-foreground: 350 60% 30%;
-    --muted: 200 30% 95%;
-    --muted-foreground: 200 30% 50%;
-    --accent: 45 90% 85%; /* 雞肉黃 */
-    --accent-foreground: 45 90% 30%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 204 40% 90%;
-    --input: 204 40% 90%;
-    --ring: 204 70% 66%;
-    --radius: 2rem;
-  }
-
-  .dark {
-    --background: 200 50% 10%;
-    --foreground: 200 20% 98%;
-    --card: 200 50% 15%;
-    --card-foreground: 200 20% 98%;
-    --primary: 204 70% 66%;
-    --primary-foreground: 0 0% 100%;
-    --border: 200 30% 25%;
+    --background: 35 30% 12%; /* 深褐色/戰場灰 */
+    --foreground: 45 20% 90%;
+    --card: 35 25% 18%;
+    --card-foreground: 45 20% 95%;
+    --popover: 35 25% 15%;
+    --popover-foreground: 45 20% 95%;
+    --primary: 142 30% 45%; /* 調查兵團披風綠 */
+    --primary-foreground: 45 20% 98%;
+    --secondary: 25 40% 30%; /* 皮革棕 */
+    --secondary-foreground: 45 20% 98%;
+    --muted: 35 15% 25%;
+    --muted-foreground: 35 15% 70%;
+    --accent: 0 70% 40%; /* 巨人血紅 */
+    --accent-foreground: 45 20% 98%;
+    --destructive: 0 80% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 35 20% 30%;
+    --input: 35 20% 30%;
+    --ring: 142 30% 45%;
+    --radius: 0.5rem;
   }
 }
 
@@ -43,35 +34,37 @@
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
+    background-image: 
+      linear-gradient(to bottom, rgba(35, 30, 18, 0.9), rgba(35, 30, 18, 0.9)),
+      url('https://picsum.photos/seed/texture/1920/1080');
+    background-attachment: fixed;
+    background-size: cover;
   }
 }
 
-.capoo-card {
-  @apply bg-white rounded-[2.5rem] border-4 border-primary/20 shadow-[0_12px_0_0_rgba(108,183,230,0.1)] transition-all duration-300 hover:translate-y-[-4px] hover:shadow-[0_18px_0_0_rgba(108,183,230,0.15)];
+.titan-panel {
+  @apply bg-card/80 backdrop-blur-md border-2 border-primary/30 rounded-lg shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition-all duration-300;
+  background-image: url('https://www.transparenttextures.com/patterns/dark-leather.png');
 }
 
-.capoo-gradient {
-  background: linear-gradient(135deg, #6CB7E6 0%, #A5D8FF 100%);
+.scout-button {
+  @apply bg-secondary hover:bg-primary text-white font-black tracking-widest uppercase py-4 px-8 rounded-none border-b-4 border-black/50 active:border-b-0 active:translate-y-1 transition-all;
 }
 
-.bouncy-button {
-  @apply transition-transform active:scale-90 duration-200;
+.wall-header {
+  @apply font-black tracking-tighter uppercase italic text-primary;
+  text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
 }
 
-@keyframes wiggle {
-  0%, 100% { transform: rotate(-3deg); }
-  50% { transform: rotate(3deg); }
-}
-.animate-wiggle {
-  animation: wiggle 0.5s ease-in-out infinite;
+.shinzou-glow {
+  box-shadow: 0 0 20px rgba(134, 239, 172, 0.3);
 }
 
-::-webkit-scrollbar {
-  width: 8px;
+@keyframes steam {
+  0% { opacity: 0; transform: translateY(0); }
+  50% { opacity: 0.5; }
+  100% { opacity: 0; transform: translateY(-20px); }
 }
-::-webkit-scrollbar-track {
-  @apply bg-transparent;
-}
-::-webkit-scrollbar-thumb {
-  @apply bg-primary/30 rounded-full hover:bg-primary/50;
+.animate-steam {
+  animation: steam 2s infinite ease-out;
 }

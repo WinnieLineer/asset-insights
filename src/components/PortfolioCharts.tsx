@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -8,25 +9,17 @@ import {
 import { Snapshot, Currency } from '@/app/lib/types';
 
 const COLORS = [
-  '#6CB7E6', // 咖波藍
-  '#F28D95', // 肉墊粉
-  '#FAD02E', // 雞肉黃
-  '#9EE493', // 鮮草綠
-  '#B19CD9', // 芋頭紫
+  '#4ade80', // Scout Green
+  '#92400e', // Leather Brown
+  '#b91c1c', // Titan Blood
+  '#78350f', // Dark Leather
+  '#15803d', // Forest Green
 ];
 
 const t = {
-  en: { allocation: 'Tasty Snaps!', trend: 'Snack Growth', total: 'Net Munch', ratio: 'Ratio' },
-  zh: { allocation: '肉肉比例分布', trend: '肉肉增長趨勢', total: '資產淨值', ratio: '配置佔比' }
+  en: { allocation: 'Territory Distribution', trend: 'Reclamation Progress', total: 'Net Worth', ratio: 'Ratio' },
+  zh: { allocation: '領土分佈比例', trend: '奪還領土進度', total: '總戰略資產', ratio: '配置比例' }
 };
-
-interface PortfolioChartsProps {
-  allocationData: { name: string; value: number }[];
-  historicalData: Snapshot[];
-  displayCurrency: Currency;
-  rates: { TWD: number, CNY: number, USD: number };
-  language: 'en' | 'zh';
-}
 
 const renderActiveShape = (props: any) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
@@ -36,12 +29,12 @@ const renderActiveShape = (props: any) => {
         cx={cx}
         cy={cy}
         innerRadius={innerRadius}
-        outerRadius={outerRadius + 12}
+        outerRadius={outerRadius + 15}
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
       />
-      <circle cx={cx} cy={cy} r={innerRadius - 10} fill={fill} opacity={0.05} />
+      <circle cx={cx} cy={cy} r={innerRadius - 10} fill={fill} opacity={0.1} />
     </g>
   );
 };
@@ -70,11 +63,10 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
 
   return (
     <>
-      {/* Allocation Chart */}
-      <div className="capoo-card p-12 flex flex-col items-center min-h-[500px]">
-        <div className="w-full flex flex-col gap-1 mb-8">
-          <h3 className="font-black text-2xl text-primary">{lang.allocation}</h3>
-          <p className="text-[10px] text-primary/40 font-bold uppercase tracking-widest">How yummy is your pile?</p>
+      <div className="titan-panel p-10 flex flex-col items-center min-h-[500px]">
+        <div className="w-full mb-8">
+          <h3 className="wall-header text-xl">{lang.allocation}</h3>
+          <p className="text-[10px] text-primary/40 font-bold uppercase tracking-[0.4em] mt-1">Strategic Formation Analysis</p>
         </div>
         
         <div className="h-[320px] w-full relative">
@@ -86,15 +78,14 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 data={allocationData}
                 cx="50%"
                 cy="50%"
-                innerRadius={80}
-                outerRadius={105}
-                paddingAngle={8}
+                innerRadius={75}
+                outerRadius={100}
+                paddingAngle={5}
                 dataKey="value"
-                stroke="none"
+                stroke="#000"
+                strokeWidth={2}
                 onMouseEnter={(_, index) => setActiveIndex(index)}
                 onMouseLeave={() => setActiveIndex(null)}
-                animationDuration={800}
-                animationBegin={100}
               >
                 {allocationData.map((_, i) => (
                   <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />
@@ -105,9 +96,9 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                   if (active && payload && payload.length) {
                     const val = Number(payload[0].value);
                     return (
-                      <div className="bg-primary text-white p-4 rounded-3xl shadow-2xl border-none font-black text-xs animate-in zoom-in-95 duration-200">
-                        <p className="opacity-70 mb-1">{payload[0].name}</p>
-                        <p>{symbol}{val.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                      <div className="bg-black/90 border border-primary/40 p-3 rounded-none text-[10px] font-black uppercase text-primary">
+                        <p className="opacity-60">{payload[0].name}</p>
+                        <p className="text-white text-base">{symbol}{val.toLocaleString()}</p>
                       </div>
                     );
                   }
@@ -117,35 +108,30 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
             </PieChart>
           </ResponsiveContainer>
           
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none w-32 h-32 flex items-center justify-center">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
             {activeIndex !== null ? (
-              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <p className="text-xs font-black text-primary/40 mb-1 truncate max-w-[100px] uppercase">
+              <div className="animate-in fade-in zoom-in-95 duration-200">
+                <p className="text-[8px] font-black text-primary uppercase tracking-[0.2em] mb-1 truncate max-w-[80px]">
                   {allocationData[activeIndex].name}
                 </p>
-                <p className="text-4xl font-black text-primary tracking-tighter">
-                  {totalAllocationValue > 0 
-                    ? ((allocationData[activeIndex].value / totalAllocationValue) * 100).toFixed(0) 
-                    : '0'}<span className="text-sm ml-1">%</span>
+                <p className="text-3xl font-black text-white tracking-tighter">
+                  {((allocationData[activeIndex].value / totalAllocationValue) * 100).toFixed(0)}%
                 </p>
               </div>
             ) : (
-              <div className="animate-in fade-in duration-500">
-                <p className="text-xs font-black text-primary/40 mb-1 uppercase">{lang.ratio}</p>
-                <p className="text-4xl font-black text-primary tracking-tighter">100<span className="text-sm ml-1">%</span></p>
+              <div>
+                <p className="text-[8px] font-black text-primary/40 uppercase tracking-[0.2em] mb-1">{lang.ratio}</p>
+                <p className="text-3xl font-black text-white tracking-tighter">100%</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Trend Chart */}
-      <div className="capoo-card p-12 flex flex-col min-h-[500px]">
-        <div className="w-full flex flex-col gap-1 mb-12">
-          <h3 className="font-black text-2xl text-primary">
-            {lang.trend} <span className="text-xs font-bold text-primary/30 ml-2">({displayCurrency})</span>
-          </h3>
-          <p className="text-[10px] text-primary/40 font-bold uppercase tracking-widest">Growth Path Timeline</p>
+      <div className="titan-panel p-10 flex flex-col min-h-[500px]">
+        <div className="w-full mb-12">
+          <h3 className="wall-header text-xl">{lang.trend}</h3>
+          <p className="text-[10px] text-primary/40 font-bold uppercase tracking-[0.4em] mt-1">Territory Expansion Records</p>
         </div>
 
         <div className="h-[280px] w-full mt-auto">
@@ -153,25 +139,25 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
             <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6CB7E6" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#6CB7E6" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#4ade80" stopOpacity={0.4}/>
+                  <stop offset="95%" stopColor="#4ade80" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="#E0F2FE" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff10" />
               <XAxis 
                 dataKey="displayDate" 
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 11, fill: '#6CB7E6', fontWeight: 800 }}
+                tick={{ fontSize: 10, fill: '#4ade80', fontWeight: 900 }}
               />
               <YAxis hide domain={['auto', 'auto']} />
               <RechartsTooltip 
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-primary text-white p-4 rounded-3xl shadow-2xl border-none font-black text-xs">
-                        <p className="opacity-70 mb-1 uppercase">{label}</p>
-                        <p>{symbol}{payload[0].value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                      <div className="bg-black/90 border border-primary/40 p-3 rounded-none text-[10px] font-black uppercase text-primary">
+                        <p className="opacity-60">{label}</p>
+                        <p className="text-white text-base">{symbol}{payload[0].value.toLocaleString()}</p>
                       </div>
                     );
                   }
@@ -179,14 +165,13 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 }}
               />
               <Area 
-                type="monotone" 
+                type="stepAfter" 
                 dataKey="totalValue" 
-                stroke="#6CB7E6" 
-                strokeWidth={6} 
+                stroke="#4ade80" 
+                strokeWidth={3} 
                 fill="url(#colorValue)" 
-                animationDuration={1000}
-                dot={{ r: 6, fill: '#6CB7E6', stroke: '#fff', strokeWidth: 4 }}
-                activeDot={{ r: 9, fill: '#6CB7E6', stroke: '#fff', strokeWidth: 4 }}
+                animationDuration={1200}
+                dot={{ r: 4, fill: '#4ade80' }}
               />
             </AreaChart>
           </ResponsiveContainer>

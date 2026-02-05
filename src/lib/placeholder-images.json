@@ -1,3 +1,22 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "eren-yeager",
+      "description": "Eren Yeager determined look",
+      "imageUrl": "https://images.unsplash.com/photo-1749996898643-2949553441f8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx0aXRhbiUyMGFuaW1lfGVufDB8fHx8MTc3MDI5OTgxMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "titan anime"
+    },
+    {
+      "id": "survey-corps-logo",
+      "description": "Wings of Liberty logo",
+      "imageUrl": "https://images.unsplash.com/photo-1762846699982-3bc24f3162e0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtaWxpdGFyeSUyMGVtYmxlbXxlbnwwfHx8fDE3NzAyOTk4MTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "military emblem"
+    },
+    {
+      "id": "wall-background",
+      "description": "Large stone wall background",
+      "imageUrl": "https://images.unsplash.com/photo-1536566482680-fca31930a0bd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxzdG9uZSUyMHdhbGx8ZW58MHx8fHwxNzcwMjgyMzEzfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "stone wall"
+    }
+  ]
 }

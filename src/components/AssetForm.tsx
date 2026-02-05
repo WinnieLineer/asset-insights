@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useMemo } from 'react';
@@ -25,47 +26,47 @@ import {
 
 const t = {
   en: {
-    name: 'Snack Name',
-    namePlaceholder: 'e.g., Tuna Can',
-    symbol: 'Ticker / ID',
+    name: 'Unit/Territory Name',
+    namePlaceholder: 'e.g., Wall Maria Outpost',
+    symbol: 'Strategic ID',
     symbolPlaceholder: 'BTC, AAPL, 2330',
-    category: 'Food Type',
-    currency: 'Pay with',
-    amount: 'How many pieces?',
-    submit: 'Add to Pile!',
+    category: 'Combat Division',
+    currency: 'Supply Currency',
+    amount: 'Combat Strength / Amount',
+    submit: 'Initiate Recruitment!',
     categories: {
-      Stock: 'Stock Snack',
-      Crypto: 'Crypto Candy',
-      Savings: 'Yummy Savings',
-      FixedDeposit: 'Long-term Meat',
-      Bank: 'Other Treasure'
+      Stock: 'Infantry (Stocks)',
+      Crypto: 'Special Ops (Crypto)',
+      Savings: 'Reserve (Savings)',
+      FixedDeposit: 'Heavy Artillery (Fixed)',
+      Bank: 'Other Reinforcements'
     },
     errors: {
-      nameTooShort: 'Give it a cute name! (min 2 chars)',
-      invalidAmount: 'Must be a positive munch!',
-      required: 'Capoo needs this!'
+      nameTooShort: 'Name is too short for a division! (min 2 chars)',
+      invalidAmount: 'Strength must be a positive value!',
+      required: 'Information is mandatory for the Corps!'
     }
   },
   zh: {
-    name: '肉肉名稱',
-    namePlaceholder: '例如：鮪魚罐頭',
-    symbol: '代號 (台股數字, 美股代碼)',
+    name: '單位/領土名稱',
+    namePlaceholder: '例如：瑪利亞之牆哨所',
+    symbol: '戰略代號 (台股、美股或硬幣)',
     symbolPlaceholder: 'BTC, AAPL, 2330',
-    category: '肉肉分類',
-    currency: '交易幣別',
-    amount: '持有數量 / 金額',
-    submit: '存入寶藏堆！',
+    category: '作戰分隊',
+    currency: '物資幣別',
+    amount: '持有戰力 / 數量',
+    submit: '招募入伍！',
     categories: {
-      Stock: '股票肉肉',
-      Crypto: '加密糖果',
-      Savings: '活期肉肉',
-      FixedDeposit: '定存大餐',
-      Bank: '其他寶藏'
+      Stock: '步兵分隊 (股票)',
+      Crypto: '奇行種對策 (加密貨幣)',
+      Savings: '預備役 (活期)',
+      FixedDeposit: '重裝要塞 (定存)',
+      Bank: '其他援軍'
     },
     errors: {
-      nameTooShort: '名稱太短了啦（至少 2 個字）',
-      invalidAmount: '請輸入有效的正數肉肉',
-      required: '這個要填喔！'
+      nameTooShort: '分隊名稱太短了（至少 2 個字）',
+      invalidAmount: '請輸入有效的正數戰力',
+      required: '這是兵團要求的必填資訊！'
     }
   }
 };
@@ -106,9 +107,9 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
       <form onSubmit={form.handleSubmit((v) => { onAdd(v as Omit<Asset, 'id'>); form.reset(); })} className="space-y-6">
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-black uppercase text-primary/60">{lang.name}</FormLabel>
+            <FormLabel className="text-[10px] font-black uppercase text-primary/60 tracking-[0.3em]">{lang.name}</FormLabel>
             <FormControl>
-              <Input placeholder={lang.namePlaceholder} {...field} className="bg-primary/5 border-4 border-primary/10 focus:bg-white rounded-[1.5rem] h-14 font-bold text-lg" />
+              <Input placeholder={lang.namePlaceholder} {...field} className="bg-black/40 border-2 border-primary/20 focus:border-primary rounded-none h-12 font-bold text-white" />
             </FormControl>
             <FormMessage className="text-xs font-bold text-red-500" />
           </FormItem>
@@ -117,9 +118,9 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
         {category !== 'Savings' && (
           <FormField control={form.control} name="symbol" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-sm font-black uppercase text-primary/60">{lang.symbol}</FormLabel>
+              <FormLabel className="text-[10px] font-black uppercase text-primary/60 tracking-[0.3em]">{lang.symbol}</FormLabel>
               <FormControl>
-                <Input placeholder={lang.symbolPlaceholder} {...field} className="bg-primary/5 border-4 border-primary/10 focus:bg-white rounded-[1.5rem] h-14 font-black uppercase text-lg" />
+                <Input placeholder={lang.symbolPlaceholder} {...field} className="bg-black/40 border-2 border-primary/20 focus:border-primary rounded-none h-12 font-black uppercase text-white" />
               </FormControl>
               <FormMessage className="text-xs font-bold text-red-500" />
             </FormItem>
@@ -129,14 +130,14 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
         <div className="grid grid-cols-2 gap-6">
           <FormField control={form.control} name="category" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-sm font-black uppercase text-primary/60">{lang.category}</FormLabel>
+              <FormLabel className="text-[10px] font-black uppercase text-primary/60 tracking-[0.3em]">{lang.category}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger className="h-14 bg-primary/5 border-4 border-primary/10 rounded-[1.5rem] font-bold">
+                  <SelectTrigger className="h-12 bg-black/40 border-2 border-primary/20 rounded-none font-bold text-white">
                     <SelectValue />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="rounded-3xl border-4 border-primary/10">
+                <SelectContent className="bg-slate-900 border-2 border-primary/40 text-white rounded-none">
                   <SelectItem value="Stock">{lang.categories.Stock}</SelectItem>
                   <SelectItem value="Crypto">{lang.categories.Crypto}</SelectItem>
                   <SelectItem value="Savings">{lang.categories.Savings}</SelectItem>
@@ -149,14 +150,14 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
           
           <FormField control={form.control} name="currency" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-sm font-black uppercase text-primary/60">{lang.currency}</FormLabel>
+              <FormLabel className="text-[10px] font-black uppercase text-primary/60 tracking-[0.3em]">{lang.currency}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value} disabled={category === 'Crypto'}>
                 <FormControl>
-                  <SelectTrigger className="h-14 bg-primary/5 border-4 border-primary/10 rounded-[1.5rem] font-bold">
+                  <SelectTrigger className="h-12 bg-black/40 border-2 border-primary/20 rounded-none font-bold text-white">
                     <SelectValue />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="rounded-3xl border-4 border-primary/10">
+                <SelectContent className="bg-slate-900 border-2 border-primary/40 text-white rounded-none">
                   <SelectItem value="TWD">TWD</SelectItem>
                   <SelectItem value="USD">USD</SelectItem>
                   <SelectItem value="CNY">CNY</SelectItem>
@@ -168,18 +169,19 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
 
         <FormField control={form.control} name="amount" render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-sm font-black uppercase text-primary/60">{lang.amount}</FormLabel>
+            <FormLabel className="text-[10px] font-black uppercase text-primary/60 tracking-[0.3em]">{lang.amount}</FormLabel>
             <FormControl>
-              <Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-14 font-black text-2xl bg-primary/5 border-4 border-primary/10 rounded-[1.5rem]" />
+              <Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-12 font-black text-xl bg-black/40 border-2 border-primary/20 rounded-none text-white" />
             </FormControl>
             <FormMessage className="text-xs font-bold text-red-500" />
           </FormItem>
         )} />
         
-        <Button type="submit" className="w-full h-16 text-xl font-black rounded-[2rem] shadow-xl bouncy-button bg-primary hover:bg-primary/90">
+        <Button type="submit" className="scout-button w-full h-14">
           {lang.submit}
         </Button>
       </form>
     </Form>
   );
 }
+
