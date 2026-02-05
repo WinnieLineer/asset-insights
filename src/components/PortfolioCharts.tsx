@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Sector,
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -19,8 +19,8 @@ const COLORS = [
 ];
 
 const t = {
-  en: { allocation: 'Asset Allocation', trend: 'History Trend', total: 'Total Assets' },
-  zh: { allocation: '資產配置比例', trend: '資產歷史趨勢', total: '總資產' }
+  en: { allocation: 'Asset Allocation', trend: 'History Trend', total: 'Total Assets', ratio: 'Ratio' },
+  zh: { allocation: '資產配置比例', trend: '資產歷史趨勢', total: '總資產', ratio: '佔比' }
 };
 
 interface PortfolioChartsProps {
@@ -78,6 +78,10 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
     totalValue: convert(d.totalTWD)
   }));
 
+  const totalAllocationValue = useMemo(() => {
+    return allocationData.reduce((acc, curr) => acc + curr.value, 0);
+  }, [allocationData]);
+
   const onPieEnter = (_: any, index: number) => {
     setActiveIndex(index);
   };
@@ -126,10 +130,14 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
               <RechartsTooltip 
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
+                    const percent = totalAllocationValue > 0 
+                      ? ((Number(payload[0].value) / totalAllocationValue) * 100).toFixed(1) 
+                      : '0';
                     return (
                       <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-white/50 animate-in fade-in zoom-in-95 duration-200">
                         <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400 mb-1">{payload[0].name}</p>
                         <p className="text-lg font-bold text-slate-900">{symbol}{payload[0].value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                        <p className="text-xs font-bold text-primary mt-1">{lang.ratio}: {percent}%</p>
                       </div>
                     );
                   }
@@ -141,10 +149,21 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
           
           {/* Center Label */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-            <p className="text-[10px] uppercase tracking-tighter font-bold text-slate-400 mb-0.5">{lang.total}</p>
-            <p className="text-xl font-headline font-bold text-slate-900">
-              {activeIndex !== null ? allocationData[activeIndex].name : '100%'}
-            </p>
+            {activeIndex !== null ? (
+              <div className="animate-in fade-in zoom-in duration-300">
+                <p className="text-[10px] uppercase tracking-tighter font-bold text-primary mb-0.5">{allocationData[activeIndex].name}</p>
+                <p className="text-3xl font-headline font-bold text-slate-900 leading-none">
+                  {totalAllocationValue > 0 
+                    ? ((allocationData[activeIndex].value / totalAllocationValue) * 100).toFixed(1) 
+                    : '0'}%
+                </p>
+              </div>
+            ) : (
+              <div className="animate-in fade-in duration-500">
+                <p className="text-[10px] uppercase tracking-tighter font-bold text-slate-400 mb-0.5">{lang.total}</p>
+                <p className="text-xl font-headline font-bold text-slate-900">100%</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
