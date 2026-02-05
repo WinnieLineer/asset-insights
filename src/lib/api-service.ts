@@ -67,7 +67,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     console.error('Crypto fetch error:', error);
   }
 
-  // 3. 抓取股票價格 (使用 Yahoo Finance 搭配 AllOrigins Proxy 以解決 403 問題)
+  // 3. 抓取股票價格 (使用 AllOrigins 代理解析 Yahoo Finance)
   const stockSymbols = [...new Set(symbols.stocks.map(s => s.toUpperCase()))];
   for (const symbol of stockSymbols) {
     const isNumeric = /^\d+$/.test(symbol);
