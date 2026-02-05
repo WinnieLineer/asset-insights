@@ -4,12 +4,11 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Shield, RefreshCw, Skull, Map, Flag, MessageSquare, Send, Crosshair, Star, Target } from 'lucide-react';
+import { Cpu, RefreshCw, AlertCircle, TrendingUp, ShieldCheck, Zap, BrainCircuit, Terminal } from 'lucide-react';
 import { getFinancialTip, type FinancialTipOutput } from '@/ai/flows/financial-tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 
 interface AssetDetail {
   name: string;
@@ -30,30 +29,30 @@ interface AITipCardProps {
 
 const t = {
   en: {
-    title: 'Commander Erwin\'s Strategy Brief',
-    desc: 'Strategic orders for the humanity\'s financial survival.',
-    analysis: 'Wall Vulnerability Analysis',
-    risk: 'Titan Threat Level',
-    diversification: 'Tactical Spread Index',
-    recommendations: 'Operational Orders',
-    ctaButton: 'Receive Commands',
-    loading: 'Commander is planning the next expedition...',
-    placeholder: 'Ask the Commander for specific tactical advice on your divisions!',
-    ask: 'Tactical Inquiry',
-    answer: 'The Commander\'s Decree',
+    title: 'Nexus Intelligence',
+    desc: 'Autonomous financial matrix analysis and predictive guidance.',
+    analysis: 'System Vulnerability Assessment',
+    risk: 'Risk Vector Classification',
+    diversification: 'Composition Entropy',
+    recommendations: 'Strategic Optimization Protocols',
+    ctaButton: 'Initialize Insight',
+    loading: 'Processing matrix data...',
+    placeholder: 'Input custom parameters or queries for deep analysis...',
+    ask: 'Custom Query',
+    answer: 'Nexus Protocol Decree',
   },
   zh: {
-    title: '艾爾文團長的戰術簡報',
-    desc: '關於奪還領土與人類財富未來的最終指令。',
-    analysis: '城牆結構弱點深度評估',
-    risk: '巨人威脅威懾程度',
-    diversification: '分隊戰術多樣性指數',
-    recommendations: '兵團作戰具體行動建議',
-    ctaButton: '接收最終指令',
-    loading: '團長正在制定壁外調查作戰計畫...',
-    placeholder: '針對目前的領土戰力配置，向艾爾文團長請教戰術指令！',
-    ask: '機密戰術諮詢',
-    answer: '團長的作戰決議',
+    title: 'Nexus Intelligence',
+    desc: '自主化財務矩陣分析與預測性導引',
+    analysis: '系統性脆弱度評估',
+    risk: '風險向量分級',
+    diversification: '結構熵值指數',
+    recommendations: '戰略優化協議',
+    ctaButton: '初始化數據洞察',
+    loading: '正在處理矩陣數據...',
+    placeholder: '輸入自定義參數或查詢以進行深度分析...',
+    ask: '自定義查詢',
+    answer: 'Nexus 協議決議',
   }
 };
 
@@ -76,7 +75,7 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
       });
       setInsight(response);
     } catch (error) {
-      console.error('Operational failure:', error);
+      console.error('Core failure:', error);
     } finally {
       setLoading(false);
     }
@@ -84,111 +83,108 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
 
   const getRiskColor = (level: string) => {
     const l = level.toLowerCase();
-    if (l.includes('safe') || l.includes('low') || l.includes('安全')) return 'bg-emerald-900/40 text-emerald-400 border-emerald-500/50';
-    if (l.includes('abnormal') || l.includes('medium') || l.includes('奇行種')) return 'bg-amber-900/40 text-amber-400 border-amber-500/50';
-    return 'bg-red-900/40 text-red-400 border-red-500/50';
+    if (l.includes('safe') || l.includes('low') || l.includes('低') || l.includes('安全')) return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+    if (l.includes('medium') || l.includes('moderate') || l.includes('中')) return 'text-amber-400 bg-amber-400/10 border-amber-400/20';
+    return 'text-rose-400 bg-rose-400/10 border-rose-400/20';
   };
 
   return (
-    <Card className="titan-panel border-none rounded-none shadow-2xl relative overflow-hidden">
-      {/* Background Character: Levi Silhouette or similar */}
-      <div className="absolute top-0 right-0 w-1/3 h-full opacity-10 pointer-events-none grayscale">
-         <Image src="https://picsum.photos/seed/levi/600/800" fill alt="Levi" className="object-cover" data-ai-hint="levi anime" />
+    <Card className="pro-card border-none overflow-hidden relative">
+      <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+        <BrainCircuit className="w-64 h-64 text-primary" />
       </div>
 
-      <div className="bg-primary/10 border-b border-primary/20 px-12 py-10 relative z-10">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">
-          <div className="space-y-4">
-            <CardTitle className="flex items-center gap-6 text-4xl font-black uppercase tracking-tighter text-primary italic">
-              <Crosshair className="h-10 w-10" />
-              {lang.title}
+      <CardHeader className="p-10 border-b border-border/40 bg-secondary/20">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <CardTitle className="flex items-center gap-3 text-2xl font-bold tracking-tight">
+              <Terminal className="w-6 h-6 text-primary" />
+              <span className="nexus-gradient">{lang.title}</span>
             </CardTitle>
-            <CardDescription className="text-primary/60 text-xs font-black uppercase tracking-[0.5em]">{lang.desc}</CardDescription>
+            <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">{lang.desc}</CardDescription>
           </div>
           {insight && (
-            <Button variant="outline" size="sm" onClick={() => { setInsight(null); setQuestion(''); }} className="scout-button h-14 px-10 rounded-none border border-primary/30">
-              <RefreshCw className="h-5 w-5 mr-3" />
-              {language === 'en' ? 'New Tactical Request' : '申請新的作戰指令'}
+            <Button variant="outline" size="sm" onClick={() => { setInsight(null); setQuestion(''); }} className="h-9 px-4 text-[11px] font-bold tracking-widest uppercase border-primary/30 text-primary hover:bg-primary/10 rounded-full">
+              <RefreshCw className="h-3 w-3 mr-2" />
+              Reset Matrix
             </Button>
           )}
         </div>
-      </div>
+      </CardHeader>
       
-      <CardContent className="p-12 relative z-10">
+      <CardContent className="p-10">
         {!insight ? (
-          <div className="flex flex-col lg:flex-row gap-12 items-start">
-            <div className="flex-1 w-full space-y-6">
-              <label className="text-[10px] font-black text-primary/70 uppercase tracking-[0.4em] block px-2">{lang.ask}</label>
+          <div className="flex flex-col lg:flex-row gap-8 items-stretch">
+            <div className="flex-1 space-y-4">
+              <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">{lang.ask}</label>
               <Textarea 
                 placeholder={lang.placeholder}
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                className="resize-none h-48 rounded-none bg-black/60 border-2 border-primary/30 text-xl p-10 focus:border-primary transition-all font-black text-white custom-scrollbar"
+                className="resize-none h-40 bg-secondary/30 border-border/50 focus:border-primary/50 text-base font-medium rounded-xl p-6 transition-all"
               />
             </div>
             <Button 
-              className="h-48 w-full lg:w-72 scout-button flex flex-col items-center justify-center gap-5 group rounded-none"
+              className="w-full lg:w-60 bg-primary hover:bg-primary/90 text-primary-foreground font-bold flex flex-col items-center justify-center gap-4 group rounded-xl"
               onClick={fetchTip}
               disabled={loading || assets.length === 0}
             >
-              <div className={cn("p-6 border-2 border-white/20 rounded-full group-hover:bg-white/10 transition-all", loading && "animate-spin")}>
-                {loading ? <RefreshCw className="h-12 w-12" /> : <Target className="h-12 w-12" />}
+              <div className={cn("p-4 rounded-full bg-white/10", loading && "animate-spin")}>
+                {loading ? <RefreshCw className="w-6 h-6" /> : <Cpu className="w-6 h-6" />}
               </div>
-              <span className="font-black text-xs uppercase tracking-[0.3em]">{loading ? lang.loading : lang.ctaButton}</span>
+              <span className="text-[11px] uppercase tracking-widest">{loading ? lang.loading : lang.ctaButton}</span>
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-20 animate-in fade-in slide-in-from-bottom-10 duration-1000">
-            <div className="xl:col-span-5 space-y-12">
-              <div className="space-y-6">
-                <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.5em]">{lang.answer}</h4>
-                <div className="text-xl text-slate-100 leading-relaxed bg-black/40 p-12 border-l-[12px] border-primary relative italic font-black shadow-2xl">
-                   <MessageSquare className="absolute -top-10 -left-10 h-20 w-20 text-primary/5 -rotate-12" />
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 animate-in fade-in duration-700">
+            <div className="xl:col-span-5 space-y-8">
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest">{lang.answer}</h4>
+                <div className="text-lg text-white leading-relaxed bg-secondary/30 p-8 rounded-xl border border-primary/20 font-medium italic">
                   "{insight.answer}"
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-10">
-                <div className="bg-black/60 p-10 border border-primary/20 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-2 opacity-10"><Skull className="h-12 w-12" /></div>
-                  <h4 className="text-[10px] font-black text-primary/50 uppercase tracking-[0.4em] mb-6">{lang.risk}</h4>
-                  <Badge variant="outline" className={cn("text-base font-black py-3 px-8 rounded-none w-full justify-center tracking-tighter", getRiskColor(insight.riskLevel))}>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="bg-secondary/20 p-6 rounded-xl border border-border/40">
+                  <h4 className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-3">{lang.risk}</h4>
+                  <Badge variant="outline" className={cn("text-xs font-bold py-2 px-4 rounded-full w-full justify-center tracking-wide", getRiskColor(insight.riskLevel))}>
                     {insight.riskLevel}
                   </Badge>
                 </div>
-                <div className="bg-black/60 p-10 border border-primary/20">
-                  <div className="flex justify-between items-center mb-6">
-                    <h4 className="text-[10px] font-black text-primary/50 uppercase tracking-[0.4em]">{lang.diversification}</h4>
-                    <span className="text-xl font-black text-primary">{insight.diversificationScore}%</span>
+                <div className="bg-secondary/20 p-6 rounded-xl border border-border/40">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{lang.diversification}</h4>
+                    <span className="text-xs font-bold text-primary">{insight.diversificationScore}%</span>
                   </div>
-                  <Progress value={insight.diversificationScore} className="h-3 bg-primary/10 rounded-none" />
+                  <Progress value={insight.diversificationScore} className="h-1.5 bg-white/5 rounded-full" />
                 </div>
               </div>
             </div>
 
-            <div className="xl:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-16">
-              <div className="space-y-8">
-                <h4 className="text-2xl font-black flex items-center gap-5 text-primary uppercase italic tracking-tighter">
-                  <div className="bg-primary/20 p-5 border border-primary/30"><Shield className="h-7 w-7" /></div>
+            <div className="xl:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div className="space-y-6">
+                <h4 className="text-sm font-bold flex items-center gap-3 text-white uppercase tracking-wider">
+                  <ShieldCheck className="w-4 h-4 text-primary" />
                   {lang.analysis}
                 </h4>
-                <p className="text-lg text-slate-400 leading-relaxed font-black opacity-90">
+                <p className="text-sm text-muted-foreground leading-relaxed font-medium">
                   {insight.analysis}
                 </p>
               </div>
 
-              <div className="space-y-8">
-                <h4 className="text-2xl font-black flex items-center gap-5 text-primary uppercase italic tracking-tighter">
-                  <div className="bg-primary/20 p-5 border border-primary/30"><Star className="h-7 w-7" /></div>
+              <div className="space-y-6">
+                <h4 className="text-sm font-bold flex items-center gap-3 text-white uppercase tracking-wider">
+                  <TrendingUp className="w-4 h-4 text-primary" />
                   {lang.recommendations}
                 </h4>
-                <ul className="space-y-8">
+                <ul className="space-y-4">
                   {insight.recommendations.map((rec, i) => (
-                    <li key={i} className="text-lg flex gap-6 text-slate-200 items-start group">
-                      <div className="h-12 w-12 border-2 border-primary/40 text-primary flex items-center justify-center shrink-0 font-black text-sm group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                    <li key={i} className="text-xs flex gap-4 text-muted-foreground items-start">
+                      <div className="w-6 h-6 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0 font-bold text-[10px] border border-primary/20">
                         {i + 1}
                       </div>
-                      <span className="font-black pt-2 leading-snug tracking-tight">{rec}</span>
+                      <span className="pt-1 font-medium leading-normal">{rec}</span>
                     </li>
                   ))}
                 </ul>

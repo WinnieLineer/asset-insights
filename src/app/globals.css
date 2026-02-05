@@ -4,26 +4,26 @@
 
 @layer base {
   :root {
-    --background: 35 30% 10%; /* 戰場深灰 */
-    --foreground: 45 20% 90%;
-    --card: 35 25% 15%;
-    --card-foreground: 45 20% 95%;
-    --popover: 35 25% 12%;
-    --popover-foreground: 45 20% 95%;
-    --primary: 142 30% 45%; /* 調查兵團綠 */
-    --primary-foreground: 45 20% 98%;
-    --secondary: 25 40% 25%; /* 皮革深棕 */
-    --secondary-foreground: 45 20% 98%;
-    --muted: 35 15% 20%;
-    --muted-foreground: 35 15% 60%;
-    --accent: 0 70% 35%; /* 巨人血紅 */
-    --accent-foreground: 45 20% 98%;
-    --destructive: 0 80% 45%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 35 20% 25%;
-    --input: 35 20% 25%;
-    --ring: 142 30% 45%;
-    --radius: 0.25rem; /* 更加硬朗的邊角 */
+    --background: 0 0% 2%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 180 100% 50%; /* Cyber Cyan */
+    --primary-foreground: 180 100% 10%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 180 100% 50%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 180 100% 50%;
+    --radius: 0.75rem;
   }
 }
 
@@ -32,55 +32,50 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-body antialiased;
-    background-image: 
-      linear-gradient(to bottom, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.95)),
-      url('https://images.unsplash.com/photo-1536566482680-fca31930a0bd?q=80&w=2000&auto=format&fit=crop');
-    background-attachment: fixed;
-    background-size: cover;
+    @apply bg-background text-foreground selection:bg-primary/30;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-.titan-panel {
-  @apply bg-card/90 backdrop-blur-xl border-2 border-primary/20 shadow-[0_20px_50px_rgba(0,0,0,0.8)] relative overflow-hidden;
-  background-image: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+.pro-card {
+  @apply bg-card border border-border/50 shadow-2xl transition-all duration-300;
+  background-image: radial-gradient(circle at 50% 0%, rgba(0, 245, 255, 0.03) 0%, transparent 70%);
 }
 
-.titan-panel::before {
-  content: "";
-  @apply absolute inset-0 opacity-10 pointer-events-none;
-  background-image: url('https://www.transparenttextures.com/patterns/dark-leather.png');
+.pro-card:hover {
+  @apply border-primary/30 shadow-primary/5;
 }
 
-.wall-header {
-  @apply font-black tracking-tighter uppercase italic text-primary;
-  text-shadow: 3px 3px 0px rgba(0,0,0,0.8);
+.data-glow {
+  text-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
 }
 
-.scout-button {
-  @apply bg-secondary hover:bg-primary text-white font-black tracking-widest uppercase transition-all duration-300 border-b-4 border-black/50 active:border-b-0 active:translate-y-1 relative overflow-hidden;
+.glass-nav {
+  @apply bg-background/60 backdrop-blur-xl border-b border-border/50;
 }
 
-.scout-button::after {
-  content: "";
-  @apply absolute inset-0 bg-white/5 opacity-0 hover:opacity-100 transition-opacity;
+.nexus-gradient {
+  background: linear-gradient(135deg, #00f5ff 0%, #005f63 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-@keyframes steam {
-  0% { opacity: 0; transform: translateY(0) scale(1); }
-  50% { opacity: 0.3; transform: translateY(-10px) scale(1.1); }
-  100% { opacity: 0; transform: translateY(-20px) scale(1.2); }
+@keyframes pulse-subtle {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
 }
 
-.animate-steam {
-  animation: steam 3s infinite ease-out;
+.animate-pulse-subtle {
+  animation: pulse-subtle 4s infinite ease-in-out;
 }
 
-.shinzou-glow {
-  box-shadow: 0 0 30px rgba(134, 239, 172, 0.2);
+::-webkit-scrollbar {
+  width: 6px;
 }
-
-.blood-accent {
-  @apply text-accent font-black uppercase tracking-widest;
-  text-shadow: 0 0 10px rgba(153, 27, 27, 0.5);
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20;
 }

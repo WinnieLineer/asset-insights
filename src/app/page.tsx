@@ -8,30 +8,27 @@ import { PortfolioCharts } from '@/components/PortfolioCharts';
 import { AITipCard } from '@/components/AITipCard';
 import { Button } from '@/components/ui/button';
 import { 
-  Shield, 
-  Flag, 
-  Skull, 
-  Map, 
+  Activity, 
+  ArrowUpRight, 
+  Layers, 
+  Plus, 
   RefreshCw, 
-  History, 
+  Clock, 
   Trash2, 
   Eye, 
-  Check, 
-  Edit2, 
-  Sword,
-  Target,
-  TrendingUp,
-  AlertTriangle,
-  Zap,
   ChevronRight,
-  Crosshair
+  TrendingUp,
+  TrendingDown,
+  Globe,
+  Wallet,
+  Zap,
+  BarChart3
 } from 'lucide-react';
 import { 
   Card, 
   CardContent, 
   CardHeader, 
   CardTitle,
-  CardDescription
 } from '@/components/ui/card';
 import { 
   Table, 
@@ -43,83 +40,76 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogTrigger
 } from "@/components/ui/dialog";
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 
 type Language = 'en' | 'zh';
 
 const translations = {
   en: {
-    title: 'Survey Corps Command',
-    subtitle: 'SHINZOU WO SASAGEYO! RECLAIM THE FUTURE',
-    updateData: 'Scout Territory',
-    takeSnapshot: 'Log Expedition',
-    totalValue: 'Reclaimed Strategic Assets',
-    assetCount: 'Scout Regiments',
-    items: 'units',
-    addAsset: 'Recruit Division',
-    snapshotHistory: 'Expedition Records',
-    manageHistory: 'Chronicles of the Struggle',
-    noSnapshots: 'No territory reclaimed yet...',
-    snapshotDetail: 'Battle After-Action Report',
-    snapshotDetailDesc: 'Your tactical position on that day.',
-    assetName: 'Regiment/Division',
-    marketPrice: 'Battlefield Intel',
-    holdings: 'Unit Strength',
-    valuation: 'Strategic Worth',
-    fetching: 'Scouting...',
-    stockUnit: 'units',
-    dataUpdated: 'Intel Gathered!',
-    snapshotSaved: 'Expedition Logged!',
-    snapshotDeleted: 'Records Purged!',
-    dashboard: 'Frontline Command Center',
-    valuationChange: 'Momentum'
+    title: 'Asset Insights Pro',
+    subtitle: 'INTELLIGENT WEALTH COMMAND',
+    updateData: 'Sync Market',
+    takeSnapshot: 'Log Snapshot',
+    totalValue: 'Net Portfolio Value',
+    assetCount: 'Total Units',
+    items: 'items',
+    addAsset: 'New Division',
+    snapshotHistory: 'Timeline',
+    manageHistory: 'Historical Evolution',
+    noSnapshots: 'No historical logs available',
+    snapshotDetail: 'Snapshot Intel',
+    assetName: 'Asset Group',
+    marketPrice: 'Price',
+    holdings: 'Quantity',
+    valuation: 'Valuation',
+    fetching: 'Syncing...',
+    dataUpdated: 'Market intelligence synchronized.',
+    snapshotSaved: 'Snapshot logged to timeline.',
+    snapshotDeleted: 'Entry purged.',
+    dashboard: 'Intelligence Hub',
+    valuationChange: 'Momentum (24h)'
   },
   zh: {
-    title: '調查兵團戰術本部',
-    subtitle: '獻出你的心臟！奪回屬於人類的財富領土',
-    updateData: '壁外調查',
-    takeSnapshot: '紀錄遠征',
-    totalValue: '人類奪還領土總額',
-    assetCount: '兵團分隊數',
-    items: '個單位',
-    addAsset: '招募新分隊',
-    snapshotHistory: '遠征紀錄簿',
-    manageHistory: '人類反擊的歷史足跡',
-    noSnapshots: '尚未發起任何遠征...',
-    snapshotDetail: '戰況紀錄檔案',
-    snapshotDetailDesc: '那一天，人類回想起了被虧損支配的恐懼。',
-    assetName: '分隊/領土名稱',
-    marketPrice: '當前情報價值',
-    holdings: '持有兵力',
-    valuation: '戰略價值',
-    fetching: '偵查中...',
-    stockUnit: '單位',
-    dataUpdated: '牆外情報已更新！',
-    snapshotSaved: '遠征成果已歸檔！',
-    snapshotDeleted: '機密檔案已銷毀！',
-    dashboard: '前線指揮作戰中心',
-    valuationChange: '戰況起伏'
+    title: 'Asset Insights Pro',
+    subtitle: '智能財富管理終端',
+    updateData: '同步市場',
+    takeSnapshot: '建立快照',
+    totalValue: '投資組合總淨值',
+    assetCount: '資產項目',
+    items: '個項目',
+    addAsset: '新增部位',
+    snapshotHistory: '歷史快照',
+    manageHistory: '資產演化進程',
+    noSnapshots: '尚無歷史紀錄',
+    snapshotDetail: '快照詳情',
+    assetName: '資產名稱',
+    marketPrice: '當前市價',
+    holdings: '持有數量',
+    valuation: '帳面價值',
+    fetching: '同步中...',
+    dataUpdated: '市場情報已同步',
+    snapshotSaved: '快照已存入時間線',
+    snapshotDeleted: '快照已刪除',
+    dashboard: '數據監控中心',
+    valuationChange: '24H 動能'
   }
 };
 
-export default function TitanAssetPage() {
+export default function ProfessionalAssetPage() {
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
   const [language, setLanguage] = useState<Language>('zh');
   const [assets, setAssets] = useState<Asset[]>([]);
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
-  
   const [marketData, setMarketData] = useState<MarketData>({
     exchangeRate: 32.5,
     rates: { TWD: 32.5, CNY: 7.2, USD: 1 },
@@ -127,8 +117,6 @@ export default function TitanAssetPage() {
     stockPrices: {}
   });
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editAmount, setEditAmount] = useState<string>('');
 
   useEffect(() => {
     setMounted(true);
@@ -138,7 +126,7 @@ export default function TitanAssetPage() {
     
     if (savedLang) setLanguage(savedLang as Language);
     if (savedAssets) setAssets(JSON.parse(savedAssets));
-    else setAssets([{ id: 'default-0050', name: '瑪利亞之牆首儲 (0050)', symbol: '0050', category: 'Stock', amount: 1000, currency: 'TWD' }]);
+    else setAssets([{ id: 'default-1', name: 'Global Tech Index', symbol: 'QQQ', category: 'Stock', amount: 10, currency: 'USD' }]);
     
     if (savedSnapshots) setSnapshots(JSON.parse(savedSnapshots));
     setLoading(false);
@@ -165,7 +153,7 @@ export default function TitanAssetPage() {
       setMarketData(data);
       toast({ title: t.dataUpdated });
     } catch (error) {
-      console.error('Scouting failed', error);
+      console.error('Market sync failed', error);
     } finally {
       setLoading(false);
     }
@@ -199,7 +187,7 @@ export default function TitanAssetPage() {
       let valueInTWD = 0;
       const rate = marketData.rates.TWD || 32.5;
       if (asset.currency === 'USD') {
-        const usdValue = (asset.category === 'Stock' || asset.category === 'Crypto') ? asset.amount * currentPrice : asset.amount;
+        const usdValue = (asset.category === 'Stock' || asset.category === 'Crypto') ? asset.amount * (currentPrice || 1) : asset.amount;
         valueInTWD = usdValue * rate;
       } else if (asset.currency === 'CNY') {
         valueInTWD = asset.amount * (rate / (marketData.rates.CNY || 7.2));
@@ -250,269 +238,175 @@ export default function TitanAssetPage() {
       allocations: assetCalculations.processedAssets.map(a => ({ category: a.category, value: a.valueInTWD })),
       assets: assetCalculations.processedAssets.map(a => ({ ...a, price: a.calculatedPrice, valueInTWD: a.valueInTWD }))
     };
-    setSnapshots(prev => [...prev, newSnapshot].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+    setSnapshots(prev => [...prev, newSnapshot]);
     toast({ title: t.snapshotSaved });
   };
 
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen pb-24 text-slate-200">
-      {/* Heavy Steel Commander Header */}
-      <header className="sticky top-0 z-50 w-full bg-black/90 backdrop-blur-lg border-b-2 border-primary/40 h-24 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-8 h-full flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="p-3 border-2 border-primary/60 rounded-sm bg-primary/10 shadow-[0_0_15px_rgba(134,239,172,0.2)]">
-              <Shield className="h-10 w-10 text-primary" />
+    <div className="min-h-screen bg-background text-foreground pb-20 selection:bg-primary/20">
+      <header className="glass-nav sticky top-0 z-50 h-20">
+        <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20">
+              <Activity className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-black wall-header italic tracking-tight">{t.title}</h1>
-              <p className="text-[10px] text-primary/70 font-black uppercase tracking-[0.4em]">{t.subtitle}</p>
+              <h1 className="text-xl font-bold tracking-tight">{t.title}</h1>
+              <p className="text-[10px] text-muted-foreground font-medium tracking-widest uppercase">{t.subtitle}</p>
             </div>
           </div>
-          <div className="flex items-center gap-8">
-            <div className="flex bg-black/60 border border-primary/30 rounded-none p-1">
-              <Button variant={language === 'zh' ? 'default' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="text-[10px] h-8 px-4 rounded-none font-black">ZHTW</Button>
-              <Button variant={language === 'en' ? 'default' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="text-[10px] h-8 px-4 rounded-none font-black">ENG</Button>
+          
+          <div className="flex items-center gap-6">
+            <div className="flex bg-secondary p-1 rounded-lg">
+              <Button 
+                variant={language === 'zh' ? 'secondary' : 'ghost'} 
+                size="sm" 
+                onClick={() => setLanguage('zh')} 
+                className="h-7 px-3 text-[11px] font-medium"
+              >ZH</Button>
+              <Button 
+                variant={language === 'en' ? 'secondary' : 'ghost'} 
+                size="sm" 
+                onClick={() => setLanguage('en')} 
+                className="h-7 px-3 text-[11px] font-medium"
+              >EN</Button>
             </div>
+            
             <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
-              <TabsList className="h-10 bg-black/60 border border-primary/30 rounded-none p-1">
-                <TabsTrigger value="TWD" className="text-[10px] px-4 font-black data-[state=active]:bg-primary">TWD</TabsTrigger>
-                <TabsTrigger value="USD" className="text-[10px] px-4 font-black data-[state=active]:bg-primary">USD</TabsTrigger>
+              <TabsList className="h-9 bg-secondary">
+                <TabsTrigger value="TWD" className="text-[11px] px-3">TWD</TabsTrigger>
+                <TabsTrigger value="USD" className="text-[11px] px-3">USD</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-8 py-12 space-y-16">
-        {/* Main Strategic Dashboard */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          <Card className="lg:col-span-8 titan-panel p-16 border-none shinzou-glow min-h-[500px] flex flex-col justify-center">
-             {/* Character Background: Eren determined gaze */}
-             <div className="absolute top-0 right-0 w-1/2 h-full opacity-30 pointer-events-none grayscale hover:grayscale-0 transition-all duration-1000">
-                <Image src="https://picsum.photos/seed/eren/800/1000" fill alt="Eren Yeager" className="object-cover object-center" data-ai-hint="eren anime" />
-             </div>
-             
-             <div className="relative z-10 space-y-8">
-               <div className="flex items-center gap-4 text-primary font-black uppercase tracking-[0.4em] text-xs">
-                 <Target className="h-6 w-6" />
-                 {t.totalValue}
-               </div>
-               <div className="text-8xl md:text-[10rem] font-black tracking-tighter leading-none text-white drop-shadow-[0_5px_15px_rgba(0,0,0,1)]">
-                 {getCurrencySymbol(displayCurrency)}{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-               </div>
-               
-               {lastSnapshot && (
-                 <div className={cn(
-                   "inline-flex items-center gap-6 px-10 py-5 border-l-8 font-black uppercase tracking-widest bg-black/80 shadow-xl",
-                   assetCalculations.totalDiffTWD >= 0 ? "border-primary text-primary" : "border-accent text-accent"
-                 )}>
-                   {assetCalculations.totalDiffTWD >= 0 ? <TrendingUp className="h-8 w-8" /> : <Skull className="h-8 w-8" />}
-                   <span className="text-2xl">
+      <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+        {/* Intelligence Grid */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <Card className="lg:col-span-8 pro-card overflow-hidden">
+            <CardContent className="p-10 flex flex-col justify-between min-h-[380px]">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground text-xs font-semibold uppercase tracking-wider">
+                  <Globe className="w-4 h-4 text-primary" />
+                  {t.totalValue}
+                </div>
+                <div className="text-7xl font-bold tracking-tighter data-glow">
+                  {getCurrencySymbol(displayCurrency)}{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </div>
+                
+                {lastSnapshot && (
+                  <div className={cn(
+                    "inline-flex items-center gap-2 py-1 px-3 rounded-full text-xs font-bold bg-white/5 border",
+                    assetCalculations.totalDiffTWD >= 0 ? "text-emerald-400 border-emerald-400/20" : "text-rose-400 border-rose-400/20"
+                  )}>
+                    {assetCalculations.totalDiffTWD >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                     {getCurrencySymbol(displayCurrency)}{Math.abs(assetCalculations.totalDiffDisplay).toLocaleString()} 
-                    <span className="opacity-60 ml-3">({assetCalculations.totalDiffPercent >= 0 ? '+' : ''}{assetCalculations.totalDiffPercent.toFixed(2)}%)</span>
-                   </span>
-                 </div>
-               )}
+                    <span className="opacity-50 ml-1">({assetCalculations.totalDiffPercent >= 0 ? '+' : ''}{assetCalculations.totalDiffPercent.toFixed(2)}%)</span>
+                  </div>
+                )}
+              </div>
 
-               <div className="pt-16 flex gap-16">
-                 <div className="border-l-4 border-primary/30 pl-8">
-                   <p className="text-[10px] uppercase tracking-[0.4em] text-primary/60 font-black mb-2">{t.assetCount}</p>
-                   <p className="text-5xl font-black text-white">{assets.length} <span className="text-sm opacity-40">{t.items}</span></p>
-                 </div>
-                 <div className="border-l-4 border-primary/30 pl-8">
-                   <p className="text-[10px] uppercase tracking-[0.4em] text-primary/60 font-black mb-2">Humanity Strength</p>
-                   <p className="text-5xl font-black text-white">98%</p>
-                 </div>
-               </div>
-             </div>
+              <div className="flex gap-12 pt-10 border-t border-border/40">
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">Exposure Strategy</p>
+                  <p className="text-2xl font-bold">{assets.length} <span className="text-sm font-medium text-muted-foreground">{t.items}</span></p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">Network Integrity</p>
+                  <p className="text-2xl font-bold text-primary">Active</p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">Last Sync</p>
+                  <p className="text-2xl font-bold text-muted-foreground">Real-time</p>
+                </div>
+              </div>
+            </CardContent>
           </Card>
 
-          <div className="lg:col-span-4 flex flex-col gap-8">
+          <div className="lg:col-span-4 grid grid-rows-2 gap-6">
             <Button 
               onClick={takeSnapshot} 
-              className="h-full scout-button flex flex-col items-center justify-center gap-6 group rounded-none"
+              className="h-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold flex flex-col items-center justify-center gap-3 rounded-2xl group transition-all duration-500"
             >
-              <div className="p-6 border-2 border-white/20 rounded-full group-hover:rotate-[360deg] transition-all duration-700 bg-white/5">
-                <Map className="h-12 w-12" />
-              </div>
+              <Zap className="w-8 h-8 transition-transform group-hover:scale-110" />
               <div className="text-center">
-                <span className="block text-2xl font-black tracking-tighter">{t.takeSnapshot}</span>
-                <span className="text-[10px] opacity-60 font-black tracking-[0.3em] uppercase mt-2">Log Battle Progress</span>
+                <span className="block text-lg tracking-tight">{t.takeSnapshot}</span>
+                <span className="text-[10px] opacity-70 font-medium uppercase tracking-widest">Archive Current Matrix</span>
               </div>
             </Button>
             <Button 
               variant="outline" 
               onClick={updateMarketData} 
               disabled={loading} 
-              className="h-28 scout-button bg-black/60 border-primary/30 flex items-center justify-center gap-5 rounded-none"
+              className="h-full border-border/50 bg-secondary/30 hover:bg-secondary/50 font-bold flex flex-col items-center justify-center gap-3 rounded-2xl group transition-all duration-500"
             >
-              <RefreshCw className={cn("h-8 w-8 text-primary", loading && "animate-spin")} />
-              <span className="font-black text-xl tracking-tighter">{t.updateData}</span>
+              <RefreshCw className={cn("w-8 h-8 text-primary", loading && "animate-spin")} />
+              <div className="text-center">
+                <span className="block text-lg tracking-tight">{t.updateData}</span>
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Market Intel Sync</span>
+              </div>
             </Button>
           </div>
         </section>
 
-        {/* Tactical Intel Visualization */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <PortfolioCharts 
-            language={language}
-            allocationData={assetCalculations.allocationData} 
-            historicalData={snapshots} 
-            displayCurrency={displayCurrency}
-            rates={marketData.rates}
-          />
-        </section>
-
-        {/* Frontline Operations Area */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
-          {/* Left Column: Input & Logs */}
-          <div className="xl:col-span-4 space-y-12">
-            <Card className="titan-panel border-primary/10 rounded-none">
-              <CardHeader className="bg-primary/10 border-b border-primary/20 p-8">
-                <CardTitle className="text-xl font-black flex items-center gap-4 text-primary uppercase tracking-widest">
-                  <Sword className="h-7 w-7" />
-                  {t.addAsset}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-8">
-                <AssetForm language={language} onAdd={(a) => setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }])} />
-              </CardContent>
-            </Card>
-
-            <Card className="titan-panel border-primary/10 rounded-none">
-              <CardHeader className="bg-primary/10 border-b border-primary/20 p-8">
-                <CardTitle className="text-xl font-black flex items-center gap-4 text-primary uppercase tracking-widest">
-                  <History className="h-7 w-7" />
-                  {t.snapshotHistory}
-                </CardTitle>
+        {/* Data Matrix */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          {/* Left Column: Visualizers */}
+          <div className="xl:col-span-8 space-y-6">
+            <Card className="pro-card">
+              <CardHeader className="p-8 border-b border-border/40">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-bold flex items-center gap-3">
+                    <BarChart3 className="w-5 h-5 text-primary" />
+                    {t.dashboard}
+                  </CardTitle>
+                  <Badge variant="outline" className="text-[10px] px-3 border-primary/20 text-primary uppercase font-bold tracking-widest animate-pulse-subtle">
+                    Live Data Feed
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
-                {snapshots.length === 0 ? (
-                  <div className="text-center py-24 text-primary/10 font-black uppercase tracking-[0.5em] italic text-2xl">No expeditions recorded</div>
-                ) : (
-                  <div className="divide-y divide-primary/10">
-                    {snapshots.slice().reverse().map(s => (
-                      <div key={s.id} className="flex items-center justify-between p-8 hover:bg-primary/5 transition-all group cursor-default">
-                        <div className="flex items-center gap-6">
-                          <div className="p-4 bg-primary/10 border border-primary/20 group-hover:bg-primary/20 transition-colors">
-                            <Flag className="h-6 w-6 text-primary" />
-                          </div>
-                          <div>
-                            <div className="text-lg font-black uppercase tracking-tighter text-white">{new Date(s.date).toLocaleDateString()}</div>
-                            <div className="text-[10px] text-primary/50 font-black mt-2 tracking-widest">
-                              TOTAL VALUE: {getCurrencySymbol(displayCurrency)} {convertTWDToDisplay(s.totalTWD).toLocaleString()}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex gap-4">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-12 w-12 hover:bg-primary/20 rounded-none border border-transparent hover:border-primary/30"><Eye className="h-6 w-6 text-primary" /></Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl titan-panel border-primary/40 rounded-none text-slate-200">
-                              <DialogHeader className="p-8 bg-primary/5 border-b border-primary/10">
-                                <DialogTitle className="text-3xl font-black text-primary uppercase tracking-[0.3em] italic">{t.snapshotDetail}</DialogTitle>
-                                <DialogDescription className="font-black text-slate-400 mt-2 uppercase tracking-widest">LOG DATE: {new Date(s.date).toLocaleString()}</DialogDescription>
-                              </DialogHeader>
-                              <div className="p-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow className="border-primary/20 bg-black/40">
-                                      <TableHead className="font-black text-primary uppercase text-xs p-6 tracking-widest">{t.assetName}</TableHead>
-                                      <TableHead className="text-right font-black text-primary uppercase text-xs p-6 tracking-widest">{t.holdings}</TableHead>
-                                      <TableHead className="text-right font-black text-primary uppercase text-xs p-6 tracking-widest">{t.valuation}</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {s.assets?.map((a, idx) => (
-                                      <TableRow key={idx} className="border-primary/10 hover:bg-white/5 transition-colors">
-                                        <TableCell className="p-6 font-black text-sm uppercase text-slate-300">{a.name}</TableCell>
-                                        <TableCell className="p-6 text-right font-black text-sm">{a.amount.toLocaleString()}</TableCell>
-                                        <TableCell className="p-6 text-right font-black text-primary text-lg tracking-tighter">{getCurrencySymbol(displayCurrency)} {convertTWDToDisplay(a.valueInTWD || 0).toLocaleString()}</TableCell>
-                                      </TableRow>
-                                    ))}
-                                  </TableBody>
-                                </Table>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-12 w-12 hover:bg-accent/20 hover:text-accent rounded-none border border-transparent hover:border-accent/30" 
-                            onClick={() => { setSnapshots(prev => prev.filter(snap => snap.id !== s.id)); toast({ title: t.snapshotDeleted }); }}
-                          >
-                            <Trash2 className="h-6 w-6" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Right Column: Asset Table */}
-          <div className="xl:col-span-8">
-            <Card className="titan-panel border-primary/10 rounded-none h-full">
-              <CardHeader className="bg-primary/10 border-b border-primary/20 p-8">
-                <CardTitle className="text-2xl font-black flex items-center gap-5 text-primary uppercase tracking-[0.3em] italic">
-                  <Crosshair className="h-8 w-8" />
-                  {t.dashboard}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0 overflow-x-auto">
                 <Table>
-                  <TableHeader>
-                    <TableRow className="bg-black/40 border-primary/10">
-                      <TableHead className="p-8 font-black text-primary uppercase text-[10px] tracking-[0.4em]">{t.assetName}</TableHead>
-                      <TableHead className="p-8 font-black text-primary uppercase text-[10px] tracking-[0.4em] hidden md:table-cell">{t.marketPrice}</TableHead>
-                      <TableHead className="p-8 font-black text-primary uppercase text-[10px] tracking-[0.4em]">{t.holdings}</TableHead>
-                      <TableHead className="p-8 font-black text-primary uppercase text-[10px] tracking-[0.4em] text-right">{t.valuationChange}</TableHead>
-                      <TableHead className="p-8 font-black text-primary uppercase text-[10px] tracking-[0.4em] text-right">{t.valuation}</TableHead>
+                  <TableHeader className="bg-secondary/30">
+                    <TableRow className="hover:bg-transparent border-border/40">
+                      <TableHead className="px-8 py-5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t.assetName}</TableHead>
+                      <TableHead className="px-8 py-5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t.marketPrice}</TableHead>
+                      <TableHead className="px-8 py-5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t.valuationChange}</TableHead>
+                      <TableHead className="px-8 py-5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest text-right">{t.valuation}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {assetCalculations.processedAssets.map(asset => (
-                      <TableRow key={asset.id} className="border-b border-primary/5 hover:bg-primary/5 transition-all group">
-                        <TableCell className="p-10">
-                          <div className="font-black text-xl text-white uppercase tracking-tighter mb-1">{asset.name}</div>
-                          <div className="text-[10px] text-primary/60 font-black uppercase tracking-widest">{asset.symbol}</div>
+                      <TableRow key={asset.id} className="border-border/40 hover:bg-white/[0.02] group transition-colors">
+                        <TableCell className="px-8 py-8">
+                          <div className="font-bold text-base text-white">{asset.name}</div>
+                          <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">{asset.symbol}</div>
                         </TableCell>
-                        <TableCell className="p-10 hidden md:table-cell text-sm font-black text-slate-400">
-                          {(asset.category === 'Stock' || asset.category === 'Crypto') ? (asset.calculatedPrice > 0 ? `${getCurrencySymbol(asset.currency)}${asset.calculatedPrice.toLocaleString()}` : t.fetching) : '--'}
+                        <TableCell className="px-8 py-8">
+                          {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
+                            <span className="font-bold text-sm text-muted-foreground">
+                              {asset.calculatedPrice > 0 ? `${getCurrencySymbol(asset.currency)}${asset.calculatedPrice.toLocaleString()}` : t.fetching}
+                            </span>
+                          ) : '--'}
                         </TableCell>
-                        <TableCell className="p-10">
-                          {editingId === asset.id ? (
-                            <div className="flex items-center gap-3">
-                              <Input type="number" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} className="h-12 w-32 bg-black/60 border-primary/40 rounded-none font-black text-lg" step="any" autoFocus />
-                              <Button size="icon" className="h-12 w-12 bg-primary rounded-none" onClick={() => { setAssets(prev => prev.map(a => a.id === editingId ? { ...a, amount: parseFloat(editAmount) || 0 } : a)); setEditingId(null); }}><Check className="h-6 w-6" /></Button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-3 cursor-pointer group/item" onClick={() => { setEditingId(asset.id); setEditAmount(asset.amount.toString()); }}>
-                              <span className="text-xl font-black text-slate-300 tracking-tighter">{asset.amount.toLocaleString()}</span>
-                              <Edit2 className="h-5 w-5 text-primary/30 opacity-0 group-hover/item:opacity-100 transition-opacity" />
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="p-10 text-right">
+                        <TableCell className="px-8 py-8">
                           {asset.hasHistory ? (
                             <div className={cn(
-                              "text-xs font-black inline-flex flex-col items-end px-5 py-3 border-l-4",
-                              asset.diffTWD >= 0 ? "text-primary border-primary/30 bg-primary/5" : "text-accent border-accent/30 bg-accent/5"
+                              "text-[11px] font-bold inline-flex items-center gap-1.5 px-2 py-1 rounded-md",
+                              asset.diffTWD >= 0 ? "text-emerald-400 bg-emerald-400/10" : "text-rose-400 bg-rose-400/10"
                             )}>
-                              <span className="text-sm">{asset.diffTWD >= 0 ? '+' : '-'}{getCurrencySymbol(displayCurrency)}{Math.abs(convertTWDToDisplay(asset.diffTWD)).toLocaleString()}</span>
-                              <span className="text-[10px] opacity-60 mt-1">{asset.diffTWD >= 0 ? '+' : ''}{asset.diffPercent.toFixed(2)}%</span>
+                              {asset.diffTWD >= 0 ? '+' : '-'}{asset.diffPercent.toFixed(2)}%
                             </div>
                           ) : (
-                            <span className="text-[10px] text-primary/40 font-black uppercase tracking-widest border border-primary/20 px-4 py-2 bg-primary/5">New Unit</span>
+                            <span className="text-[10px] text-primary/60 font-bold uppercase tracking-widest">New Entry</span>
                           )}
                         </TableCell>
-                        <TableCell className="p-10 text-right">
-                          <span className="font-black text-3xl text-primary tracking-tighter drop-shadow-[0_2px_5px_rgba(0,0,0,0.5)]">
+                        <TableCell className="px-8 py-8 text-right">
+                          <span className="font-bold text-xl tracking-tight text-white">
                             {getCurrencySymbol(displayCurrency)}{asset.valueInDisplay.toLocaleString()}
                           </span>
                         </TableCell>
@@ -521,35 +415,122 @@ export default function TitanAssetPage() {
                   </TableBody>
                 </Table>
                 {assets.length === 0 && (
-                  <div className="py-48 text-center text-primary/10 font-black text-5xl italic uppercase tracking-[0.3em]">Recruit units to battle</div>
+                  <div className="py-24 text-center text-muted-foreground/30 font-bold text-2xl uppercase tracking-[0.2em]">Deploy Assets to Begin</div>
                 )}
+              </CardContent>
+            </Card>
+
+            <PortfolioCharts 
+              language={language}
+              allocationData={assetCalculations.allocationData} 
+              historicalData={snapshots} 
+              displayCurrency={displayCurrency}
+              rates={marketData.rates}
+            />
+          </div>
+          
+          {/* Right Column: Operations */}
+          <div className="xl:col-span-4 space-y-6">
+            <Card className="pro-card">
+              <CardHeader className="p-8 border-b border-border/40">
+                <CardTitle className="text-lg font-bold flex items-center gap-3">
+                  <Plus className="w-5 h-5 text-primary" />
+                  {t.addAsset}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8">
+                <AssetForm language={language} onAdd={(a) => setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }])} />
+              </CardContent>
+            </Card>
+
+            <Card className="pro-card">
+              <CardHeader className="p-8 border-b border-border/40">
+                <CardTitle className="text-lg font-bold flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-primary" />
+                  {t.snapshotHistory}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-border/40">
+                  {snapshots.slice().reverse().map(s => (
+                    <div key={s.id} className="flex items-center justify-between p-6 hover:bg-white/[0.02] group transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                          <Layers className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-white">{new Date(s.date).toLocaleDateString()}</div>
+                          <div className="text-[10px] text-muted-foreground font-bold mt-0.5 tracking-wider uppercase">
+                            VALUATION: {getCurrencySymbol(displayCurrency)}{convertTWDToDisplay(s.totalTWD).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="w-8 h-8 hover:bg-primary/10 hover:text-primary"><Eye className="w-4 h-4" /></Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl bg-card border-border/50 text-foreground">
+                            <DialogHeader>
+                              <DialogTitle className="text-xl font-bold">{t.snapshotDetail}</DialogTitle>
+                            </DialogHeader>
+                            <div className="mt-4 max-h-[60vh] overflow-y-auto">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="hover:bg-transparent border-border/40">
+                                    <TableHead className="font-bold text-xs uppercase tracking-widest">{t.assetName}</TableHead>
+                                    <TableHead className="text-right font-bold text-xs uppercase tracking-widest">{t.valuation}</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {s.assets?.map((a, idx) => (
+                                    <TableRow key={idx} className="border-border/40">
+                                      <TableCell className="py-4 font-medium text-sm text-muted-foreground">{a.name}</TableCell>
+                                      <TableCell className="py-4 text-right font-bold text-white">{getCurrencySymbol(displayCurrency)} {convertTWDToDisplay(a.valueInTWD || 0).toLocaleString()}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="w-8 h-8 hover:bg-rose-500/10 hover:text-rose-500" 
+                          onClick={() => { setSnapshots(prev => prev.filter(snap => snap.id !== s.id)); toast({ title: t.snapshotDeleted }); }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {snapshots.length === 0 && (
+                    <div className="py-12 text-center text-muted-foreground/30 text-xs font-bold uppercase tracking-widest">{t.noSnapshots}</div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
         </div>
 
-        {/* Strategic Commander Intel Section */}
-        <section className="pt-12">
+        {/* AI Intelligence Layer */}
+        <section className="pt-10">
            <AITipCard 
               language={language} 
               assets={assetCalculations.processedAssets.map(a => ({ name: a.name, symbol: a.symbol, category: a.category, amount: a.amount, currency: a.currency, price: a.calculatedPrice, valueInTWD: a.valueInTWD }))}
               totalTWD={assetCalculations.totalTWD}
-              marketConditions={`USD/TWD: ${(marketData.rates.TWD || 32.5).toFixed(2)} | Wall Status: ACTIVE`} 
+              marketConditions={`USD/TWD: ${(marketData.rates.TWD || 32.5).toFixed(2)} | NODE_STATUS: OPTIMAL`} 
             />
         </section>
       </main>
 
-      <footer className="py-32 text-center space-y-6 border-t border-primary/20 bg-black/60 relative overflow-hidden">
-        {/* Subtle Steam Effect */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute bottom-0 left-1/4 h-32 w-32 bg-white/5 rounded-full blur-3xl animate-steam" />
-          <div className="absolute bottom-0 right-1/4 h-32 w-32 bg-white/5 rounded-full blur-3xl animate-steam delay-700" />
-        </div>
-        
-        <div className="relative z-10 space-y-4">
-          <p className="text-primary/70 text-sm font-black uppercase tracking-[0.8em]">Survey Corps Strategic Planning Division</p>
-          <p className="text-[10px] text-primary/40 italic font-black uppercase tracking-widest max-w-xl mx-auto leading-loose">
-            "If you don't fight, you can't win. This world is cruel, but it's also very beautiful. Reclaim your future with tactical precision."
+      <footer className="py-20 border-t border-border/40 text-center">
+        <div className="space-y-3 opacity-40 hover:opacity-100 transition-opacity">
+          <p className="text-[10px] font-bold uppercase tracking-[0.5em] text-primary">Nexus Asset Core 2026</p>
+          <p className="text-[9px] font-medium text-muted-foreground max-w-md mx-auto leading-relaxed uppercase tracking-widest">
+            Data is encrypted and synchronized across the secure distributed ledger. 
+            Automated intelligence layer active.
           </p>
         </div>
       </footer>
