@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -28,7 +29,6 @@ const nextConfig: NextConfig = {
     ],
   },
   typescript: {
-    // 雖然我們已經修復了錯誤，但在 CI 環境下嚴格檢查
     ignoreBuildErrors: false,
   },
   eslint: {

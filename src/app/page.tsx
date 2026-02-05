@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Asset, Snapshot, MarketData, AssetCategory, Currency } from './lib/types';
-import { getMarketData } from '@/app/actions/market';
+import { fetchMarketData } from '@/lib/api-service';
 import { AssetForm } from '@/components/AssetForm';
 import { PortfolioCharts } from '@/components/PortfolioCharts';
 import { AITipCard } from '@/components/AITipCard';
@@ -144,7 +145,7 @@ export default function MonochromeAssetPage() {
     const stocks = assets.filter(a => a.category === 'Stock').map(a => a.symbol);
     
     try {
-      const data = await getMarketData({ cryptos, stocks });
+      const data = await fetchMarketData({ cryptos, stocks });
       setMarketData(data);
       toast({ title: t.dataUpdated });
     } catch (error) {
@@ -319,9 +320,9 @@ export default function MonochromeAssetPage() {
               </div>
             </div>
 
-            {/* Wallet Icon - Placed at end of container and given highest z-index to stay on top of the divider line */}
-            <div className="absolute -bottom-10 -right-10 opacity-[0.08] pointer-events-none z-30">
-              <Wallet className="w-80 h-80 text-black" />
+            {/* Wallet Icon - 設定較高的 z-index 以壓在分隔線上方 */}
+            <div className="absolute -bottom-10 -right-10 opacity-[0.12] pointer-events-none z-50">
+              <Wallet className="w-80 h-80 text-black drop-shadow-sm" />
             </div>
           </Card>
 
