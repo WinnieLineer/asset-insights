@@ -28,16 +28,15 @@ interface AITipCardProps {
 
 const t = {
   en: {
-    title: 'AI Wealth Advisor',
-    desc: 'Deep portfolio intelligence and interactive financial planning.',
+    title: 'AI Portfolio Advisor',
+    desc: 'Intelligent financial insights and strategic planning.',
     analysis: 'Allocation Strategy',
     risk: 'Risk Profile',
     diversification: 'Diversity Score',
     recommendations: 'Strategic Actions',
-    ctaTitle: 'Smart Consultant',
     ctaButton: 'Generate Analysis',
-    loading: 'Generating Insights...',
-    placeholder: 'Ask me anything: "How can I improve my yield?" or "Is my risk too high?"',
+    loading: 'Analyzing...',
+    placeholder: 'Ask me anything about your portfolio...',
     ask: 'Strategic Question',
     answer: 'Advisor Response',
   },
@@ -48,10 +47,9 @@ const t = {
     risk: '風險概況',
     diversification: '配置多樣性',
     recommendations: '策略行動建議',
-    ctaTitle: '智慧諮詢',
-    ctaButton: '開始深度分析',
+    ctaButton: '開始分析',
     loading: '正在生成分析報告...',
-    placeholder: '詢問任何問題：例如「我該如何提升收益？」或「風險是否過高？」',
+    placeholder: '詢問任何問題，例如「我該如何提升收益？」...',
     ask: '策略性提問',
     answer: '顧問回覆',
   }
@@ -84,27 +82,25 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
 
   const getRiskColor = (level: string) => {
     const l = level.toLowerCase();
-    if (l.includes('low') || l.includes('低') || l.includes('conservative')) return 'bg-green-100 text-green-700 border-green-200';
-    if (l.includes('medium') || l.includes('中') || l.includes('moderate')) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-    return 'bg-red-100 text-red-700 border-red-200';
+    if (l.includes('low') || l.includes('低') || l.includes('conservative')) return 'bg-green-50 text-green-700 border-green-100';
+    if (l.includes('medium') || l.includes('中') || l.includes('moderate')) return 'bg-yellow-50 text-yellow-700 border-yellow-100';
+    return 'bg-red-50 text-red-700 border-red-100';
   };
 
   return (
-    <Card className="neo-card border-none bg-white shadow-2xl shadow-blue-900/5 overflow-hidden">
-      <div className="bg-gradient-to-r from-primary/5 to-indigo-600/5 p-8 border-b border-slate-50">
+    <Card className="neo-card border-none overflow-hidden">
+      <div className="bg-slate-50 p-6 border-b border-slate-100">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <CardTitle className="flex items-center gap-3 text-primary font-headline text-2xl">
-              <div className="bg-primary p-2 rounded-xl shadow-lg shadow-primary/20">
-                <Sparkles className="h-6 w-6 text-white" />
-              </div>
+            <CardTitle className="flex items-center gap-2 text-primary text-xl">
+              <Sparkles className="h-5 w-5" />
               {lang.title}
             </CardTitle>
-            <CardDescription className="text-slate-500 font-medium">{lang.desc}</CardDescription>
+            <CardDescription className="text-slate-500 text-xs font-medium">{lang.desc}</CardDescription>
           </div>
           {insight && (
-            <Button variant="outline" size="sm" onClick={() => { setInsight(null); setQuestion(''); }} className="rounded-xl border-primary/20 text-primary hover:bg-primary/5">
-              <RefreshCw className="h-4 w-4 mr-2" />
+            <Button variant="ghost" size="sm" onClick={() => { setInsight(null); setQuestion(''); }} className="text-xs h-8">
+              <RefreshCw className="h-3.5 w-3.5 mr-2" />
               {language === 'en' ? 'New Analysis' : '重新分析'}
             </Button>
           )}
@@ -113,81 +109,72 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
       
       <CardContent className="p-8">
         {!insight ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
-            <div className="lg:col-span-9 space-y-3">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 px-1">
-                <MessageSquare className="h-3.5 w-3.5 text-primary/60" />
-                {lang.ask}
-              </label>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 space-y-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">{lang.ask}</label>
               <Textarea 
                 placeholder={lang.placeholder}
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                className="resize-none h-24 rounded-[1.5rem] bg-slate-50 border-none focus-visible:ring-primary/20 text-base p-5 transition-all"
+                className="resize-none h-20 rounded-xl bg-slate-50/50 border-slate-200 text-sm p-4 focus:bg-white transition-colors"
               />
             </div>
-            <div className="lg:col-span-3">
-              <Button 
-                className="w-full h-24 rounded-[1.5rem] bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/20 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02]"
-                onClick={fetchTip}
-                disabled={loading || assets.length === 0}
-              >
-                {loading ? <RefreshCw className="h-6 w-6 animate-spin" /> : <Send className="h-6 w-6" />}
-                <span className="font-bold">{loading ? lang.loading : lang.ctaButton}</span>
-              </Button>
-            </div>
+            <Button 
+              className="h-20 w-full md:w-32 rounded-xl bg-slate-900 hover:bg-slate-800 text-white flex flex-col items-center justify-center gap-2"
+              onClick={fetchTip}
+              disabled={loading || assets.length === 0}
+            >
+              {loading ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+              <span className="font-bold text-xs">{loading ? lang.loading : lang.ctaButton}</span>
+            </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
-            <div className="lg:col-span-1 space-y-6">
-              <div className="space-y-3">
-                <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4" />
-                  {lang.answer}
-                </h4>
-                <div className="text-sm text-slate-700 leading-relaxed bg-primary/5 p-6 rounded-[2rem] border border-primary/10 italic shadow-inner">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest">{lang.answer}</h4>
+                <div className="text-sm text-slate-700 leading-relaxed bg-primary/5 p-5 rounded-2xl border border-primary/10 italic">
                   "{insight.answer}"
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-2">{lang.risk}</h4>
-                  <Badge variant="outline" className={`text-[10px] font-bold py-1 px-3 border-none rounded-lg ${getRiskColor(insight.riskLevel)}`}>
-                    <AlertTriangle className="h-3 w-3 mr-1.5" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 p-3 rounded-xl">
+                  <h4 className="text-[9px] font-bold text-slate-400 uppercase mb-2">{lang.risk}</h4>
+                  <Badge variant="outline" className={`text-[10px] font-bold py-0.5 px-2 border-none ${getRiskColor(insight.riskLevel)}`}>
                     {insight.riskLevel}
                   </Badge>
                 </div>
-                <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                <div className="bg-slate-50 p-3 rounded-xl">
                   <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase">{lang.diversification}</h4>
-                    <span className="text-xs font-bold text-primary">{insight.diversificationScore}%</span>
+                    <h4 className="text-[9px] font-bold text-slate-400 uppercase">{lang.diversification}</h4>
+                    <span className="text-[10px] font-bold text-primary">{insight.diversificationScore}%</span>
                   </div>
-                  <Progress value={insight.diversificationScore} className="h-2 bg-slate-200" />
+                  <Progress value={insight.diversificationScore} className="h-1.5 bg-slate-200" />
                 </div>
               </div>
             </div>
 
-            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8 border-l border-slate-50 pl-8">
               <div className="space-y-4">
-                <h4 className="text-sm font-bold flex items-center gap-2 text-slate-900">
-                  <div className="bg-indigo-100 p-2 rounded-lg"><PieChart className="h-4 w-4 text-indigo-600" /></div>
+                <h4 className="text-xs font-bold flex items-center gap-2 text-slate-900">
+                  <div className="bg-slate-100 p-1.5 rounded-lg"><PieChart className="h-4 w-4 text-slate-600" /></div>
                   {lang.analysis}
                 </h4>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <p className="text-xs text-slate-600 leading-relaxed">
                   {insight.analysis}
                 </p>
               </div>
 
               <div className="space-y-4">
-                <h4 className="text-sm font-bold flex items-center gap-2 text-slate-900">
-                  <div className="bg-green-100 p-2 rounded-lg"><CheckCircle2 className="h-4 w-4 text-green-600" /></div>
+                <h4 className="text-xs font-bold flex items-center gap-2 text-slate-900">
+                  <div className="bg-slate-100 p-1.5 rounded-lg"><CheckCircle2 className="h-4 w-4 text-slate-600" /></div>
                   {lang.recommendations}
                 </h4>
-                <ul className="space-y-4">
+                <ul className="space-y-3">
                   {insight.recommendations.map((rec, i) => (
-                    <li key={i} className="text-sm flex gap-3 text-slate-600 group items-start">
-                      <div className="h-5 w-5 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-primary group-hover:text-white transition-colors font-bold text-[10px]">{i+1}</div>
+                    <li key={i} className="text-xs flex gap-2 text-slate-600 items-start">
+                      <div className="h-4 w-4 rounded bg-slate-100 text-slate-400 flex items-center justify-center shrink-0 mt-0.5 font-bold text-[9px]">{i+1}</div>
                       {rec}
                     </li>
                   ))}

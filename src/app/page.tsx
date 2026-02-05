@@ -57,7 +57,7 @@ type Language = 'en' | 'zh';
 const translations = {
   en: {
     title: 'Asset Insights',
-    subtitle: 'MODERN WEALTH TRACKING',
+    subtitle: 'PROFESSIONAL WEALTH TRACKING',
     updateData: 'Sync Market',
     takeSnapshot: 'Archive Snapshot',
     totalValue: 'Net Worth Estimate',
@@ -83,14 +83,14 @@ const translations = {
   },
   zh: {
     title: 'Asset Insights',
-    subtitle: '專業資產追蹤專家',
+    subtitle: '專業資產管理專家',
     updateData: '同步市場行情',
     takeSnapshot: '儲存目前快照',
     totalValue: '總資產淨值估計',
     assetCount: '目前持有',
     items: '個項目',
     addAsset: '新增資產項目',
-    snapshotHistory: '歷史時光機',
+    snapshotHistory: '歷史紀錄',
     manageHistory: '查看過去的資產配置紀錄。',
     noSnapshots: '尚無歷史紀錄。',
     snapshotDetail: '快照詳細資訊',
@@ -255,102 +255,97 @@ export default function AssetTrackerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-24 font-body selection:bg-primary/20 animate-in fade-in duration-1000">
-      <header className="sticky top-0 z-50 w-full glass-panel transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+    <div className="min-h-screen bg-[#F8FAFC] pb-24 font-body text-slate-900">
+      <header className="sticky top-0 z-50 w-full glass-panel border-b">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-primary p-2.5 rounded-2xl shadow-lg shadow-primary/30 animate-float hover:scale-110 transition-transform cursor-pointer">
-              <TrendingUp className="h-6 w-6 text-white" />
+            <div className="bg-primary p-2 rounded-xl text-white">
+              <TrendingUp className="h-5 w-5" />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-xl md:text-2xl font-headline font-bold text-slate-900 tracking-tight leading-none">{t.title}</h1>
-              <p className="text-[9px] text-primary font-bold uppercase tracking-[0.2em] opacity-80 mt-1">{t.subtitle}</p>
+              <h1 className="text-lg font-bold tracking-tight">{t.title}</h1>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{t.subtitle}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex bg-slate-100/50 p-1 rounded-2xl border border-slate-200">
-              <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="text-xs h-8 px-4 rounded-xl font-bold">繁中</Button>
-              <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="text-xs h-8 px-4 rounded-xl font-bold">EN</Button>
+            <div className="hidden md:flex bg-slate-100 p-1 rounded-xl">
+              <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="text-xs h-7 px-3 rounded-lg">繁中</Button>
+              <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="text-xs h-7 px-3 rounded-lg">EN</Button>
             </div>
-            <div className="h-6 w-px bg-slate-200" />
             <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)} className="hidden sm:block">
-              <TabsList className="h-10 bg-slate-100/50 rounded-2xl border border-slate-200">
-                <TabsTrigger value="TWD" className="text-xs px-4 font-bold rounded-xl data-[state=active]:shadow-md">TWD</TabsTrigger>
-                <TabsTrigger value="USD" className="text-xs px-4 font-bold rounded-xl data-[state=active]:shadow-md">USD</TabsTrigger>
+              <TabsList className="h-9 bg-slate-100 rounded-xl">
+                <TabsTrigger value="TWD" className="text-xs px-3 rounded-lg">TWD</TabsTrigger>
+                <TabsTrigger value="USD" className="text-xs px-3 rounded-lg">USD</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-10 space-y-10">
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in slide-in-from-bottom-10 duration-700">
-          <Card className="lg:col-span-8 hero-gradient border-none text-white p-2 overflow-hidden relative group glow-effect">
-             <div className="absolute -top-12 -right-12 p-8 opacity-10 transition-transform duration-1000 group-hover:scale-125 group-hover:rotate-12">
-               <Wallet className="h-64 w-64" />
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-8 animate-in fade-in duration-500">
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <Card className="lg:col-span-8 hero-gradient border-none text-white relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-8 opacity-5">
+               <Wallet className="h-48 w-48" />
              </div>
-             <CardHeader className="relative z-10 pt-10 px-8">
-               <div className="flex items-center gap-2 text-white/70 mb-2 text-sm font-bold tracking-wide">
-                 <LayoutDashboard className="h-4 w-4" />
+             <CardHeader className="relative z-10 pt-8 px-8">
+               <div className="flex items-center gap-2 text-white/50 mb-2 text-xs font-bold tracking-wider uppercase">
+                 <LayoutDashboard className="h-3.5 w-3.5" />
                  {t.totalValue}
                </div>
-               <CardTitle className="text-5xl md:text-7xl font-headline font-bold tracking-tighter drop-shadow-md">
+               <CardTitle className="text-4xl md:text-6xl font-headline font-bold tracking-tight">
                  {getCurrencySymbol(displayCurrency)}{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
                </CardTitle>
              </CardHeader>
-             <CardContent className="relative z-10 px-8 pb-10">
+             <CardContent className="relative z-10 px-8 pb-8">
                {lastSnapshot && (
                  <div className={cn(
-                   "inline-flex items-center gap-2 px-5 py-2.5 rounded-[1.25rem] text-sm font-bold backdrop-blur-xl border border-white/20 shadow-2xl transition-all hover:scale-105",
-                   assetCalculations.totalDiffTWD >= 0 ? "bg-white/20 text-white" : "bg-red-500/30 text-white"
+                   "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border border-white/10",
+                   assetCalculations.totalDiffTWD >= 0 ? "bg-white/10 text-white" : "bg-red-500/20 text-white"
                  )}>
-                   {assetCalculations.totalDiffTWD >= 0 ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownRight className="h-5 w-5" />}
+                   {assetCalculations.totalDiffTWD >= 0 ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
                    {getCurrencySymbol(displayCurrency)}{Math.abs(assetCalculations.totalDiffDisplay).toLocaleString(undefined, { maximumFractionDigits: 2 })} 
-                   <span className="opacity-80 font-medium ml-1">({assetCalculations.totalDiffPercent >= 0 ? '+' : ''}{assetCalculations.totalDiffPercent.toFixed(2)}%)</span>
+                   <span className="opacity-60 ml-1">({assetCalculations.totalDiffPercent >= 0 ? '+' : ''}{assetCalculations.totalDiffPercent.toFixed(2)}%)</span>
                  </div>
                )}
-               <div className="mt-10 flex gap-10">
+               <div className="mt-8 flex gap-8">
                  <div className="space-y-1">
-                   <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-bold">{t.assetCount}</p>
-                   <p className="text-2xl font-bold">{assets.length} <span className="text-xs font-normal opacity-60 ml-1">{t.items}</span></p>
+                   <p className="text-[10px] uppercase tracking-widest text-white/40 font-bold">{t.assetCount}</p>
+                   <p className="text-xl font-bold">{assets.length} <span className="text-xs font-normal opacity-40 ml-1">{t.items}</span></p>
                  </div>
-                 <div className="w-px h-12 bg-white/10" />
+                 <div className="w-px h-10 bg-white/10" />
                  <div className="space-y-1">
-                   <p className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-bold">USD/TWD FX</p>
-                   <p className="text-2xl font-bold">{marketData.rates.TWD.toFixed(2)}</p>
+                   <p className="text-[10px] uppercase tracking-widest text-white/40 font-bold">USD/TWD</p>
+                   <p className="text-xl font-bold">{marketData.rates.TWD.toFixed(2)}</p>
                  </div>
                </div>
              </CardContent>
           </Card>
 
-          <div className="lg:col-span-4 flex flex-col gap-6">
+          <div className="lg:col-span-4 flex flex-col gap-4">
             <Button 
               onClick={takeSnapshot} 
-              className="h-full rounded-[2.5rem] bg-slate-900 hover:bg-slate-800 text-white flex flex-col items-center justify-center gap-4 transition-all hover:scale-[1.03] active:scale-95 shadow-2xl group"
+              className="h-full rounded-[1.5rem] bg-slate-900 hover:bg-slate-800 text-white flex flex-col items-center justify-center gap-2 transition-transform active:scale-95 shadow-lg"
             >
-              <div className="bg-white/10 p-5 rounded-3xl group-hover:bg-primary transition-colors">
-                <History className="h-8 w-8 text-white" />
-              </div>
+              <History className="h-6 w-6 mb-1" />
               <div className="text-center">
-                <span className="block text-xl font-bold">{t.takeSnapshot}</span>
-                <span className="text-xs opacity-50 font-medium">Capture current benchmark</span>
+                <span className="block text-lg font-bold">{t.takeSnapshot}</span>
+                <span className="text-[10px] opacity-40">Benchmark current portfolio</span>
               </div>
             </Button>
             <Button 
               variant="outline" 
               onClick={updateMarketData} 
               disabled={loading} 
-              className="h-28 rounded-[2.5rem] border-slate-200 hover:bg-white hover:border-primary/40 transition-all flex items-center justify-center gap-4 active:scale-95 group"
+              className="h-20 rounded-[1.5rem] border-slate-200 hover:border-primary/40 flex items-center justify-center gap-3 transition-colors"
             >
-              <div className={cn("p-3 rounded-2xl bg-slate-50 group-hover:bg-primary/5 transition-colors")}>
-                <RefreshCw className={cn("h-6 w-6 text-slate-400 group-hover:text-primary transition-colors", loading && "animate-spin")} />
-              </div>
-              <span className="font-bold text-lg">{t.updateData}</span>
+              <RefreshCw className={cn("h-5 w-5 text-slate-400", loading && "animate-spin")} />
+              <span className="font-bold">{t.updateData}</span>
             </Button>
           </div>
         </section>
 
-        <section className="animate-in slide-in-from-bottom-10 delay-150 duration-700">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <PortfolioCharts 
             language={language}
             allocationData={assetCalculations.allocationData} 
@@ -360,86 +355,71 @@ export default function AssetTrackerPage() {
           />
         </section>
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-          <div className="xl:col-span-4 space-y-10 animate-in slide-in-from-left-10 duration-700">
-            <Card className="neo-card overflow-hidden group">
-              <CardHeader className="pb-6 border-b border-slate-50">
-                <CardTitle className="text-xl font-bold flex items-center gap-3">
-                  <div className="bg-blue-600/10 p-2.5 rounded-2xl group-hover:bg-blue-600 transition-colors">
-                    <Plus className="h-5 w-5 text-blue-600 group-hover:text-white transition-colors" />
-                  </div>
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+          <div className="xl:col-span-4 space-y-8">
+            <Card className="neo-card">
+              <CardHeader className="pb-4 border-b border-slate-50">
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <Plus className="h-4 w-4 text-primary" />
                   {t.addAsset}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-8">
+              <CardContent className="pt-6">
                 <AssetForm language={language} onAdd={handleAddAsset} />
               </CardContent>
             </Card>
 
-            <Card className="neo-card overflow-hidden group">
+            <Card className="neo-card">
               <CardHeader className="pb-4 border-b border-slate-50">
-                <CardTitle className="text-xl font-bold flex items-center gap-3">
-                  <div className="bg-purple-600/10 p-2.5 rounded-2xl group-hover:bg-purple-600 transition-colors">
-                    <History className="h-5 w-5 text-purple-600 group-hover:text-white transition-colors" />
-                  </div>
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <History className="h-4 w-4 text-slate-400" />
                   {t.snapshotHistory}
                 </CardTitle>
-                <CardDescription className="font-medium">{t.manageHistory}</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
                 {snapshots.length === 0 ? (
-                  <div className="text-center py-20 text-slate-300">
-                    <History className="h-16 w-16 mx-auto mb-6 opacity-20 animate-pulse" />
-                    <p className="text-sm font-bold tracking-wide">{t.noSnapshots}</p>
-                  </div>
+                  <div className="text-center py-12 text-slate-300 text-xs font-bold">{t.noSnapshots}</div>
                 ) : (
                   <div className="divide-y divide-slate-50">
                     {snapshots.slice().reverse().map(s => (
-                      <div key={s.id} className="flex items-center justify-between p-6 hover:bg-slate-50 transition-all group/item cursor-pointer">
-                        <div className="flex items-center gap-5">
-                          <div className="h-14 w-14 bg-white rounded-[1.5rem] flex items-center justify-center text-slate-400 group-hover/item:text-primary shadow-sm border border-slate-100 transition-all duration-300 group-hover/item:shadow-lg group-hover/item:border-primary/20">
-                            <Calendar className="h-6 w-6" />
-                          </div>
+                      <div key={s.id} className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <Calendar className="h-4 w-4 text-slate-400" />
                           <div>
-                            <div className="text-base font-bold text-slate-900">{new Date(s.date).toLocaleDateString(language === 'en' ? 'en-US' : 'zh-TW', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
-                            <div className="text-xs text-slate-400 font-mono font-bold mt-0.5">
+                            <div className="text-sm font-bold">{new Date(s.date).toLocaleDateString(language === 'en' ? 'en-US' : 'zh-TW', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                            <div className="text-[10px] text-slate-400 font-bold">
                               {getCurrencySymbol(displayCurrency)} {convertTWDToDisplay(s.totalTWD).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                             </div>
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1">
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-11 w-11 rounded-2xl hover:bg-white hover:shadow-md transition-all"><Eye className="h-5 w-5" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg"><Eye className="h-4 w-4" /></Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-2xl rounded-[3rem] border-none shadow-[0_32px_128px_rgba(0,0,0,0.1)] p-8">
+                            <DialogContent className="max-w-xl rounded-[2rem]">
                               <DialogHeader>
-                                <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-                                  <div className="bg-primary/10 p-2.5 rounded-2xl"><Sparkles className="h-6 w-6 text-primary" /></div>
-                                  {t.snapshotDetail}
-                                </DialogTitle>
-                                <DialogDescription className="text-slate-500 font-medium">
-                                  {t.snapshotDetailDesc} • {new Date(s.date).toLocaleString()}
-                                </DialogDescription>
+                                <DialogTitle className="text-xl font-bold">{t.snapshotDetail}</DialogTitle>
+                                <DialogDescription>{new Date(s.date).toLocaleString()}</DialogDescription>
                               </DialogHeader>
-                              <div className="max-h-[50vh] overflow-y-auto pr-4 mt-6 custom-scrollbar">
+                              <div className="max-h-[40vh] overflow-y-auto mt-4 pr-2">
                                 <Table>
                                   <TableHeader>
-                                    <TableRow className="border-none bg-slate-50/80 rounded-2xl">
-                                      <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-400 py-4 px-6">{t.assetName}</TableHead>
-                                      <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-400 text-right">{t.holdings}</TableHead>
-                                      <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-400 text-right pr-6">{t.valuation}</TableHead>
+                                    <TableRow className="border-none bg-slate-50/50">
+                                      <TableHead className="text-[10px] font-bold uppercase">{t.assetName}</TableHead>
+                                      <TableHead className="text-[10px] font-bold uppercase text-right">{t.holdings}</TableHead>
+                                      <TableHead className="text-[10px] font-bold uppercase text-right">{t.valuation}</TableHead>
                                     </TableRow>
                                   </TableHeader>
                                   <TableBody>
                                     {s.assets?.map((a, idx) => (
-                                      <TableRow key={idx} className="border-slate-50 hover:bg-slate-50/50 transition-colors">
-                                        <TableCell className="px-6 py-5">
-                                          <div className="font-bold text-sm text-slate-900">{a.name}</div>
-                                          <div className="text-[10px] text-slate-400 uppercase font-mono tracking-widest">{a.symbol}</div>
+                                      <TableRow key={idx} className="border-slate-50">
+                                        <TableCell className="py-3">
+                                          <div className="font-bold text-xs">{a.name}</div>
+                                          <div className="text-[9px] text-slate-400 font-mono uppercase">{a.symbol}</div>
                                         </TableCell>
-                                        <TableCell className="text-right font-mono text-sm font-bold text-slate-600">{a.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</TableCell>
-                                        <TableCell className="text-right font-bold text-primary pr-6">{getCurrencySymbol(displayCurrency)} {convertTWDToDisplay(a.valueInTWD || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
+                                        <TableCell className="text-right text-xs font-mono">{a.amount.toLocaleString(undefined, { maximumFractionDigits: 4 })}</TableCell>
+                                        <TableCell className="text-right font-bold text-xs text-primary">{getCurrencySymbol(displayCurrency)} {convertTWDToDisplay(a.valueInTWD || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
                                       </TableRow>
                                     ))}
                                   </TableBody>
@@ -450,10 +430,10 @@ export default function AssetTrackerPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-11 w-11 rounded-2xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all" 
+                            className="h-8 w-8 rounded-lg text-slate-300 hover:text-red-500" 
                             onClick={() => { setSnapshots(prev => prev.filter(snap => snap.id !== s.id)); toast({ title: t.snapshotDeleted }); }}
                           >
-                            <Trash2 className="h-5 w-5" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -464,11 +444,11 @@ export default function AssetTrackerPage() {
             </Card>
           </div>
           
-          <div className="xl:col-span-8 animate-in slide-in-from-right-10 duration-700">
+          <div className="xl:col-span-8">
             <Card className="neo-card overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between border-b border-slate-50 pb-8 px-8 pt-8">
-                <CardTitle className="text-2xl font-bold flex items-center gap-4">
-                  <div className="bg-primary/10 p-3 rounded-3xl"><LayoutDashboard className="h-7 w-7 text-primary" /></div>
+              <CardHeader className="border-b border-slate-50 py-6 px-8">
+                <CardTitle className="text-xl font-bold flex items-center gap-2">
+                  <LayoutDashboard className="h-5 w-5 text-primary" />
                   {t.dashboard}
                 </CardTitle>
               </CardHeader>
@@ -476,54 +456,52 @@ export default function AssetTrackerPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-none hover:bg-transparent">
-                      <TableHead className="py-6 px-10 font-bold text-[10px] uppercase tracking-[0.2em] text-slate-400">{t.assetName}</TableHead>
-                      <TableHead className="py-6 font-bold text-[10px] uppercase tracking-[0.2em] text-slate-400 hidden md:table-cell">{t.marketPrice}</TableHead>
-                      <TableHead className="py-6 font-bold text-[10px] uppercase tracking-[0.2em] text-slate-400">{t.holdings}</TableHead>
-                      <TableHead className="py-6 font-bold text-[10px] uppercase tracking-[0.2em] text-slate-400 text-right">{t.valuationChange}</TableHead>
-                      <TableHead className="py-6 px-10 font-bold text-[10px] uppercase tracking-[0.2em] text-slate-400 text-right">{t.valuation} ({displayCurrency})</TableHead>
+                      <TableHead className="py-4 px-8 text-[10px] font-bold uppercase tracking-widest text-slate-400">{t.assetName}</TableHead>
+                      <TableHead className="py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 hidden md:table-cell">{t.marketPrice}</TableHead>
+                      <TableHead className="py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">{t.holdings}</TableHead>
+                      <TableHead className="py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">{t.valuationChange}</TableHead>
+                      <TableHead className="py-4 px-8 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">{t.valuation}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {assetCalculations.processedAssets.map(asset => (
-                      <TableRow key={asset.id} className="group hover:bg-slate-50/60 transition-all border-slate-50 duration-300">
-                        <TableCell className="px-10 py-8">
-                          <div className="font-bold text-lg text-slate-900 group-hover:text-primary transition-colors duration-300">{asset.name}</div>
-                          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">{asset.symbol}</div>
+                      <TableRow key={asset.id} className="hover:bg-slate-50/50 border-slate-50">
+                        <TableCell className="px-8 py-6">
+                          <div className="font-bold text-base">{asset.name}</div>
+                          <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{asset.symbol}</div>
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
-                          <div className="text-xs font-mono font-bold text-slate-500 bg-slate-100/80 px-3 py-1.5 rounded-xl border border-slate-200/50">
+                          <span className="text-xs font-mono text-slate-500">
                             {(asset.category === 'Stock' || asset.category === 'Crypto') ? (asset.calculatedPrice > 0 ? `${getCurrencySymbol(asset.currency)}${asset.calculatedPrice.toLocaleString()}` : t.fetching) : '--'}
-                          </div>
+                          </span>
                         </TableCell>
                         <TableCell>
                           {editingId === asset.id ? (
-                            <div className="flex items-center gap-3">
-                              <Input type="number" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} className="h-10 w-28 text-sm font-mono font-bold rounded-xl border-primary" step="any" autoFocus />
-                              <Button size="icon" className="h-10 w-10 text-white rounded-xl shadow-lg shadow-green-600/20 bg-green-600 hover:bg-green-700" onClick={() => { setAssets(prev => prev.map(a => a.id === editingId ? { ...a, amount: parseFloat(editAmount) || 0 } : a)); setEditingId(null); }}><Check className="h-5 w-5" /></Button>
+                            <div className="flex items-center gap-2">
+                              <Input type="number" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} className="h-8 w-24 text-xs font-mono" step="any" autoFocus />
+                              <Button size="icon" className="h-8 w-8 bg-green-600 hover:bg-green-700" onClick={() => { setAssets(prev => prev.map(a => a.id === editingId ? { ...a, amount: parseFloat(editAmount) || 0 } : a)); setEditingId(null); }}><Check className="h-4 w-4" /></Button>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-3 group/amount cursor-pointer" onClick={() => { setEditingId(asset.id); setEditAmount(asset.amount.toString()); }}>
-                              <div className="font-mono text-base font-bold text-slate-700 group-hover/amount:text-primary transition-colors">{asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</div>
-                              <div className="p-1.5 rounded-lg bg-slate-50 opacity-0 group-hover/amount:opacity-100 transition-all hover:bg-primary/10">
-                                <Edit2 className="h-4 w-4 text-primary" />
-                              </div>
+                            <div className="flex items-center gap-2 group cursor-pointer" onClick={() => { setEditingId(asset.id); setEditAmount(asset.amount.toString()); }}>
+                              <span className="font-mono text-sm font-bold text-slate-600">{asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</span>
+                              <Edit2 className="h-3 w-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
                           {asset.hasHistory ? (
                             <div className={cn(
-                              "text-xs font-bold whitespace-nowrap px-4 py-2 rounded-2xl inline-flex flex-col items-end shadow-sm",
-                              asset.diffTWD >= 0 ? "text-green-700 bg-green-50 border border-green-100" : "text-red-700 bg-red-50 border border-red-100"
+                              "text-[10px] font-bold inline-flex flex-col items-end px-2 py-1 rounded-lg",
+                              asset.diffTWD >= 0 ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50"
                             )}>
-                              <span className="font-mono">{asset.diffTWD >= 0 ? '+' : ''}{getCurrencySymbol(displayCurrency)}{Math.abs(convertTWDToDisplay(asset.diffTWD)).toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}</span>
-                              <span className="text-[10px] opacity-70 mt-1">({asset.diffTWD >= 0 ? '+' : ''}{asset.diffPercent.toFixed(2)}%)</span>
+                              <span>{asset.diffTWD >= 0 ? '+' : ''}{getCurrencySymbol(displayCurrency)}{Math.abs(convertTWDToDisplay(asset.diffTWD)).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                              <span className="opacity-60">({asset.diffTWD >= 0 ? '+' : ''}{asset.diffPercent.toFixed(2)}%)</span>
                             </div>
                           ) : (
-                            <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Initial Data</span>
+                            <span className="text-[9px] text-slate-300 font-bold uppercase">Initial</span>
                           )}
                         </TableCell>
-                        <TableCell className="px-10 text-right font-headline font-bold text-xl text-slate-900 group-hover:scale-105 transition-transform origin-right">
+                        <TableCell className="px-8 text-right font-bold text-lg">
                           {getCurrencySymbol(displayCurrency)}{asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: displayCurrency === 'TWD' ? 0 : 2 })}
                         </TableCell>
                       </TableRow>
@@ -531,20 +509,14 @@ export default function AssetTrackerPage() {
                   </TableBody>
                 </Table>
                 {assets.length === 0 && (
-                  <div className="py-32 text-center animate-in zoom-in-95 duration-700">
-                    <div className="bg-slate-50 h-28 w-28 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
-                      <Wallet className="h-12 w-12 text-slate-300" />
-                    </div>
-                    <p className="text-slate-400 text-lg font-bold">Ready to track your first asset?</p>
-                    <Button variant="link" className="text-primary font-bold mt-4 text-base hover:no-underline hover:text-primary/80">Get Started with the form on the left <ChevronRight className="h-5 w-5 ml-1" /></Button>
-                  </div>
+                  <div className="py-20 text-center text-slate-300 font-bold text-sm">No assets tracked yet.</div>
                 )}
               </CardContent>
             </Card>
           </div>
         </div>
 
-        <section className="pt-12 animate-in slide-in-from-bottom-10 duration-1000">
+        <section className="pt-8">
            <AITipCard 
               language={language} 
               assets={assetCalculations.processedAssets.map(a => ({ name: a.name, symbol: a.symbol, category: a.category, amount: a.amount, currency: a.currency, price: a.calculatedPrice, valueInTWD: a.valueInTWD }))}
@@ -554,8 +526,8 @@ export default function AssetTrackerPage() {
         </section>
       </main>
 
-      <footer className="h-20 flex items-center justify-center text-slate-300 text-[10px] font-bold uppercase tracking-[0.3em] opacity-50">
-        Asset Insights • Professional Portfolio Advisor
+      <footer className="py-12 text-center text-slate-300 text-[10px] font-bold uppercase tracking-widest opacity-60">
+        Asset Insights • Secure Financial Analytics
       </footer>
     </div>
   );
