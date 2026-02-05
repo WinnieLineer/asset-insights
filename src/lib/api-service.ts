@@ -41,7 +41,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     console.error('Exchange rate fetch error:', error);
   }
 
-  // 2. 抓取加密貨幣
+  // 2. 抓取加密貨幣 (CoinGecko)
   try {
     const cryptoSymbols = [...new Set(symbols.cryptos.map(s => s.toUpperCase()))];
     if (cryptoSymbols.length > 0) {
@@ -62,7 +62,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     console.error('Crypto fetch error:', error);
   }
 
-  // 3. 抓取股票價格 (使用 AllOrigins 解析 Yahoo Finance)
+  // 3. 抓取股票價格 (使用 corsproxy.io 解析 Yahoo Finance)
   const stockSymbols = [...new Set(symbols.stocks.map(s => s.toUpperCase()))];
   for (const symbol of stockSymbols) {
     const isNumeric = /^\d+$/.test(symbol);
@@ -70,17 +70,15 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     
     try {
       const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&cb=${Date.now()}`;
+      // 使用 corsproxy.io 並加上 timestamp 繞過快取
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}&cb=${Date.now()}`;
       
       const response = await fetch(proxyUrl);
       if (response.ok) {
-        const wrapper = await response.json();
-        if (wrapper && wrapper.contents) {
-          const data = JSON.parse(wrapper.contents);
-          const price = data.chart?.result?.[0]?.meta?.regularMarketPrice;
-          if (price) {
-            stockPrices[symbol] = price;
-          }
+        const data = await response.json();
+        const price = data.chart?.result?.[0]?.meta?.regularMarketPrice;
+        if (price) {
+          stockPrices[symbol] = price;
         }
       }
     } catch (e) {
