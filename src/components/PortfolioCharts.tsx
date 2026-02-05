@@ -7,13 +7,13 @@ import {
 } from 'recharts';
 import { cn } from '@/lib/utils';
 
-// Monochrome colors for the pie chart
+// Monochrome colors for the pie chart - Professional Greyscale
 const COLORS = [
   '#000000', // Black
-  '#333333', // Dark Grey
-  '#666666', // Grey
-  '#999999', // Light Grey
-  '#CCCCCC', // Very Light Grey
+  '#27272a', // Zinc 800
+  '#52525b', // Zinc 600
+  '#a1a1aa', // Zinc 400
+  '#e4e4e7', // Zinc 200
 ];
 
 const t = {
@@ -64,10 +64,10 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Allocation Pie Chart */}
-      <div className="modern-card p-8 flex flex-col items-center min-h-[400px] border-slate-200">
-        <div className="w-full mb-2">
+      <div className="modern-card p-8 flex flex-col items-center min-h-[400px] border-slate-200 bg-white">
+        <div className="w-full mb-2 text-left">
           <h3 className="text-[10px] font-bold text-black uppercase tracking-widest">{lang.allocation}</h3>
-          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Diversification matrix</p>
+          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Asset Mix Matrix</p>
         </div>
         
         <div className="h-[280px] w-full relative">
@@ -94,7 +94,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
               </Pie>
               <RechartsTooltip 
                 content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
+                  if (active && payload && payload.length && payload[0]) {
                     const val = Number(payload[0].value);
                     return (
                       <div className="bg-white border border-slate-200 p-2.5 rounded shadow-sm animate-fade-in">
@@ -130,10 +130,10 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
       </div>
 
       {/* Trend Area Chart */}
-      <div className="modern-card p-8 flex flex-col min-h-[400px] border-slate-200">
-        <div className="w-full mb-8">
+      <div className="modern-card p-8 flex flex-col min-h-[400px] border-slate-200 bg-white">
+        <div className="w-full mb-8 text-left">
           <h3 className="text-[10px] font-bold text-black uppercase tracking-widest">{lang.trend}</h3>
-          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Historical growth</p>
+          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Performance Log</p>
         </div>
 
         <div className="h-[220px] w-full mt-auto">
@@ -156,11 +156,12 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
               <YAxis hide domain={['auto', 'auto']} />
               <RechartsTooltip 
                 content={({ active, payload, label }) => {
-                  if (active && payload && payload.length) {
+                  if (active && payload && payload.length && payload[0]) {
+                    const val = Number(payload[0].value);
                     return (
                       <div className="bg-white border border-slate-200 p-2.5 rounded shadow-sm animate-fade-in">
                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>
-                        <p className="text-xs font-bold text-black">{symbol}{payload[0].value.toLocaleString()}</p>
+                        <p className="text-xs font-bold text-black">{symbol}{val.toLocaleString()}</p>
                       </div>
                     );
                   }

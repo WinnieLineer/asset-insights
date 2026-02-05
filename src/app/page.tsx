@@ -280,14 +280,15 @@ export default function MonochromeAssetPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
+        {/* Hero Portfolio Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <Card className="lg:col-span-8 modern-card p-10 flex flex-col justify-between overflow-hidden relative border-slate-200">
-            {/* Wallet Icon - Repositioned to not block anything */}
+            {/* Wallet Icon background - Re-positioned to ensure it never blocks text */}
             <div className="absolute -bottom-10 -right-10 opacity-[0.04] pointer-events-none">
               <Wallet className="w-64 h-64 text-black" />
             </div>
 
-            <div className="space-y-4 z-10">
+            <div className="space-y-4 z-10 relative">
               <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
                 <Globe className="w-3.5 h-3.5" />
                 {t.totalValue}
@@ -310,7 +311,7 @@ export default function MonochromeAssetPage() {
               )}
             </div>
 
-            <div className="flex gap-10 pt-10 mt-10 border-t border-slate-100 z-10">
+            <div className="flex gap-10 pt-10 mt-10 border-t border-slate-100 z-10 relative">
               <div>
                 <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">{t.assetCount}</p>
                 <p className="text-xl font-bold">{assets.length} <span className="text-xs font-medium text-slate-400">{t.items}</span></p>
@@ -345,17 +346,18 @@ export default function MonochromeAssetPage() {
           </div>
         </div>
 
+        {/* Dashboard & Assets Section */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
           <div className="xl:col-span-8 space-y-8">
             <Card className="modern-card overflow-hidden border-slate-200">
-              <CardHeader className="px-8 py-5 border-b border-slate-50 flex flex-row items-center justify-between">
+              <CardHeader className="px-8 py-5 border-b border-slate-50 flex flex-row items-center justify-between bg-white">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <BarChart3 className="w-4 h-4" />
                   {t.dashboard}
                 </CardTitle>
                 <Button variant="ghost" size="icon" className="w-8 h-8 text-slate-400"><Settings2 className="w-4 h-4" /></Button>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="p-0 bg-white">
                 <Table>
                   <TableHeader className="bg-slate-50">
                     <TableRow className="hover:bg-transparent border-slate-100">
@@ -416,7 +418,7 @@ export default function MonochromeAssetPage() {
           </div>
           
           <div className="xl:col-span-4 space-y-8">
-            <Card className="modern-card border-slate-200">
+            <Card className="modern-card border-slate-200 bg-white">
               <CardHeader className="px-8 py-5 border-b border-slate-50">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <Plus className="w-4 h-4" />
@@ -428,7 +430,7 @@ export default function MonochromeAssetPage() {
               </CardContent>
             </Card>
 
-            <Card className="modern-card border-slate-200">
+            <Card className="modern-card border-slate-200 bg-white">
               <CardHeader className="px-8 py-5 border-b border-slate-50">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <Clock className="w-4 h-4" />
@@ -499,6 +501,7 @@ export default function MonochromeAssetPage() {
           </div>
         </div>
 
+        {/* AI Financial Tip Section */}
         <section className="pt-10">
            <AITipCard 
               language={language} 
