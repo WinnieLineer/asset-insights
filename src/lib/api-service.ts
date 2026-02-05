@@ -69,7 +69,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
       const isNumeric = /^\d+$/.test(symbol);
       const yahooSymbol = isNumeric ? `${symbol}.TW` : symbol;
       const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
-      // 使用 raw 模式直接獲取原始內容，避開某些 JSON 封裝錯誤
+      // 使用 AllOrigins raw 模式直接獲取內容
       const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}&cb=${Date.now()}`;
       
       const response = await fetch(proxyUrl);
@@ -85,7 +85,6 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     }
   }
 
-  // 確保回傳完整的 MarketData 物件，包含必填的 rates
   return {
     exchangeRate,
     rates,
