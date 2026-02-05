@@ -25,7 +25,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
   const cryptoPrices: Record<string, number> = {};
   const stockPrices: Record<string, number> = {};
 
-  // 1. 抓取匯率
+  // 1. 抓取匯率 (Exchange Rate)
   try {
     const erResponse = await fetch(`${EXCHANGE_RATE_API}?cb=${Date.now()}`);
     if (erResponse.ok) {
@@ -62,16 +62,15 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     console.error('Crypto fetch error:', error);
   }
 
-  // 3. 抓取股票價格 (使用 corsproxy.io 解析 Yahoo Finance)
+  // 3. 抓取股票價格 (使用 AllOrigins 代理 Yahoo Finance)
   const stockSymbols = [...new Set(symbols.stocks.map(s => s.toUpperCase()))];
   for (const symbol of stockSymbols) {
-    const isNumeric = /^\d+$/.test(symbol);
-    const yahooSymbol = isNumeric ? `${symbol}.TW` : symbol;
-    
     try {
+      const isNumeric = /^\d+$/.test(symbol);
+      const yahooSymbol = isNumeric ? `${symbol}.TW` : symbol;
       const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
-      // 使用 corsproxy.io 並加上 timestamp 繞過快取
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}&cb=${Date.now()}`;
+      // 使用 raw 模式直接獲取原始內容，避開某些 JSON 封裝錯誤
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}&cb=${Date.now()}`;
       
       const response = await fetch(proxyUrl);
       if (response.ok) {
@@ -86,6 +85,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     }
   }
 
+  // 確保回傳完整的 MarketData 物件，包含必填的 rates
   return {
     exchangeRate,
     rates,
