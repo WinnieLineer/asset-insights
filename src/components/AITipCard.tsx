@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -28,34 +29,32 @@ interface AITipCardProps {
 
 const t = {
   en: {
-    title: 'AI Financial Advisor',
-    desc: 'Ask questions or get an automated analysis of your portfolio.',
-    analysis: 'Portfolio Analysis',
-    risk: 'Risk Assessment',
-    diversification: 'Diversification Score',
-    recommendations: 'Actionable Advice',
-    ctaTitle: 'Interactive Advisor',
-    ctaDesc: 'Ask about your 10% yield goal or asset allocation.',
-    ctaButton: 'Analyze Portfolio',
-    loading: 'Analyzing...',
-    placeholder: 'e.g., How can I reach a 10% annual return with my current assets?',
-    ask: 'Ask a question...',
-    answer: 'AI Response',
+    title: 'AI Wealth Advisor',
+    desc: 'Deep portfolio intelligence and interactive financial planning.',
+    analysis: 'Allocation Strategy',
+    risk: 'Risk Profile',
+    diversification: 'Diversity Score',
+    recommendations: 'Strategic Actions',
+    ctaTitle: 'Smart Consultant',
+    ctaButton: 'Generate Analysis',
+    loading: 'Generating Insights...',
+    placeholder: 'Ask me anything: "How can I improve my yield?" or "Is my risk too high?"',
+    ask: 'Strategic Question',
+    answer: 'Advisor Response',
   },
   zh: {
-    title: 'AI 財務顧問',
-    desc: '您可以詢問特定問題，或獲取資產配置深度分析。',
-    analysis: '資產配置分析',
-    risk: '風險評估',
+    title: 'AI 財富顧問',
+    desc: '深度資產情報與互動式財務規劃建議。',
+    analysis: '資產配置策略',
+    risk: '風險概況',
     diversification: '配置多樣性',
-    recommendations: '行動建議',
-    ctaTitle: '互動式顧問',
-    ctaDesc: '您可以詢問：「如何達成 10% 年收益？」或配置問題。',
+    recommendations: '策略行動建議',
+    ctaTitle: '智慧諮詢',
     ctaButton: '開始深度分析',
-    loading: '分析中...',
-    placeholder: '例如：我該如何調整部位以達成年收益 10%？',
-    ask: '提問...',
-    answer: 'AI 回覆',
+    loading: '正在生成分析報告...',
+    placeholder: '詢問任何問題：例如「我該如何提升收益？」或「風險是否過高？」',
+    ask: '策略性提問',
+    answer: '顧問回覆',
   }
 };
 
@@ -92,115 +91,112 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
   };
 
   return (
-    <Card className="border-accent/20 bg-accent/5 overflow-hidden h-full flex flex-col">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-accent font-headline text-lg md:text-xl">
-            <Sparkles className="h-5 w-5" />
-            {lang.title}
-          </CardTitle>
+    <Card className="neo-card border-none bg-white shadow-2xl shadow-blue-900/5 overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-600/5 to-indigo-600/5 p-8 border-b border-slate-50">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-3 text-blue-600 font-headline text-2xl">
+              <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-600/20">
+                <Sparkles className="h-6 w-6 text-white" />
+              </div>
+              {lang.title}
+            </CardTitle>
+            <CardDescription className="text-slate-500 font-medium">{lang.desc}</CardDescription>
+          </div>
           {insight && (
-            <Button variant="ghost" size="sm" onClick={() => { setInsight(null); setQuestion(''); }} className="hover:bg-accent/10 text-accent">
-              <RefreshCw className="h-4 w-4 mr-1" />
-              {language === 'en' ? 'Reset' : '重設'}
+            <Button variant="outline" size="sm" onClick={() => { setInsight(null); setQuestion(''); }} className="rounded-xl border-blue-100 text-blue-600 hover:bg-blue-50">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {language === 'en' ? 'New Analysis' : '重新分析'}
             </Button>
           )}
         </div>
-        <CardDescription className="text-xs">{lang.desc}</CardDescription>
-      </CardHeader>
+      </div>
       
-      <CardContent className="space-y-4 flex-1 overflow-y-auto">
+      <CardContent className="p-8">
         {!insight ? (
-          <div className="space-y-4 animate-in fade-in duration-500">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-2">
-                <MessageSquare className="h-3 w-3" />
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+            <div className="lg:col-span-9 space-y-3">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 px-1">
+                <MessageSquare className="h-3.5 w-3.5 text-blue-400" />
                 {lang.ask}
               </label>
               <Textarea 
                 placeholder={lang.placeholder}
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                className="resize-none h-24 bg-white/80 border-accent/20 focus-visible:ring-accent"
+                className="resize-none h-24 rounded-[1.5rem] bg-slate-50 border-none focus-visible:ring-blue-200 text-base p-5 transition-all"
               />
             </div>
-            <Button 
-              className="w-full bg-accent hover:bg-accent/90 text-white flex items-center gap-2"
-              onClick={fetchTip}
-              disabled={loading || assets.length === 0}
-            >
-              {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              {loading ? lang.loading : lang.ctaButton}
-            </Button>
-            {assets.length === 0 && (
-              <p className="text-[10px] text-center text-destructive">
-                {language === 'en' ? 'Add assets first to analyze.' : '請先新增資產以供分析。'}
-              </p>
-            )}
+            <div className="lg:col-span-3">
+              <Button 
+                className="w-full h-24 rounded-[1.5rem] bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-600/20 flex flex-col items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                onClick={fetchTip}
+                disabled={loading || assets.length === 0}
+              >
+                {loading ? <RefreshCw className="h-6 w-6 animate-spin" /> : <Send className="h-6 w-6" />}
+                <span className="font-bold">{loading ? lang.loading : lang.ctaButton}</span>
+              </Button>
+            </div>
           </div>
         ) : (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-4">
-            {/* Direct Answer */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold flex items-center gap-2 text-accent">
-                <MessageSquare className="h-4 w-4" />
-                {lang.answer}
-              </h4>
-              <div className="text-sm text-foreground leading-relaxed bg-white p-4 rounded-xl border border-accent/10 shadow-sm italic">
-                "{insight.answer}"
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold flex items-center gap-2">
-                <PieChart className="h-4 w-4 text-primary" />
-                {lang.analysis}
-              </h4>
-              <p className="text-xs text-foreground/80 leading-relaxed bg-white/50 p-3 rounded-lg border border-accent/10">
-                {insight.analysis}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <h4 className="text-[10px] font-semibold text-muted-foreground uppercase">{lang.risk}</h4>
-                <Badge variant="outline" className={`text-[10px] py-0 px-2 ${getRiskColor(insight.riskLevel)}`}>
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  {insight.riskLevel}
-                </Badge>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <h4 className="text-[10px] font-semibold text-muted-foreground uppercase">{lang.diversification}</h4>
-                  <span className="text-[10px] font-bold">{insight.diversificationScore}%</span>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
+            {/* Answer Column */}
+            <div className="lg:col-span-1 space-y-6">
+              <div className="space-y-3">
+                <h4 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  {lang.answer}
+                </h4>
+                <div className="text-sm text-slate-700 leading-relaxed bg-blue-50/50 p-6 rounded-[2rem] border border-blue-100 italic shadow-inner">
+                  "{insight.answer}"
                 </div>
-                <Progress value={insight.diversificationScore} className="h-1.5" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-2">{lang.risk}</h4>
+                  <Badge variant="outline" className={`text-[10px] font-bold py-1 px-3 border-none rounded-lg ${getRiskColor(insight.riskLevel)}`}>
+                    <AlertTriangle className="h-3 w-3 mr-1.5" />
+                    {insight.riskLevel}
+                  </Badge>
+                </div>
+                <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase">{lang.diversification}</h4>
+                    <span className="text-xs font-bold text-blue-600">{insight.diversificationScore}%</span>
+                  </div>
+                  <Progress value={insight.diversificationScore} className="h-2 bg-slate-200" />
+                </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="text-sm font-semibold flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                {lang.recommendations}
-              </h4>
-              <ul className="space-y-2">
-                {insight.recommendations.map((rec, i) => (
-                  <li key={i} className="text-xs flex gap-2 text-foreground/70 items-start">
-                    <span className="text-accent mt-0.5 font-bold">•</span>
-                    {rec}
-                  </li>
-                ))}
-              </ul>
+            {/* Analysis & Recs Column */}
+            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-4">
+                <h4 className="text-sm font-bold flex items-center gap-2 text-slate-900">
+                  <div className="bg-indigo-100 p-2 rounded-lg"><PieChart className="h-4 w-4 text-indigo-600" /></div>
+                  {lang.analysis}
+                </h4>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  {insight.analysis}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-sm font-bold flex items-center gap-2 text-slate-900">
+                  <div className="bg-green-100 p-2 rounded-lg"><CheckCircle2 className="h-4 w-4 text-green-600" /></div>
+                  {lang.recommendations}
+                </h4>
+                <ul className="space-y-4">
+                  {insight.recommendations.map((rec, i) => (
+                    <li key={i} className="text-sm flex gap-3 text-slate-600 group items-start">
+                      <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-blue-600 group-hover:text-white transition-colors font-bold text-[10px]">{i+1}</div>
+                      {rec}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full text-xs border-accent/30 text-accent hover:bg-accent/5"
-              onClick={() => setInsight(null)}
-            >
-              {language === 'en' ? 'Ask another question' : '詢問其他問題'}
-            </Button>
           </div>
         )}
       </CardContent>

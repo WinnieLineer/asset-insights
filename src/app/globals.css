@@ -24,12 +24,7 @@
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 221 83% 53%;
-    --radius: 1rem;
-    --chart-1: 221 83% 53%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --radius: 1.25rem;
   }
 
   .dark {
@@ -64,10 +59,25 @@
   }
 }
 
-.glass-card {
-  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+.glass-panel {
+  @apply bg-white/60 backdrop-blur-xl border border-white/40 shadow-2xl;
 }
 
-.header-gradient {
-  @apply bg-gradient-to-r from-primary to-blue-600;
+.neo-card {
+  @apply bg-white rounded-[2rem] border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300;
+}
+
+.hero-gradient {
+  background: radial-gradient(circle at top right, #3b82f6, #1d4ed8, #1e3a8a);
+  @apply shadow-[0_20px_50px_rgba(30,58,138,0.3)];
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
 }
