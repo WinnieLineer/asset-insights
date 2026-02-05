@@ -75,7 +75,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
       const response = await fetch(proxyUrl);
       if (response.ok) {
         const wrapper = await response.json();
-        if (wrapper.contents) {
+        if (wrapper && wrapper.contents) {
           const data = JSON.parse(wrapper.contents);
           const price = data.chart?.result?.[0]?.meta?.regularMarketPrice;
           if (price) {
