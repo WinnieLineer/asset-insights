@@ -5,15 +5,15 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Sector,
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
-import { Snapshot, Currency } from '@/app/lib/types';
 import { cn } from '@/lib/utils';
 
+// Monochrome colors for the pie chart
 const COLORS = [
-  '#3b82f6', // blue-500
-  '#6366f1', // indigo-500
-  '#8b5cf6', // violet-500
-  '#a855f7', // purple-500
-  '#ec4899', // pink-500
+  '#000000', // Black
+  '#333333', // Dark Grey
+  '#666666', // Grey
+  '#999999', // Light Grey
+  '#CCCCCC', // Very Light Grey
 ];
 
 const t = {
@@ -29,7 +29,7 @@ const renderActiveShape = (props: any) => {
         cx={cx}
         cy={cy}
         innerRadius={innerRadius}
-        outerRadius={outerRadius + 8}
+        outerRadius={outerRadius + 6}
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
@@ -64,10 +64,10 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       {/* Allocation Pie Chart */}
-      <div className="modern-card p-8 flex flex-col items-center min-h-[420px] rounded-2xl bg-white relative">
+      <div className="modern-card p-8 flex flex-col items-center min-h-[400px] border-slate-200">
         <div className="w-full mb-2">
-          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">{lang.allocation}</h3>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Asset diversification</p>
+          <h3 className="text-[10px] font-bold text-black uppercase tracking-widest">{lang.allocation}</h3>
+          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Diversification matrix</p>
         </div>
         
         <div className="h-[280px] w-full relative">
@@ -79,9 +79,9 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 data={allocationData}
                 cx="50%"
                 cy="50%"
-                innerRadius={80}
-                outerRadius={100}
-                paddingAngle={5}
+                innerRadius={75}
+                outerRadius={95}
+                paddingAngle={4}
                 dataKey="value"
                 stroke="transparent"
                 onMouseEnter={(_, index) => setActiveIndex(index)}
@@ -97,9 +97,9 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                   if (active && payload && payload.length) {
                     const val = Number(payload[0].value);
                     return (
-                      <div className="bg-white/95 backdrop-blur-md border border-slate-100 p-3 rounded-lg shadow-xl animate-fade-in">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{payload[0].name}</p>
-                        <p className="text-sm font-bold text-slate-900">{symbol}{val.toLocaleString()}</p>
+                      <div className="bg-white border border-slate-200 p-2.5 rounded shadow-sm animate-fade-in">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{payload[0].name}</p>
+                        <p className="text-xs font-bold text-black">{symbol}{val.toLocaleString()}</p>
                       </div>
                     );
                   }
@@ -109,21 +109,20 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
             </PieChart>
           </ResponsiveContainer>
           
-          {/* Centered Dynamic Label - Fixed Text Collision */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none w-full max-w-[140px] px-2 flex flex-col items-center justify-center">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none w-full max-w-[120px] px-2">
             {activeIndex !== null && allocationData[activeIndex] ? (
-              <div className="animate-fade-in space-y-0.5">
-                <p className="text-[10px] font-bold text-primary uppercase tracking-widest truncate max-w-full">
+              <div className="animate-fade-in">
+                <p className="text-[9px] font-bold text-black uppercase tracking-widest truncate">
                   {allocationData[activeIndex].name}
                 </p>
-                <p className="text-3xl font-extrabold text-slate-900 tracking-tighter">
+                <p className="text-2xl font-black text-black tracking-tighter">
                   {((allocationData[activeIndex].value / (totalAllocationValue || 1)) * 100).toFixed(1)}%
                 </p>
               </div>
             ) : (
-              <div className="animate-fade-in space-y-0.5">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{lang.total}</p>
-                <p className="text-3xl font-extrabold text-slate-300 tracking-tighter">100%</p>
+              <div className="animate-fade-in">
+                <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">{lang.total}</p>
+                <p className="text-2xl font-black text-slate-200 tracking-tighter">100%</p>
               </div>
             )}
           </div>
@@ -131,19 +130,19 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
       </div>
 
       {/* Trend Area Chart */}
-      <div className="modern-card p-8 flex flex-col min-h-[420px] rounded-2xl bg-white">
+      <div className="modern-card p-8 flex flex-col min-h-[400px] border-slate-200">
         <div className="w-full mb-8">
-          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest">{lang.trend}</h3>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Historical valuation</p>
+          <h3 className="text-[10px] font-bold text-black uppercase tracking-widest">{lang.trend}</h3>
+          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Historical growth</p>
         </div>
 
-        <div className="h-[240px] w-full mt-auto">
+        <div className="h-[220px] w-full mt-auto">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
               <defs>
-                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15}/>
-                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                <linearGradient id="colorMonochrome" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#000000" stopOpacity={0.08}/>
+                  <stop offset="95%" stopColor="#000000" stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -159,9 +158,9 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-white/95 backdrop-blur-md border border-slate-100 p-3 rounded-lg shadow-xl animate-fade-in">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-                        <p className="text-sm font-bold text-primary">{symbol}{payload[0].value.toLocaleString()}</p>
+                      <div className="bg-white border border-slate-200 p-2.5 rounded shadow-sm animate-fade-in">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>
+                        <p className="text-xs font-bold text-black">{symbol}{payload[0].value.toLocaleString()}</p>
                       </div>
                     );
                   }
@@ -171,11 +170,11 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
               <Area 
                 type="monotone" 
                 dataKey="totalValue" 
-                stroke="#3b82f6" 
-                strokeWidth={3} 
-                fill="url(#colorValue)" 
-                animationDuration={1000}
-                activeDot={{ r: 6, strokeWidth: 0, fill: '#3b82f6' }}
+                stroke="#000000" 
+                strokeWidth={2} 
+                fill="url(#colorMonochrome)" 
+                animationDuration={800}
+                activeDot={{ r: 4, strokeWidth: 0, fill: '#000000' }}
               />
             </AreaChart>
           </ResponsiveContainer>
