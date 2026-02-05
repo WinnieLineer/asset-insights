@@ -52,7 +52,7 @@ type Language = 'en' | 'zh';
 const translations = {
   en: {
     title: 'Asset Insights Pro',
-    subtitle: 'MINIMALIST PORTFOLIO TRACKER',
+    subtitle: 'MONOCHROME PORTFOLIO TRACKER',
     updateData: 'Sync Market',
     takeSnapshot: 'Take Snapshot',
     totalValue: 'Total Portfolio Value',
@@ -75,7 +75,7 @@ const translations = {
   },
   zh: {
     title: 'Asset Insights Pro',
-    subtitle: '極簡資產追蹤系統',
+    subtitle: '極簡黑白資產追蹤',
     updateData: '同步市場',
     takeSnapshot: '建立快照',
     totalValue: '投資組合總淨值',
@@ -240,11 +240,11 @@ export default function MonochromeAssetPage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-white text-black pb-20 selection:bg-black selection:text-white">
+    <div className="min-h-screen bg-white text-black pb-20 selection:bg-black selection:text-white font-sans">
       <header className="glass-nav h-20 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-black rounded flex items-center justify-center">
               <Activity className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -254,7 +254,7 @@ export default function MonochromeAssetPage() {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="flex bg-slate-100 p-1 rounded-md">
+            <div className="flex bg-slate-100 p-1 rounded">
               <Button 
                 variant={language === 'zh' ? 'secondary' : 'ghost'} 
                 size="sm" 
@@ -280,11 +280,10 @@ export default function MonochromeAssetPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
-        {/* Hero Portfolio Section */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <Card className="lg:col-span-8 modern-card p-10 flex flex-col justify-between overflow-hidden relative border-slate-200">
-            {/* Wallet Icon - Enlarged and moved to foreground (behind text, but above background borders) */}
-            <div className="absolute -bottom-12 -right-12 opacity-[0.06] pointer-events-none z-10">
+            {/* Wallet Icon - Enlarged and placed on top layer (z-30) to overlap the divider */}
+            <div className="absolute -bottom-10 -right-10 opacity-[0.08] pointer-events-none z-30">
               <Wallet className="w-80 h-80 text-black" />
             </div>
 
@@ -299,7 +298,7 @@ export default function MonochromeAssetPage() {
               
               {lastSnapshot && (
                 <div className={cn(
-                  "inline-flex items-center gap-1.5 py-1.5 px-3 rounded-md text-[11px] font-bold border",
+                  "inline-flex items-center gap-1.5 py-1.5 px-3 rounded text-[11px] font-bold border",
                   assetCalculations.totalDiffTWD >= 0 
                     ? "text-emerald-600 bg-emerald-50 border-emerald-100" 
                     : "text-rose-600 bg-rose-50 border-rose-100"
@@ -311,7 +310,7 @@ export default function MonochromeAssetPage() {
               )}
             </div>
 
-            <div className="flex gap-10 pt-10 mt-10 border-t border-slate-100 z-20 relative bg-white/40 backdrop-blur-[2px]">
+            <div className="flex gap-10 pt-10 mt-10 border-t border-slate-100 z-10 relative bg-white/40 backdrop-blur-[2px]">
               <div>
                 <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">{t.assetCount}</p>
                 <p className="text-xl font-bold">{assets.length} <span className="text-xs font-medium text-slate-400">{t.items}</span></p>
@@ -329,7 +328,7 @@ export default function MonochromeAssetPage() {
           <div className="lg:col-span-4 grid grid-cols-1 gap-6">
             <Button 
               onClick={takeSnapshot} 
-              className="w-full h-full bg-black hover:bg-slate-800 text-white font-bold flex flex-col items-center justify-center gap-3 rounded-xl transition-all"
+              className="w-full h-full bg-black hover:bg-slate-800 text-white font-bold flex flex-col items-center justify-center gap-3 rounded transition-all"
             >
               <Clock className="w-5 h-5" />
               <span className="text-sm tracking-widest uppercase">{t.takeSnapshot}</span>
@@ -338,7 +337,7 @@ export default function MonochromeAssetPage() {
               variant="outline" 
               onClick={updateMarketData} 
               disabled={loading} 
-              className="w-full h-full border-slate-200 bg-white hover:bg-slate-50 font-bold flex flex-col items-center justify-center gap-3 rounded-xl transition-all"
+              className="w-full h-full border-slate-200 bg-white hover:bg-slate-50 font-bold flex flex-col items-center justify-center gap-3 rounded transition-all"
             >
               <RefreshCw className={cn("w-5 h-5", loading && "animate-spin")} />
               <span className="text-sm tracking-widest uppercase">{t.updateData}</span>
@@ -346,7 +345,6 @@ export default function MonochromeAssetPage() {
           </div>
         </div>
 
-        {/* Dashboard & Assets Section */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
           <div className="xl:col-span-8 space-y-8">
             <Card className="modern-card overflow-hidden border-slate-200">
@@ -501,7 +499,6 @@ export default function MonochromeAssetPage() {
           </div>
         </div>
 
-        {/* AI Financial Tip Section */}
         <section className="pt-10">
            <AITipCard 
               language={language} 
