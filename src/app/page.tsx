@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -21,8 +22,7 @@ import {
   Wallet, 
   ChevronRight,
   BarChart3,
-  Settings2,
-  PieChart as PieChartIcon
+  Settings2
 } from 'lucide-react';
 import { 
   Card, 
@@ -40,8 +40,7 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from '@/components/ui/badge';
-import {
+import { 
   Dialog,
   DialogContent,
   DialogHeader,
@@ -283,7 +282,6 @@ export default function ProfessionalAssetPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
-        {/* Value Overview Bento */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <Card className="lg:col-span-8 modern-card p-10 flex flex-col justify-between overflow-hidden relative border-none shadow-xl shadow-slate-200/40">
             <div className="absolute top-0 right-0 p-16 opacity-[0.03] pointer-events-none">
@@ -351,7 +349,6 @@ export default function ProfessionalAssetPage() {
           </div>
         </div>
 
-        {/* Analytics & Data Section */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
           <div className="xl:col-span-8 space-y-8">
             <Card className="modern-card overflow-hidden border-none shadow-xl shadow-slate-200/30">
@@ -508,7 +505,6 @@ export default function ProfessionalAssetPage() {
           </div>
         </div>
 
-        {/* Professional AI Analysis */}
         <section className="pt-10">
            <AITipCard 
               language={language} 
