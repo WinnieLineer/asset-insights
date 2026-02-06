@@ -41,7 +41,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     console.error('Exchange rate fetch error:', error);
   }
 
-  // 2. Fetch Crypto Prices via CoinGecko (Backup/Stable Source)
+  // 2. Fetch Crypto Prices via CoinGecko
   try {
     const cryptoSymbols = [...new Set(symbols.cryptos.map(s => s.toUpperCase()))];
     if (cryptoSymbols.length > 0) {
@@ -63,12 +63,15 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
   }
 
   // 3. Batch Fetch via Yahoo Finance (Efficient & Consolidated)
+  // Process stock symbols: numbers get .TW, others stay uppercase
   const stockYahooSymbols = symbols.stocks.map(s => {
     const isNumeric = /^\d+$/.test(s);
     return isNumeric ? `${s}.TW` : s.toUpperCase();
   });
 
+  // Process crypto symbols for Yahoo as backup
   const cryptoYahooSymbols = symbols.cryptos.map(s => `${s.toUpperCase()}-USD`);
+  
   const allYahooSymbols = [...new Set([...stockYahooSymbols, ...cryptoYahooSymbols])].join(',');
 
   if (allYahooSymbols) {
@@ -86,6 +89,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
             const sym = res.symbol;
             if (sym.includes('-USD')) {
               const baseSym = sym.replace('-USD', '');
+              // Only fill if CoinGecko failed or to ensure latest
               cryptoPrices[baseSym] = res.regularMarketPrice;
             } else {
               // Extract original symbol (e.g., 2330.TW -> 2330)
@@ -100,9 +104,10 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     }
   }
 
+  // IMPORTANT: Must return rates to satisfy MarketData interface
   return {
     exchangeRate,
-    rates, // Critical: Ensure rates is included to match type MarketData
+    rates,
     cryptoPrices,
     stockPrices,
   };
