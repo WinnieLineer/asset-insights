@@ -20,8 +20,7 @@ import {
   Wallet, 
   BarChart3,
   Settings2,
-  Layers,
-  Edit2
+  Layers
 } from 'lucide-react';
 import { 
   Card, 
@@ -44,11 +43,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogFooter
+  DialogTrigger
 } from "@/components/ui/dialog";
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 type Language = 'en' | 'zh';
@@ -75,12 +71,7 @@ const translations = {
     snapshotSaved: 'Snapshot saved.',
     snapshotDeleted: 'Snapshot deleted.',
     dashboard: 'Portfolio Overview',
-    change: '24h Change',
-    editAmount: 'Edit Amount',
-    save: 'Save Changes',
-    cancel: 'Cancel',
-    deleteConfirm: 'Asset deleted.',
-    amountUpdated: 'Amount updated.'
+    change: '24h Change'
   },
   zh: {
     title: 'Asset Insights Pro',
@@ -103,12 +94,7 @@ const translations = {
     snapshotSaved: '快照已存入紀錄',
     snapshotDeleted: '紀錄已刪除',
     dashboard: '投資組合概覽',
-    change: '24H 漲跌',
-    editAmount: '修改持有數量',
-    save: '儲存修改',
-    cancel: '取消',
-    deleteConfirm: '資產部位已刪除',
-    amountUpdated: '數量已更新'
+    change: '24H 漲跌'
   }
 };
 
@@ -126,7 +112,6 @@ export default function MonochromeAssetPage() {
     stockPrices: {}
   });
   const [loading, setLoading] = useState(true);
-  const [editAsset, setEditAsset] = useState<{ id: string, amount: number } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -251,18 +236,6 @@ export default function MonochromeAssetPage() {
     };
     setSnapshots(prev => [...prev, newSnapshot]);
     toast({ title: t.snapshotSaved });
-  };
-
-  const deleteAsset = (id: string) => {
-    setAssets(prev => prev.filter(a => a.id !== id));
-    toast({ title: t.deleteConfirm });
-  };
-
-  const updateAssetAmount = () => {
-    if (!editAsset) return;
-    setAssets(prev => prev.map(a => a.id === editAsset.id ? { ...a, amount: editAsset.amount } : a));
-    setEditAsset(null);
-    toast({ title: t.amountUpdated });
   };
 
   if (!mounted) return null;
@@ -391,7 +364,6 @@ export default function MonochromeAssetPage() {
                       <TableHead className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
                       <TableHead className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.change}</TableHead>
                       <TableHead className="px-8 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
-                      <TableHead className="px-4 py-3 w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -409,17 +381,7 @@ export default function MonochromeAssetPage() {
                           ) : <span className="text-slate-300">—</span>}
                         </TableCell>
                         <TableCell className="px-4 py-5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold">{asset.amount.toLocaleString()}</span>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => setEditAsset({ id: asset.id, amount: asset.amount })}
-                            >
-                              <Edit2 className="w-3 h-3 text-slate-400" />
-                            </Button>
-                          </div>
+                          <span className="text-sm font-bold">{asset.amount.toLocaleString()}</span>
                         </TableCell>
                         <TableCell className="px-4 py-5">
                           {asset.hasHistory ? (
@@ -437,16 +399,6 @@ export default function MonochromeAssetPage() {
                           <span className="font-bold text-lg tracking-tight">
                             {getCurrencySymbol(displayCurrency)}{asset.valueInDisplay.toLocaleString()}
                           </span>
-                        </TableCell>
-                        <TableCell className="px-4 py-5 text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="w-8 h-8 text-slate-300 hover:text-rose-600 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-all"
-                            onClick={() => deleteAsset(asset.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -559,30 +511,6 @@ export default function MonochromeAssetPage() {
               marketConditions={`USD/TWD: ${(marketData.rates.TWD || 32.5).toFixed(2)} | System Status: Optimal`} 
             />
         </section>
-
-        <Dialog open={!!editAsset} onOpenChange={(open) => !open && setEditAsset(null)}>
-          <DialogContent className="max-w-sm bg-white border-slate-200">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold">{t.editAmount}</DialogTitle>
-            </DialogHeader>
-            <div className="py-6 space-y-4">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.holdings}</Label>
-                <Input 
-                  type="number" 
-                  step="any"
-                  value={editAsset?.amount || 0} 
-                  onChange={(e) => setEditAsset(prev => prev ? { ...prev, amount: parseFloat(e.target.value) || 0 } : null)}
-                  className="font-bold bg-slate-50 border-slate-200 focus:border-black transition-all"
-                />
-              </div>
-            </div>
-            <DialogFooter className="flex gap-2">
-              <Button variant="outline" onClick={() => setEditAsset(null)} className="flex-1 font-bold">{t.cancel}</Button>
-              <Button onClick={updateAssetAmount} className="flex-1 bg-black text-white font-bold">{t.save}</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </main>
 
       <footer className="py-20 text-center border-t border-slate-100">
