@@ -1,9 +1,8 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  /* 為了部署到 GitHub Pages，設定為靜態導出 */
-  output: 'export',
-  /* GitHub Pages 不支援 Next.js 預設的圖片優化，必須設為 unoptimized */
+  /* 移除靜態導出，改為伺服器模式以支援 Server Actions */
+  // output: 'export',
   images: {
     unoptimized: true,
     remotePatterns: [

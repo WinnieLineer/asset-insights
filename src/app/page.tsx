@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Asset, Snapshot, MarketData, AssetCategory, Currency } from './lib/types';
-import { fetchMarketData } from '@/lib/api-service';
+import { getMarketData } from '@/app/actions/market';
 import { AssetForm } from '@/components/AssetForm';
 import { PortfolioCharts } from '@/components/PortfolioCharts';
 import { AITipCard } from '@/components/AITipCard';
@@ -159,11 +159,12 @@ export default function MonochromeAssetPage() {
     const stocks = assets.filter(a => a.category === 'Stock').map(a => a.symbol);
     
     try {
-      const data = await fetchMarketData({ cryptos, stocks });
+      const data = await getMarketData({ cryptos, stocks });
       setMarketData(data);
       toast({ title: t.dataUpdated });
     } catch (error) {
       console.error('Market sync failed', error);
+      toast({ variant: 'destructive', title: 'Sync Error', description: 'Could not fetch current prices.' });
     } finally {
       setLoading(false);
     }
@@ -346,7 +347,6 @@ export default function MonochromeAssetPage() {
               </div>
             </div>
 
-            {/* Wallet Icon - 提升至最高層 z-50 確保壓在所有元素之上 */}
             <div className="absolute -bottom-10 -right-10 opacity-[0.1] pointer-events-none z-50">
               <Wallet className="w-80 h-80 text-black drop-shadow-sm" />
             </div>
@@ -560,7 +560,6 @@ export default function MonochromeAssetPage() {
             />
         </section>
 
-        {/* Edit Amount Dialog */}
         <Dialog open={!!editAsset} onOpenChange={(open) => !open && setEditAsset(null)}>
           <DialogContent className="max-w-sm bg-white border-slate-200">
             <DialogHeader>
