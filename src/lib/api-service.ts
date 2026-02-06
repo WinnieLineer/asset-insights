@@ -41,7 +41,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     console.error('Exchange rate fetch error:', error);
   }
 
-  // 2. Fetch Crypto Prices (CoinGecko) as fallback or secondary source
+  // 2. Fetch Crypto Prices via CoinGecko (Backup/Stable Source)
   try {
     const cryptoSymbols = [...new Set(symbols.cryptos.map(s => s.toUpperCase()))];
     if (cryptoSymbols.length > 0) {
@@ -62,14 +62,14 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     console.error('Crypto fetch error:', error);
   }
 
-  // 3. Batch Fetch Stock and Crypto Prices via Yahoo Finance (Efficient & Stable)
-  const stockSymbols = [...new Set(symbols.stocks.map(s => {
+  // 3. Batch Fetch via Yahoo Finance (Efficient & Consolidated)
+  const stockYahooSymbols = symbols.stocks.map(s => {
     const isNumeric = /^\d+$/.test(s);
     return isNumeric ? `${s}.TW` : s.toUpperCase();
-  }))];
+  });
 
   const cryptoYahooSymbols = symbols.cryptos.map(s => `${s.toUpperCase()}-USD`);
-  const allYahooSymbols = [...new Set([...stockSymbols, ...cryptoYahooSymbols])].join(',');
+  const allYahooSymbols = [...new Set([...stockYahooSymbols, ...cryptoYahooSymbols])].join(',');
 
   if (allYahooSymbols) {
     try {
@@ -88,7 +88,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
               const baseSym = sym.replace('-USD', '');
               cryptoPrices[baseSym] = res.regularMarketPrice;
             } else {
-              // Extract original symbol from Yahoo format (e.g., 2330.TW -> 2330)
+              // Extract original symbol (e.g., 2330.TW -> 2330)
               const baseSym = sym.split('.')[0];
               stockPrices[baseSym] = res.regularMarketPrice;
             }
@@ -102,7 +102,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
 
   return {
     exchangeRate,
-    rates,
+    rates, // Critical: Ensure rates is included to match type MarketData
     cryptoPrices,
     stockPrices,
   };
