@@ -1,8 +1,7 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  /* 移除靜態導出，改為伺服器模式以支援 Server Actions */
-  // output: 'export',
+  output: 'export',
   images: {
     unoptimized: true,
     remotePatterns: [
