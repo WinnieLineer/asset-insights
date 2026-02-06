@@ -1,20 +1,19 @@
 import { MarketData } from '@/app/lib/types';
 
-const COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price';
+const BINANCE_API = 'https://api.binance.com/api/v3/ticker/price';
 const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
-const CRYPTO_ID_MAP: Record<string, string> = {
-  'BTC': 'bitcoin',
-  'ETH': 'ethereum',
-  'SOL': 'solana',
-  'BNB': 'binancecoin',
-  'USDT': 'tether',
-  'USDC': 'usd-coin',
+const CRYPTO_SYMBOL_MAP: Record<string, string> = {
+  'BTC': 'BTCUSDT',
+  'ETH': 'ETHUSDT',
+  'SOL': 'SOLUSDT',
+  'BNB': 'BNBUSDT',
+  'USDT': 'USDTUSD',
 };
 
 /**
  * 抓取市場數據
- * 使用模擬數值配合隨機波動，確保在 GitHub Pages 靜態環境下也能有穩定的「即時感」。
+ * 採用 Binance API 獲取加密貨幣，匯率採用 Open ER API，股市採用基準值模擬。
  */
 export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: string[] }): Promise<MarketData> => {
   let exchangeRate = 32.5; 
@@ -32,26 +31,27 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     console.error('Failed to fetch exchange rate:', error);
   }
 
-  // 2. 抓取加密貨幣價格 (CoinGecko)
+  // 2. 抓取加密貨幣價格 (Binance) - 比 CoinGecko 穩定且無頻率限制問題
   try {
     if (symbols.cryptos.length > 0) {
-      const ids = symbols.cryptos.map(s => CRYPTO_ID_MAP[s.toUpperCase()] || s.toLowerCase()).join(',');
-      const cgResponse = await fetch(`${COINGECKO_API}?ids=${ids}&vs_currencies=usd`);
-      if (cgResponse.ok) {
-        const data = await cgResponse.json();
-        symbols.cryptos.forEach(s => {
-          const id = CRYPTO_ID_MAP[s.toUpperCase()] || s.toLowerCase();
-          if (data[id]) {
-            cryptoPrices[s.toUpperCase()] = data[id].usd;
+      await Promise.all(symbols.cryptos.map(async (s) => {
+        const binanceSymbol = CRYPTO_SYMBOL_MAP[s.toUpperCase()] || `${s.toUpperCase()}USDT`;
+        try {
+          const response = await fetch(`${BINANCE_API}?symbol=${binanceSymbol}`);
+          if (response.ok) {
+            const data = await response.json();
+            cryptoPrices[s.toUpperCase()] = parseFloat(data.price);
           }
-        });
-      }
+        } catch (e) {
+          console.warn(`Failed to fetch crypto ${s} from Binance`);
+        }
+      }));
     }
   } catch (error) {
     console.error('Failed to fetch crypto prices:', error);
   }
 
-  // 3. 股市價格模擬 (依照指令改回模擬方式)
+  // 3. 股市價格模擬 (採用基準值 + 隨機波動，確保前端不噴 CORS 錯誤)
   const stockFallbacks: Record<string, number> = {
     'QQQ': 445.5,
     'VTI': 260.2,
@@ -66,7 +66,6 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
 
   symbols.stocks.forEach(s => {
     const basePrice = stockFallbacks[s.toUpperCase()] || 100;
-    // 加入 +/- 0.2% 的隨機波動
     const volatility = 1 + (Math.random() * 0.004 - 0.002);
     stockPrices[s.toUpperCase()] = parseFloat((basePrice * volatility).toFixed(2));
   });
@@ -75,7 +74,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     exchangeRate,
     rates: {
       TWD: exchangeRate,
-      CNY: exchangeRate / 4.5, // 估算人民幣匯率
+      CNY: exchangeRate / 4.5, 
       USD: 1
     },
     cryptoPrices,
