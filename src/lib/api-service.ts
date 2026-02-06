@@ -23,6 +23,7 @@ async function fetchYahooStockPrice(symbol: string): Promise<number | null> {
   const isNumeric = /^\d+$/.test(symbol);
   const yahooSymbol = isNumeric ? `${symbol}.TW` : symbol.toUpperCase();
   const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
+  // 使用 allorigins.win/get 代理以繞過瀏覽器 CORS 限制
   const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&cb=${Date.now()}`;
   
   try {
@@ -43,6 +44,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
   const cryptoPrices: Record<string, number> = {};
   const stockPrices: Record<string, number> = {};
 
+  // 1. 抓取匯率
   try {
     const erResponse = await fetch(EXCHANGE_RATE_API);
     if (erResponse.ok) {
@@ -55,6 +57,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     }
   } catch (e) {}
 
+  // 2. 抓取加密貨幣價格
   try {
     if (symbols.cryptos.length > 0) {
       const mappedIds = symbols.cryptos.map(s => CRYPTO_ID_MAP[s.toUpperCase()] || s.toLowerCase());
@@ -72,6 +75,7 @@ export const fetchMarketData = async (symbols: { cryptos: string[]; stocks: stri
     }
   } catch (e) {}
 
+  // 3. 抓取股票價格
   for (const s of symbols.stocks) {
     const price = await fetchYahooStockPrice(s);
     stockPrices[s.toUpperCase()] = price || 0;
