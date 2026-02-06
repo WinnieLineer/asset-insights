@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Asset, Snapshot, MarketData, AssetCategory, Currency } from './lib/types';
-import { getMarketData } from '@/app/actions/market';
+import { getMarketData } from '@/app/lib/market-api';
 import { AssetForm } from '@/components/AssetForm';
 import { PortfolioCharts } from '@/components/PortfolioCharts';
 import { AITipCard } from '@/components/AITipCard';
@@ -19,7 +19,6 @@ import {
   Globe, 
   Wallet, 
   BarChart3,
-  Settings2,
   Layers
 } from 'lucide-react';
 import { 
@@ -353,7 +352,6 @@ export default function MonochromeAssetPage() {
                   <BarChart3 className="w-4 h-4" />
                   {t.dashboard}
                 </CardTitle>
-                <Button variant="ghost" size="icon" className="w-8 h-8 text-slate-400"><Settings2 className="w-4 h-4" /></Button>
               </CardHeader>
               <CardContent className="p-0 bg-white">
                 <Table>
