@@ -1,7 +1,7 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  output: 'export',
+  // 移除 output: 'export'，因為 Server Actions 需要 Node.js 執行環境
   images: {
     unoptimized: true,
     remotePatterns: [
