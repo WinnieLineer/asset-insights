@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Asset, Snapshot, MarketData, AssetCategory, Currency } from './lib/types';
-import { getMarketData } from '@/app/lib/market-api';
+import { getMarketData } from '@/app/actions/market';
 import { AssetForm } from '@/components/AssetForm';
 import { PortfolioCharts } from '@/components/PortfolioCharts';
 import { AITipCard } from '@/components/AITipCard';
