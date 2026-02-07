@@ -2,7 +2,7 @@ import { MarketData } from '@/app/lib/types';
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price';
 const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
-const PROXY_BASE_URL = 'https://script.google.com/macros/s/AKfycbzPhhCZCHpNPagl86NFNO_n8_wzJZPOFHTx42lqjVXMi1n_S_1ncJAsS6tRjQcIDvnl/exec?url=';
+const BATCH_STOCK_PROXY_URL = 'https://script.google.com/macros/s/AKfycbz8Wjfhc-k8G19ZLsyD_bGDaPDwKa8MA-eL_21FPGGLuReTIUxX3hV_SqOyCzsEFlFX/exec?symbols=';
 
 // 加密貨幣代號與 CoinGecko ID 的對照表
 const CRYPTO_ID_MAP: Record<string, string> = {
@@ -20,31 +20,6 @@ const CRYPTO_ID_MAP: Record<string, string> = {
   'LINK': 'chainlink',
   'AVAX': 'avalanche-2',
 };
-
-/**
- * 從 Yahoo Finance 抓取價格 (透過指定的 Google Apps Script 代理)
- */
-async function fetchYahooStockPrice(symbol: string): Promise<number | null> {
-  const isNumeric = /^\d+$/.test(symbol);
-  // 台股若輸入數字，自動補上 .TW
-  const yahooSymbol = isNumeric ? `${symbol}.TW` : symbol.toUpperCase();
-  const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
-  
-  // 使用指定的 Google Apps Script 代理繞過瀏覽器 CORS 限制
-  const finalUrl = `${PROXY_BASE_URL}${encodeURIComponent(targetUrl)}`;
-  
-  try {
-    const response = await fetch(finalUrl);
-    if (!response.ok) return null;
-    const data = await response.json();
-    // 代理回傳的結構與原 Yahoo Finance 一致
-    const price = data.chart?.result?.[0]?.meta?.regularMarketPrice;
-    return price || null;
-  } catch (error) {
-    console.error(`Failed to fetch stock price for ${yahooSymbol} via proxy:`, error);
-    return null;
-  }
-}
 
 export async function fetchMarketData(symbols: { cryptos: string[]; stocks: string[] }): Promise<MarketData> {
   let rates = { TWD: 32.5, CNY: 7.2, USD: 1 };
@@ -83,10 +58,30 @@ export async function fetchMarketData(symbols: { cryptos: string[]; stocks: stri
     }
   } catch (e) {}
 
-  // 3. 抓取股票價格
-  for (const s of symbols.stocks) {
-    const price = await fetchYahooStockPrice(s);
-    stockPrices[s.toUpperCase()] = price || 0;
+  // 3. 批量抓取股票價格 (一次請求獲取所有股票)
+  if (symbols.stocks.length > 0) {
+    try {
+      const mappedSymbols = symbols.stocks.map(s => /^\d+$/.test(s) ? `${s}.TW` : s.toUpperCase());
+      const symbolsQuery = mappedSymbols.join(',');
+      const finalUrl = `${BATCH_STOCK_PROXY_URL}${encodeURIComponent(symbolsQuery)}`;
+
+      const response = await fetch(finalUrl);
+      if (response.ok) {
+        const dataArray = await response.json(); // 回傳 JSON Array
+        symbols.stocks.forEach((originalSymbol, index) => {
+          const item = dataArray[index];
+          // 解析結構與 Yahoo Finance chart API 一致
+          const price = item?.chart?.result?.[0]?.meta?.regularMarketPrice;
+          stockPrices[originalSymbol.toUpperCase()] = price || 0;
+        });
+      }
+    } catch (error) {
+      console.error('Batch stock fetch failed:', error);
+      // 發生錯誤時確保 key 存在
+      symbols.stocks.forEach(s => {
+        if (!stockPrices[s.toUpperCase()]) stockPrices[s.toUpperCase()] = 0;
+      });
+    }
   }
 
   return {
