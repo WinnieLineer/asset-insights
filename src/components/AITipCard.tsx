@@ -5,7 +5,6 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Brain, RefreshCw, ShieldCheck, TrendingUp, Sparkles } from 'lucide-react';
-import { getFinancialTip, type FinancialTipOutput } from '@/ai/flows/financial-tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -29,56 +28,57 @@ interface AITipCardProps {
 
 const t = {
   en: {
-    title: 'AI Financial Advisor',
-    desc: 'Intelligent portfolio analysis and strategic optimization.',
-    analysis: 'Strategic Analysis',
+    title: 'AI Advisor (Static Mode)',
+    desc: 'Automated portfolio check based on your asset allocation.',
+    analysis: 'Portfolio Health',
     risk: 'Risk Level',
-    diversification: 'Diversification Score',
-    recommendations: 'Actionable Steps',
-    ctaButton: 'Generate AI Report',
-    loading: 'Analyzing...',
-    placeholder: 'Specific question about your assets...',
-    ask: 'Custom Query',
-    answer: 'AI Report',
+    diversification: 'Diversity Index',
+    recommendations: 'Key Steps',
+    ctaButton: 'Run Analysis',
+    loading: 'Processing...',
+    placeholder: 'AI requires a server to provide dynamic tips...',
+    ask: 'Static Review',
+    answer: 'System Status',
   },
   zh: {
-    title: 'AI 財務顧問',
-    desc: '基於數據的資產優化戰略建議',
-    analysis: '戰略分析報告',
+    title: 'AI 財務分析 (靜態模式)',
+    desc: '基於資產配置比例的自動化檢查',
+    analysis: '資產健康狀況',
     risk: '風險等級',
-    diversification: '多樣化評分',
+    diversification: '多元化指數',
     recommendations: '優化建議',
-    ctaButton: '生成 AI 洞察',
+    ctaButton: '開始分析',
     loading: '分析中...',
-    placeholder: '輸入關於資產的具體問題...',
-    ask: '自定義查詢',
-    answer: 'AI 分析報告',
+    placeholder: '靜態網頁版僅支援基礎分析，完整 AI 建議需部署至伺服器...',
+    ask: '系統檢查',
+    answer: '系統分析結果',
   }
 };
 
-export function AITipCard({ assets, totalTWD, marketConditions, language }: AITipCardProps) {
-  const [insight, setInsight] = useState<FinancialTipOutput | null>(null);
+export function AITipCard({ assets, totalTWD, language }: AITipCardProps) {
+  const [insight, setInsight] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
-  const [question, setQuestion] = useState('');
   const lang = t[language];
 
-  const fetchTip = async () => {
+  const fetchTip = () => {
     if (assets.length === 0) return;
     setLoading(true);
-    try {
-      const response = await getFinancialTip({ 
-        assets, 
-        totalTWD, 
-        marketConditions, 
-        language,
-        userQuestion: question || undefined
+    
+    // 靜態版邏輯：模擬分析，避免使用 Server Action
+    setTimeout(() => {
+      const cryptoRatio = assets.filter(a => a.category === 'Crypto').reduce((sum, a) => sum + a.valueInTWD, 0) / (totalTWD || 1);
+      
+      setInsight({
+        answer: language === 'zh' ? '當前資產配置已根據市場匯率完成同步。' : 'Current portfolio has been synchronized with market rates.',
+        analysis: language === 'zh' ? '資產組合包含多元化部位，建議定期建立快照以追蹤長期走勢。' : 'Portfolio contains diversified assets. Regular snapshots are recommended.',
+        riskLevel: cryptoRatio > 0.3 ? (language === 'zh' ? '高風險 / 積極型' : 'High Risk / Aggressive') : (language === 'zh' ? '中低風險 / 穩健型' : 'Low-Moderate / Balanced'),
+        diversificationScore: Math.min(assets.length * 15, 100),
+        recommendations: language === 'zh' 
+          ? ['確保緊急預備金充足', '定期檢視高波動資產比重', '利用快照功能對比歷史紀錄'] 
+          : ['Ensure sufficient emergency funds', 'Review high-volatility asset exposure', 'Use snapshots to compare performance']
       });
-      setInsight(response);
-    } catch (error) {
-      console.error('Analysis failure:', error);
-    } finally {
       setLoading(false);
-    }
+    }, 800);
   };
 
   const getRiskColor = (level: string) => {
@@ -99,12 +99,6 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
             </CardTitle>
             <CardDescription className="text-xs font-bold text-slate-400 uppercase tracking-widest">{lang.desc}</CardDescription>
           </div>
-          {insight && (
-            <Button variant="ghost" size="sm" onClick={() => { setInsight(null); setQuestion(''); }} className="text-black hover:bg-slate-100 font-bold text-xs uppercase tracking-widest">
-              <RefreshCw className="h-3.5 w-3.5 mr-2" />
-              Retry
-            </Button>
-          )}
         </div>
       </CardHeader>
       
@@ -114,10 +108,9 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
             <div className="flex-1 space-y-2">
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{lang.ask}</label>
               <Textarea 
+                readOnly
                 placeholder={lang.placeholder}
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                className="resize-none h-28 bg-slate-50 border-slate-200 focus:border-black rounded-lg text-sm p-4 transition-all"
+                className="resize-none h-28 bg-slate-50 border-slate-200 focus:border-black rounded-lg text-sm p-4 transition-all opacity-60"
               />
             </div>
             <div className="flex flex-col justify-end">
@@ -177,7 +170,7 @@ export function AITipCard({ assets, totalTWD, marketConditions, language }: AITi
                   {lang.recommendations}
                 </h4>
                 <ul className="space-y-3">
-                  {insight.recommendations.map((rec, i) => (
+                  {insight.recommendations.map((rec: string, i: number) => (
                     <li key={i} className="text-[11px] flex gap-3 text-slate-600 items-start">
                       <div className="w-5 h-5 rounded bg-slate-100 text-black flex items-center justify-center shrink-0 font-bold text-[10px] border border-slate-200">
                         {i + 1}
