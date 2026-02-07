@@ -19,7 +19,8 @@ import {
   Globe, 
   Wallet, 
   BarChart3,
-  Layers
+  Layers,
+  Settings2
 } from 'lucide-react';
 import { 
   Card, 
@@ -70,7 +71,9 @@ const translations = {
     snapshotSaved: 'Snapshot saved.',
     snapshotDeleted: 'Snapshot deleted.',
     dashboard: 'Portfolio Overview',
-    change: '24h Change'
+    change: '24h Change',
+    actions: 'Actions',
+    assetDeleted: 'Asset removed.'
   },
   zh: {
     title: 'Asset Insights Pro',
@@ -93,7 +96,9 @@ const translations = {
     snapshotSaved: '快照已存入紀錄',
     snapshotDeleted: '紀錄已刪除',
     dashboard: '投資組合概覽',
-    change: '24H 漲跌'
+    change: '24H 漲跌',
+    actions: '管理',
+    assetDeleted: '資產已移除'
   }
 };
 
@@ -237,6 +242,11 @@ export default function MonochromeAssetPage() {
     toast({ title: t.snapshotSaved });
   };
 
+  const deleteAsset = (id: string) => {
+    setAssets(prev => prev.filter(a => a.id !== id));
+    toast({ title: t.assetDeleted });
+  };
+
   if (!mounted) return null;
 
   return (
@@ -362,6 +372,7 @@ export default function MonochromeAssetPage() {
                       <TableHead className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
                       <TableHead className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.change}</TableHead>
                       <TableHead className="px-8 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
+                      <TableHead className="w-[60px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -397,6 +408,16 @@ export default function MonochromeAssetPage() {
                           <span className="font-bold text-lg tracking-tight">
                             {getCurrencySymbol(displayCurrency)}{asset.valueInDisplay.toLocaleString()}
                           </span>
+                        </TableCell>
+                        <TableCell className="px-4 py-5">
+                           <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-slate-300 hover:text-rose-600 opacity-0 group-hover:opacity-100 transition-all"
+                            onClick={() => deleteAsset(asset.id)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
