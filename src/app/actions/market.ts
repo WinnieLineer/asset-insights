@@ -1,7 +1,5 @@
+
 /**
- * Market actions have been removed to comply with Static Export requirements.
- * Please use client-side fetching in src/app/lib/market-api.ts
+ * Server Actions are disabled to ensure compatibility with GitHub Pages Static Export.
  */
-export async function getMarketData() {
-  return null;
-}
+export {};

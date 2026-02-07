@@ -20,7 +20,6 @@ import {
   Globe, 
   Wallet, 
   BarChart3,
-  Layers,
   Edit2
 } from 'lucide-react';
 import { 
@@ -44,7 +43,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter
 } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
@@ -63,23 +61,17 @@ const translations = {
     assetCount: 'Total Assets',
     items: 'items',
     addAsset: 'Add New Asset',
-    snapshotHistory: 'Snapshot History',
-    noSnapshots: 'No history logs',
-    snapshotDetail: 'Snapshot Details',
     assetName: 'Asset Name',
     marketPrice: 'Price',
     holdings: 'Holdings',
     valuation: 'Valuation',
-    fetching: 'Syncing...',
     dataUpdated: 'Market data updated.',
     snapshotSaved: 'Snapshot saved.',
-    snapshotDeleted: 'Snapshot deleted.',
     dashboard: 'Portfolio Overview',
-    change: '24h Change',
+    change: 'Change',
     actions: 'Actions',
     assetDeleted: 'Asset removed.',
     editAsset: 'Edit Holdings',
-    update: 'Update',
     cancel: 'Cancel',
     saveChanges: 'Save Changes'
   },
@@ -92,23 +84,17 @@ const translations = {
     assetCount: '資產總數',
     items: '個項目',
     addAsset: '新增資產部位',
-    snapshotHistory: '歷史快照紀錄',
-    noSnapshots: '尚無快照紀錄',
-    snapshotDetail: '快照詳細資訊',
     assetName: '資產名稱',
     marketPrice: '當前市價',
     holdings: '持有數量',
     valuation: '帳面價值',
-    fetching: '同步中...',
     dataUpdated: '市場數據已更新',
     snapshotSaved: '快照已存入紀錄',
-    snapshotDeleted: '紀錄已刪除',
     dashboard: '投資組合概覽',
-    change: '24H 漲跌',
+    change: '漲跌',
     actions: '管理',
     assetDeleted: '資產已移除',
     editAsset: '編輯持有數量',
-    update: '更新數量',
     cancel: '取消',
     saveChanges: '儲存變更'
   }
@@ -129,31 +115,27 @@ export default function MonochromeAssetPage() {
     cryptoPrices: {},
     stockPrices: {}
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     const savedAssets = localStorage.getItem('assets');
     const savedSnapshots = localStorage.getItem('snapshots');
-    const savedLang = localStorage.getItem('language');
-    if (savedLang) setLanguage(savedLang as Language);
     if (savedAssets) setAssets(JSON.parse(savedAssets));
     if (savedSnapshots) setSnapshots(JSON.parse(savedSnapshots));
-    setLoading(false);
   }, []);
 
   useEffect(() => {
     if (mounted) {
       localStorage.setItem('assets', JSON.stringify(assets));
       localStorage.setItem('snapshots', JSON.stringify(snapshots));
-      localStorage.setItem('language', language);
     }
-  }, [assets, snapshots, language, mounted]);
+  }, [assets, snapshots, mounted]);
 
   const t = translations[language];
 
   const updateMarketData = async () => {
-    if (!mounted) return;
+    if (!mounted || loading) return;
     setLoading(true);
     const cryptos = assets.filter(a => a.category === 'Crypto').map(a => a.symbol);
     const stocks = assets.filter(a => a.category === 'Stock').map(a => a.symbol);
@@ -191,27 +173,50 @@ export default function MonochromeAssetPage() {
       let currentPrice = 0; 
       if (asset.category === 'Crypto') currentPrice = marketData.cryptoPrices[asset.symbol.toUpperCase()] || 0;
       else if (asset.category === 'Stock') currentPrice = marketData.stockPrices[asset.symbol.toUpperCase()] || 0;
+      
       let valueInTWD = 0;
       const rate = marketData.rates.TWD || 32.5;
+      
       if (asset.currency === 'USD') {
-        const usdValue = (asset.category === 'Stock' || asset.category === 'Crypto') ? asset.amount * (currentPrice || 1) : asset.amount;
+        const usdValue = (asset.category === 'Stock' || asset.category === 'Crypto') ? asset.amount * (currentPrice || 0) : asset.amount;
         valueInTWD = usdValue * rate;
       } else if (asset.currency === 'CNY') {
         valueInTWD = asset.amount * (rate / (marketData.rates.CNY || 7.2));
       } else {
-        const multiplier = (asset.category === 'Stock' ? (currentPrice || 1) : 1);
-        valueInTWD = asset.amount * multiplier;
+        const multiplier = (asset.category === 'Stock' ? (currentPrice || 0) : 1);
+        valueInTWD = asset.amount * (multiplier || 1);
       }
+      
       totalTWD += valueInTWD;
       allocationMap[asset.category] += valueInTWD;
+      
       const previousAsset = lastSnapshot?.assets?.find(pa => pa.id === asset.id);
       const diffTWD = previousAsset ? valueInTWD - (previousAsset.valueInTWD || 0) : 0;
       const diffPercent = previousAsset && previousAsset.valueInTWD ? (diffTWD / previousAsset.valueInTWD) * 100 : 0;
-      return { ...asset, calculatedPrice: currentPrice, valueInTWD, valueInDisplay: convertTWDToDisplay(valueInTWD), diffTWD, diffPercent, hasHistory: !!previousAsset };
+      
+      return { 
+        ...asset, 
+        calculatedPrice: currentPrice, 
+        valueInTWD, 
+        valueInDisplay: convertTWDToDisplay(valueInTWD), 
+        diffTWD, 
+        diffPercent, 
+        hasHistory: !!previousAsset 
+      };
     });
+
     const totalDiffTWD = lastSnapshot ? totalTWD - lastSnapshot.totalTWD : 0;
     const totalDiffPercent = lastSnapshot && lastSnapshot.totalTWD ? (totalDiffTWD / lastSnapshot.totalTWD) * 100 : 0;
-    return { processedAssets, totalTWD, totalDiffTWD, totalDiffPercent, totalDisplay: convertTWDToDisplay(totalTWD), totalDiffDisplay: convertTWDToDisplay(totalDiffTWD), allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ name, value: convertTWDToDisplay(value) })) };
+
+    return { 
+      processedAssets, 
+      totalTWD, 
+      totalDiffTWD, 
+      totalDiffPercent, 
+      totalDisplay: convertTWDToDisplay(totalTWD), 
+      totalDiffDisplay: convertTWDToDisplay(totalDiffTWD),
+      allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ name, value: convertTWDToDisplay(value) })) 
+    };
   }, [assets, marketData, displayCurrency, lastSnapshot]);
 
   const takeSnapshot = () => {
@@ -241,13 +246,13 @@ export default function MonochromeAssetPage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-white text-black pb-20 selection:bg-black selection:text-white font-sans">
+    <div className="min-h-screen bg-white text-black pb-20 font-sans">
       <header className="glass-nav h-20 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 bg-black rounded flex items-center justify-center"><Activity className="w-5 h-5 text-white" /></div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-black">{t.title}</h1>
+              <h1 className="text-lg font-bold tracking-tight">{t.title}</h1>
               <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t.subtitle}</p>
             </div>
           </div>
@@ -265,9 +270,10 @@ export default function MonochromeAssetPage() {
           </div>
         </div>
       </header>
+      
       <main className="max-w-7xl mx-auto px-6 py-10 space-y-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <Card className="lg:col-span-8 modern-card p-10 flex flex-col justify-between overflow-hidden relative border-slate-200 min-h-[300px]">
+          <Card className="lg:col-span-8 modern-card p-10 relative overflow-hidden">
             <div className="space-y-4 z-20 relative">
               <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-widest"><Globe className="w-3.5 h-3.5" />{t.totalValue}</div>
               <div className="text-5xl font-black tracking-tighter">{getCurrencySymbol(displayCurrency)}{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
@@ -279,45 +285,53 @@ export default function MonochromeAssetPage() {
                 </div>
               )}
             </div>
-            <div className="flex gap-10 pt-10 mt-10 border-t border-slate-100 z-20 relative bg-white">
-              <div><p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">{t.assetCount}</p><p className="text-xl font-bold">{assets.length} <span className="text-xs font-medium text-slate-400">{t.items}</span></p></div>
-              <div><p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Status</p><div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Connected</span></div></div>
-            </div>
-            <div className="absolute -bottom-10 -right-10 opacity-[0.1] pointer-events-none z-20"><Wallet className="w-80 h-80 text-black drop-shadow-sm" /></div>
+            <div className="absolute -bottom-10 -right-10 opacity-[0.05] pointer-events-none z-10"><Wallet className="w-64 h-64 text-black" /></div>
           </Card>
-          <div className="lg:col-span-4 grid grid-cols-1 gap-6">
-            <Button onClick={takeSnapshot} className="w-full h-full bg-black hover:bg-slate-800 text-white font-bold flex flex-col items-center justify-center gap-3 rounded transition-all"><Clock className="w-5 h-5" /><span className="text-sm tracking-widest uppercase">{t.takeSnapshot}</span></Button>
-            <Button variant="outline" onClick={updateMarketData} disabled={loading} className="w-full h-full border-slate-200 bg-white hover:bg-slate-50 font-bold flex flex-col items-center justify-center gap-3 rounded transition-all"><RefreshCw className={cn("w-5 h-5", loading && "animate-spin")} /><span className="text-sm tracking-widest uppercase">{t.updateData}</span></Button>
+          <div className="lg:col-span-4 grid grid-cols-1 gap-4">
+            <Button onClick={takeSnapshot} className="w-full h-full bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all">
+              <Clock className="w-5 h-5" /><span className="text-xs tracking-widest uppercase">{t.takeSnapshot}</span>
+            </Button>
+            <Button variant="outline" onClick={updateMarketData} disabled={loading} className="w-full h-full font-bold flex flex-col items-center justify-center gap-2 rounded transition-all">
+              <RefreshCw className={cn("w-5 h-5", loading && "animate-spin")} /><span className="text-xs tracking-widest uppercase">{t.updateData}</span>
+            </Button>
           </div>
         </div>
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
           <div className="xl:col-span-8 space-y-8">
-            <Card className="modern-card overflow-hidden border-slate-200">
-              <CardHeader className="px-8 py-5 border-b border-slate-50 flex flex-row items-center justify-between bg-white"><CardTitle className="text-sm font-bold flex items-center gap-2"><BarChart3 className="w-4 h-4" />{t.dashboard}</CardTitle></CardHeader>
+            <Card className="modern-card overflow-hidden">
+              <CardHeader className="px-8 py-5 border-b border-slate-50 bg-white"><CardTitle className="text-sm font-bold flex items-center gap-2"><BarChart3 className="w-4 h-4" />{t.dashboard}</CardTitle></CardHeader>
               <CardContent className="p-0 bg-white">
                 <Table>
                   <TableHeader className="bg-slate-50">
-                    <TableRow className="hover:bg-transparent border-slate-100">
-                      <TableHead className="px-8 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
-                      <TableHead className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.marketPrice}</TableHead>
-                      <TableHead className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
-                      <TableHead className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.change}</TableHead>
-                      <TableHead className="px-8 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
-                      <TableHead className="w-[100px] px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">{t.actions}</TableHead>
+                    <TableRow>
+                      <TableHead className="px-8 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
+                      <TableHead className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
+                      <TableHead className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.change}</TableHead>
+                      <TableHead className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
+                      <TableHead className="w-[100px] text-center"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {assetCalculations.processedAssets.map(asset => (
-                      <TableRow key={asset.id} className="border-slate-50 hover:bg-slate-50/50 transition-colors group">
-                        <TableCell className="px-8 py-5"><div className="font-bold text-black">{asset.name}</div><div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{asset.symbol}</div></TableCell>
-                        <TableCell className="px-4 py-5">{(asset.category === 'Stock' || asset.category === 'Crypto') ? (<span className="text-sm font-medium text-slate-600">{asset.calculatedPrice > 0 ? `${getCurrencySymbol(asset.currency)}${asset.calculatedPrice.toLocaleString()}` : t.fetching}</span>) : <span className="text-slate-300">—</span>}</TableCell>
-                        <TableCell className="px-4 py-5"><span className="text-sm font-bold">{asset.amount.toLocaleString()}</span></TableCell>
-                        <TableCell className="px-4 py-5">{asset.hasHistory ? (<div className={cn("text-[11px] font-bold px-2 py-0.5 rounded", asset.diffTWD >= 0 ? "text-emerald-600" : "text-rose-600")}>{asset.diffTWD >= 0 ? '+' : ''}{asset.diffPercent.toFixed(2)}%</div>) : (<span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Initial</span>)}</TableCell>
-                        <TableCell className="px-8 py-5 text-right"><span className="font-bold text-lg tracking-tight">{getCurrencySymbol(displayCurrency)}{asset.valueInDisplay.toLocaleString()}</span></TableCell>
-                        <TableCell className="px-4 py-5 text-center">
-                          <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-black" onClick={() => startEditing(asset)}><Edit2 className="w-3.5 h-3.5" /></Button>
-                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-rose-600" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); toast({ title: t.assetDeleted }); }}><Trash2 className="w-3.5 h-3.5" /></Button>
+                      <TableRow key={asset.id} className="group hover:bg-slate-50/50">
+                        <TableCell className="px-8 py-5">
+                          <div className="font-bold">{asset.name}</div>
+                          <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{asset.symbol}</div>
+                        </TableCell>
+                        <TableCell><span className="text-sm font-bold">{asset.amount.toLocaleString()}</span></TableCell>
+                        <TableCell>
+                          {asset.hasHistory ? (
+                            <div className={cn("text-[11px] font-bold", asset.diffTWD >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                              {asset.diffTWD >= 0 ? '+' : ''}{asset.diffPercent.toFixed(2)}%
+                            </div>
+                          ) : <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Initial</span>}
+                        </TableCell>
+                        <TableCell className="text-right"><span className="font-bold text-lg">{getCurrencySymbol(displayCurrency)}{asset.valueInDisplay.toLocaleString()}</span></TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-black" onClick={() => startEditing(asset)}><Edit2 className="w-3.5 h-3.5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-rose-600" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); toast({ title: t.assetDeleted }); }}><Trash2 className="w-3.5 h-3.5" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -329,19 +343,20 @@ export default function MonochromeAssetPage() {
             <PortfolioCharts language={language} allocationData={assetCalculations.allocationData} historicalData={snapshots} displayCurrency={displayCurrency} rates={marketData.rates} />
           </div>
           <div className="xl:col-span-4 space-y-8">
-            <Card className="modern-card border-slate-200 bg-white"><CardHeader className="px-8 py-5 border-b border-slate-50"><CardTitle className="text-sm font-bold flex items-center gap-2"><Plus className="w-4 h-4" />{t.addAsset}</CardTitle></CardHeader><CardContent className="px-8 py-8"><AssetForm language={language} onAdd={(a) => setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }])} /></CardContent></Card>
+            <Card className="modern-card"><CardHeader className="px-8 py-5 border-b border-slate-50"><CardTitle className="text-sm font-bold flex items-center gap-2"><Plus className="w-4 h-4" />{t.addAsset}</CardTitle></CardHeader><CardContent className="p-8"><AssetForm language={language} onAdd={(a) => setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }])} /></CardContent></Card>
           </div>
         </div>
-        <AITipCard language={language} assets={assetCalculations.processedAssets.map(a => ({ name: a.name, symbol: a.symbol, category: a.category, amount: a.amount, currency: a.currency, price: a.calculatedPrice, valueInTWD: a.valueInTWD }))} totalTWD={assetCalculations.totalTWD} marketConditions={`USD/TWD: ${(marketData.rates.TWD || 32.5).toFixed(2)}`} />
+        <AITipCard language={language} assets={assetCalculations.processedAssets} totalTWD={assetCalculations.totalTWD} />
       </main>
+
       <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
         <DialogContent className="sm:max-w-[425px] bg-white">
           <DialogHeader><DialogTitle className="text-xl font-bold">{t.editAsset}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="space-y-2"><Label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t.assetName}</Label><div className="text-sm font-bold p-3 bg-slate-50 rounded border border-slate-100">{editingAsset?.name} ({editingAsset?.symbol})</div></div>
-            <div className="space-y-2"><Label htmlFor="amount" className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t.holdings}</Label><Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="bg-slate-50 border-slate-200 font-bold" /></div>
+            <div className="space-y-2"><Label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t.assetName}</Label><div className="text-sm font-bold p-3 bg-slate-50 rounded">{editingAsset?.name} ({editingAsset?.symbol})</div></div>
+            <div className="space-y-2"><Label htmlFor="amount" className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t.holdings}</Label><Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="bg-slate-50 font-bold" /></div>
           </div>
-          <DialogFooter><Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-bold uppercase text-[10px] tracking-widest">{t.cancel}</Button><Button onClick={saveEdit} className="bg-black text-white hover:bg-slate-800 font-bold uppercase text-[10px] tracking-widest">{t.saveChanges}</Button></DialogFooter>
+          <DialogFooter><Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-bold text-[10px] uppercase tracking-widest">{t.cancel}</Button><Button onClick={saveEdit} className="bg-black text-white hover:bg-slate-800 font-bold text-[10px] uppercase tracking-widest">{t.saveChanges}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
