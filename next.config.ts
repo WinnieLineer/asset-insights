@@ -1,7 +1,7 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  // 移除 output: 'export' 以支援 Server Actions 與 AI 功能
+  output: 'export',
   images: {
     unoptimized: true,
     remotePatterns: [

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Asset, Snapshot, MarketData, AssetCategory, Currency } from './lib/types';
-import { getMarketData } from '@/app/actions/market';
+import { fetchMarketData } from '@/app/lib/market-api';
 import { AssetForm } from '@/components/AssetForm';
 import { PortfolioCharts } from '@/components/PortfolioCharts';
 import { AITipCard } from '@/components/AITipCard';
@@ -143,7 +143,7 @@ export default function MonochromeAssetPage() {
     const stocks = assets.filter(a => a.category === 'Stock').map(a => a.symbol);
     
     try {
-      const data = await getMarketData({ cryptos, stocks });
+      const data = await fetchMarketData({ cryptos, stocks });
       setMarketData(data);
       toast({ title: t.dataUpdated });
     } catch (error) {
