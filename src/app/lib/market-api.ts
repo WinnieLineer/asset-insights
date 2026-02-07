@@ -2,6 +2,7 @@ import { MarketData } from '@/app/lib/types';
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3/simple/price';
 const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
+const PROXY_BASE_URL = 'https://script.google.com/macros/s/AKfycbzPhhCZCHpNPagl86NFNO_n8_wzJZPOFHTx42lqjVXMi1n_S_1ncJAsS6tRjQcIDvnl/exec?url=';
 
 // 加密貨幣代號與 CoinGecko ID 的對照表
 const CRYPTO_ID_MAP: Record<string, string> = {
@@ -21,25 +22,26 @@ const CRYPTO_ID_MAP: Record<string, string> = {
 };
 
 /**
- * 從 Yahoo Finance 抓取價格 (透過 corsproxy.io)
+ * 從 Yahoo Finance 抓取價格 (透過指定的 Google Apps Script 代理)
  */
 async function fetchYahooStockPrice(symbol: string): Promise<number | null> {
   const isNumeric = /^\d+$/.test(symbol);
   // 台股若輸入數字，自動補上 .TW
   const yahooSymbol = isNumeric ? `${symbol}.TW` : symbol.toUpperCase();
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
+  const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`;
   
-  // 使用 corsproxy.io 繞過瀏覽器限制
-  const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+  // 使用指定的 Google Apps Script 代理繞過瀏覽器 CORS 限制
+  const finalUrl = `${PROXY_BASE_URL}${encodeURIComponent(targetUrl)}`;
   
   try {
-    const response = await fetch(proxyUrl);
+    const response = await fetch(finalUrl);
     if (!response.ok) return null;
     const data = await response.json();
+    // 代理回傳的結構與原 Yahoo Finance 一致
     const price = data.chart?.result?.[0]?.meta?.regularMarketPrice;
     return price || null;
   } catch (error) {
-    console.error(`Failed to fetch stock price for ${yahooSymbol}:`, error);
+    console.error(`Failed to fetch stock price for ${yahooSymbol} via proxy:`, error);
     return null;
   }
 }
