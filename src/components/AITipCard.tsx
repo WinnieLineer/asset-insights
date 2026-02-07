@@ -22,7 +22,7 @@ interface AssetDetail {
 interface AITipCardProps {
   assets: AssetDetail[];
   totalTWD: number;
-  marketConditions: string;
+  marketConditions?: string;
   language: 'en' | 'zh';
 }
 
@@ -51,7 +51,7 @@ const t = {
   }
 };
 
-export function AITipCard({ assets, totalTWD, language }: AITipCardProps) {
+export function AITipCard({ assets, totalTWD, language, marketConditions = "Stable" }: AITipCardProps) {
   const [insight, setInsight] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const lang = t[language];
@@ -60,17 +60,16 @@ export function AITipCard({ assets, totalTWD, language }: AITipCardProps) {
     if (assets.length === 0) return;
     setLoading(true);
     
-    // In static mode, we simulate a professional analysis report
-    // In a real production environment on GitHub Pages, we would use an Edge Function or direct client API call
+    // Simulating Gemini API Response for Static Export compatibility
     setTimeout(() => {
       const cryptoVal = assets.filter(a => a.category === 'Crypto').reduce((sum, a) => sum + a.valueInTWD, 0);
       const stockVal = assets.filter(a => a.category === 'Stock').reduce((sum, a) => sum + a.valueInTWD, 0);
       const cryptoRatio = cryptoVal / (totalTWD || 1);
-      const score = Math.min(assets.length * 15, 100);
+      const score = Math.min(assets.length * 15 + 20, 100);
 
       const report = language === 'zh' ? {
         answer: '資產掃描完成。目前部位顯示出明確的成長動能。',
-        analysis: `配置以 ${cryptoRatio > 0.3 ? '進攻型' : '平衡型'} 資產為主。在當前匯率環境下，您的部位對 ${cryptoRatio > 0.3 ? '市場波動' : '資產增幅'} 具有高度敏感性。`,
+        analysis: `配置以 ${cryptoRatio > 0.3 ? '進攻型' : '平衡型'} 資產為主。市場環境：${marketConditions}。在當前匯率環境下，您的部位對 ${cryptoRatio > 0.3 ? '市場波動' : '資產增幅'} 具有高度敏感性。`,
         riskLevel: cryptoRatio > 0.4 ? "高風險 / 積極成長" : cryptoRatio > 0.15 ? "中等風險 / 平衡成長" : "低風險 / 保守穩健",
         recommendations: [
           cryptoRatio > 0.3 ? "考慮在高點適度獲利了結，轉入低波動債券" : "可適度增加全球指數基金（如 VTI/VT）提升長期報酬",
@@ -79,7 +78,7 @@ export function AITipCard({ assets, totalTWD, language }: AITipCardProps) {
         ]
       } : {
         answer: 'Portfolio scan complete. Current allocation shows clear growth momentum.',
-        analysis: `Your strategy is ${cryptoRatio > 0.3 ? 'Aggressive' : 'Balanced'}. Given current FX rates, your portfolio is highly sensitive to ${cryptoRatio > 0.3 ? 'market volatility' : 'asset appreciation'}.`,
+        analysis: `Your strategy is ${cryptoRatio > 0.3 ? 'Aggressive' : 'Balanced'}. Market: ${marketConditions}. Given current FX rates, your portfolio is highly sensitive to ${cryptoRatio > 0.3 ? 'market volatility' : 'asset appreciation'}.`,
         riskLevel: cryptoRatio > 0.4 ? "High Risk / Aggressive" : cryptoRatio > 0.15 ? "Moderate / Balanced" : "Low Risk / Conservative",
         recommendations: [
           cryptoRatio > 0.3 ? "Consider rebalancing high-volatility profits into stable assets" : "Opportunity to increase global index exposure for better growth",

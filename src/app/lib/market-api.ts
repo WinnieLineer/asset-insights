@@ -9,6 +9,7 @@ export async function fetchMarketData(symbols: { cryptos: string[]; stocks: stri
   const cryptoPrices: Record<string, number> = {};
   const stockPrices: Record<string, number> = {};
 
+  // 1. Fetch Exchange Rates
   try {
     const erResponse = await fetch(EXCHANGE_RATE_API);
     if (erResponse.ok) {
@@ -17,12 +18,12 @@ export async function fetchMarketData(symbols: { cryptos: string[]; stocks: stri
     }
   } catch (e) {}
 
-  // Batch process stocks and cryptos using the GAS proxy
-  const allSymbols = [
-    ...symbols.stocks.map(s => /^\d+$/.test(s) ? `${s}.TW` : s.toUpperCase()),
-    ...symbols.cryptos.map(c => `${c}USDT`)
-  ];
+  // 2. Prepare symbols for batch request
+  const formattedStocks = symbols.stocks.map(s => /^\d+$/.test(s) ? `${s}.TW` : s.toUpperCase());
+  const formattedCryptos = symbols.cryptos.map(c => `${c}USDT`);
+  const allSymbols = [...formattedStocks, ...formattedCryptos];
 
+  // 3. Single Batch Request for all prices
   if (allSymbols.length > 0) {
     try {
       const finalUrl = `${BATCH_STOCK_PROXY_URL}${encodeURIComponent(allSymbols.join(','))}`;
@@ -30,13 +31,13 @@ export async function fetchMarketData(symbols: { cryptos: string[]; stocks: stri
       if (response.ok) {
         const dataArray = await response.json();
         
-        // Parse stock prices
+        // Parse stock prices from the beginning of the array
         symbols.stocks.forEach((s, i) => {
           const result = dataArray[i]?.chart?.result?.[0]?.meta;
           stockPrices[s.toUpperCase()] = result?.regularMarketPrice || 0;
         });
 
-        // Parse crypto prices
+        // Parse crypto prices from the end of the array
         symbols.cryptos.forEach((c, i) => {
           const cryptoIndex = symbols.stocks.length + i;
           const result = dataArray[cryptoIndex]?.chart?.result?.[0]?.meta;
