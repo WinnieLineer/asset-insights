@@ -206,26 +206,26 @@ export default function MonochromeAssetPage() {
     const allocationMap: Record<AssetCategory, number> = {
       'Stock': 0, 'Crypto': 0, 'Bank': 0, 'Savings': 0,
     };
+    
+    const rateTWD = marketData.rates.TWD || 32.5;
+
     const processedAssets = assets.map(asset => {
       let currentPrice = 0; 
       const sym = asset.symbol.toUpperCase();
       if (asset.category === 'Crypto') currentPrice = marketData.cryptoPrices[sym] || 0;
       else if (asset.category === 'Stock') currentPrice = marketData.stockPrices[sym] || 0;
       
-      let valueInTWD = 0;
-      const rateTWD = marketData.rates.TWD || 32.5;
+      const assetCurrencyRate = marketData.rates[asset.currency] || 1;
       
-      if (asset.currency === 'USD') {
-        const usdValue = (asset.category === 'Stock' || asset.category === 'Crypto') ? asset.amount * currentPrice : asset.amount;
-        valueInTWD = usdValue * rateTWD;
-      } else if (asset.currency === 'CNY') {
-        valueInTWD = asset.amount * (rateTWD / (marketData.rates.CNY || 7.2));
-      } else if (asset.currency === 'SGD') {
-        valueInTWD = asset.amount * (rateTWD / (marketData.rates.SGD || 1.35));
-      } else {
-        const multiplier = (asset.category === 'Stock' || asset.category === 'Crypto' ? currentPrice : 1);
-        valueInTWD = asset.amount * (multiplier || 1);
+      // 計算資產的基本價值（以持有幣別為單位）
+      let valueInBaseCurrency = asset.amount;
+      if (asset.category === 'Stock' || asset.category === 'Crypto') {
+        valueInBaseCurrency = asset.amount * (currentPrice || 0);
       }
+      
+      // 將持有幣別價值換算為台幣 (TWD)
+      // 公式: (幣別價值) * (TWD對USD匯率 / 持有幣別對USD匯率)
+      const valueInTWD = valueInBaseCurrency * (rateTWD / assetCurrencyRate);
       
       totalTWD += valueInTWD;
       allocationMap[asset.category] += valueInTWD;
@@ -236,18 +236,13 @@ export default function MonochromeAssetPage() {
       
       let unitPriceInDisplay = 0;
       if (asset.category === 'Stock' || asset.category === 'Crypto') {
-        let unitValTWD = 0;
-        if (asset.category === 'Crypto' || asset.currency === 'USD') unitValTWD = currentPrice * rateTWD;
-        else if (asset.currency === 'SGD') unitValTWD = currentPrice * (rateTWD / (marketData.rates.SGD || 1.35));
-        else unitValTWD = currentPrice;
-
-        unitPriceInDisplay = convertTWDToDisplay(unitValTWD);
+        // 單位價格（顯示幣別） = (單位持有幣別市價) * (顯示幣別對USD匯率 / 持有幣別對USD匯率)
+        const displayRate = marketData.rates[displayCurrency] || 1;
+        unitPriceInDisplay = currentPrice * (displayRate / assetCurrencyRate);
       } else {
-        let unitValTWD = 1;
-        if (asset.currency === 'USD') unitValTWD = rateTWD;
-        else if (asset.currency === 'CNY') unitValTWD = (rateTWD / marketData.rates.CNY);
-        else if (asset.currency === 'SGD') unitValTWD = (rateTWD / marketData.rates.SGD);
-        unitPriceInDisplay = convertTWDToDisplay(unitValTWD);
+        // 存款類資產，1單位幣別對顯示幣別的價值
+        const displayRate = marketData.rates[displayCurrency] || 1;
+        unitPriceInDisplay = 1 * (displayRate / assetCurrencyRate);
       }
 
       return { 

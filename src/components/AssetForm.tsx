@@ -43,7 +43,8 @@ const t = {
     errors: {
       nameTooShort: 'Min 2 characters',
       invalidAmount: 'Positive number required',
-      required: 'Required'
+      required: 'Required',
+      tickerRequired: 'Ticker is required for this asset type'
     }
   },
   zh: {
@@ -64,7 +65,8 @@ const t = {
     errors: {
       nameTooShort: '至少 2 個字',
       invalidAmount: '請輸入有效的正數',
-      required: '必填'
+      required: '必填',
+      tickerRequired: '此資產類別必須填寫代號'
     }
   }
 };
@@ -83,6 +85,15 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     category: z.enum(['Stock', 'Crypto', 'Bank', 'Savings']),
     amount: z.number({ invalid_type_error: lang.errors.invalidAmount }).min(0, { message: lang.errors.invalidAmount }),
     currency: z.enum(['TWD', 'USD', 'CNY', 'SGD']),
+  }).refine((data) => {
+    // 如果是股票或加密貨幣，Ticker 是必填
+    if ((data.category === 'Stock' || data.category === 'Crypto') && (!data.symbol || data.symbol.trim() === '')) {
+      return false;
+    }
+    return true;
+  }, {
+    message: lang.errors.tickerRequired,
+    path: ['symbol'],
   }), [lang]);
 
   const form = useForm<z.infer<typeof formSchema>>({
