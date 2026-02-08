@@ -92,7 +92,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
       `${a.name} (${a.symbol}): ${a.amount} ${a.currency}, Value: ${a.valueInTWD.toFixed(0)} TWD`
     ).join('\n');
 
-    const prompt = `
+    const promptText = `
       You are a high-end institutional financial analyst. Provide a professional portfolio audit.
       
       PORTFOLIO DATA:
@@ -115,12 +115,23 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
     `;
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      // 完全依照指定格式 call gemini api
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent", {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey 
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.5 }
+          contents: [
+            {
+              parts: [
+                {
+                  text: promptText
+                }
+              ]
+            }
+          ]
         })
       });
 
@@ -129,6 +140,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
       const cleanJson = rawText.replace(/```json|```/gi, '').trim();
       setInsight(JSON.parse(cleanJson));
     } catch (error) {
+      console.error('AI Error:', error);
       toast({ variant: 'destructive', title: 'AI Error', description: 'API connection failed.' });
     } finally {
       setLoading(false);

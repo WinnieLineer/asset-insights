@@ -6,10 +6,8 @@ export const metadata: Metadata = {
   title: 'Asset Insights Pro | 專業資產追蹤系統',
   description: '全方位的個人資產管理與 AI 財務決策系統。',
   icons: {
-    icon: [
-      { url: 'favicon.ico' },
-      { url: 'favicon.ico', rel: 'shortcut icon' }
-    ],
+    icon: './favicon.ico',
+    shortcut: './favicon.ico',
   },
 };
 
