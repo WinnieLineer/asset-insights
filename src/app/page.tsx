@@ -20,7 +20,10 @@ import {
   BarChart3,
   Edit2,
   Loader2,
-  DollarSign
+  DollarSign,
+  History,
+  ChevronRight,
+  Eye
 } from 'lucide-react';
 import { 
   Card, 
@@ -48,6 +51,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 type Language = 'en' | 'zh';
 
@@ -64,7 +69,7 @@ const translations = {
     marketPrice: 'Price',
     holdings: 'Holdings',
     valuation: 'Valuation',
-    unitPrice: 'Unit Market Value',
+    unitPrice: 'Unit Price',
     dataUpdated: 'Market data updated.',
     snapshotSaved: 'Snapshot saved.',
     dashboard: 'Portfolio Overview',
@@ -74,7 +79,14 @@ const translations = {
     cancel: 'Cancel',
     saveChanges: 'Save Changes',
     fetching: 'Fetching prices...',
-    exchangeRate: 'Exchange Rate'
+    exchangeRate: 'Exchange Rate',
+    history: 'Snapshot History',
+    viewDetail: 'View Details',
+    deleteSnapshot: 'Delete Snapshot',
+    noHistory: 'No historical snapshots found.',
+    snapshotDetail: 'Snapshot Details',
+    snapshotDate: 'Snapshot Date',
+    details: 'Holdings at that time'
   },
   zh: {
     title: 'Asset Insights Pro',
@@ -88,7 +100,7 @@ const translations = {
     marketPrice: '當前市價',
     holdings: '持有數量',
     valuation: '帳面價值',
-    unitPrice: '每單位市場價值',
+    unitPrice: '單位市場價值',
     dataUpdated: '市場數據已更新',
     snapshotSaved: '快照已存入紀錄',
     dashboard: '投資組合概覽',
@@ -98,7 +110,14 @@ const translations = {
     cancel: '取消',
     saveChanges: '儲存變更',
     fetching: '正在抓取報價...',
-    exchangeRate: '即時匯率'
+    exchangeRate: '即時匯率',
+    history: '歷史快照紀錄',
+    viewDetail: '檢視詳情',
+    deleteSnapshot: '刪除快照',
+    noHistory: '尚無歷史快照紀錄',
+    snapshotDetail: '快照詳細資訊',
+    snapshotDate: '建立日期',
+    details: '當時持有部位'
   }
 };
 
@@ -111,6 +130,9 @@ export default function MonochromeAssetPage() {
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editAmount, setEditAmount] = useState<number>(0);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<Snapshot | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+  
   const [marketData, setMarketData] = useState<MarketData>({
     exchangeRate: 32.5,
     rates: { TWD: 32.5, CNY: 7.2, USD: 1 },
@@ -185,7 +207,7 @@ export default function MonochromeAssetPage() {
       } else if (asset.currency === 'CNY') {
         valueInTWD = asset.amount * (rate / (marketData.rates.CNY || 7.2));
       } else {
-        const multiplier = (asset.category === 'Stock' ? (currentPrice || 0) : 1);
+        const multiplier = (asset.category === 'Stock' || asset.category === 'Crypto' ? (currentPrice || 0) : 1);
         valueInTWD = asset.amount * (multiplier || 1);
       }
       
@@ -241,6 +263,10 @@ export default function MonochromeAssetPage() {
     };
     setSnapshots(prev => [...prev, newSnapshot]);
     toast({ title: t.snapshotSaved });
+  };
+
+  const deleteSnapshot = (id: string) => {
+    setSnapshots(prev => prev.filter(s => s.id !== id));
   };
 
   const startEditing = (asset: Asset) => {
@@ -313,8 +339,8 @@ export default function MonochromeAssetPage() {
             <Button onClick={takeSnapshot} className="w-full h-full bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all">
               <Clock className="w-5 h-5" /><span className="text-xs tracking-widest uppercase">{t.takeSnapshot}</span>
             </Button>
-            <Button variant="outline" onClick={updateMarketData} disabled={loading} className="w-full h-full font-bold flex flex-col items-center justify-center gap-2 rounded transition-all">
-              <RefreshCw className={cn("w-5 h-5", loading && "animate-spin")} /><span className="text-xs tracking-widest uppercase">{t.updateData}</span>
+            <Button variant="outline" onClick={() => setShowHistory(true)} className="w-full h-full font-bold flex flex-col items-center justify-center gap-2 rounded transition-all">
+              <History className="w-5 h-5" /><span className="text-xs tracking-widest uppercase">{t.history}</span>
             </Button>
           </div>
         </div>
@@ -323,10 +349,13 @@ export default function MonochromeAssetPage() {
           <div className="xl:col-span-8 space-y-8">
             <Card className="modern-card overflow-hidden">
               <CardHeader className="px-8 py-5 border-b border-slate-50 bg-white">
-                <CardTitle className="text-sm font-bold flex items-center justify-between">
-                  <div className="flex items-center gap-2"><BarChart3 className="w-4 h-4" />{t.dashboard}</div>
-                  {loading && <div className="text-[10px] text-slate-400 animate-pulse uppercase tracking-widest">{t.fetching}</div>}
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-bold flex items-center gap-2"><BarChart3 className="w-4 h-4" />{t.dashboard}</CardTitle>
+                  <Button variant="ghost" size="sm" onClick={updateMarketData} disabled={loading} className="text-[10px] font-bold uppercase tracking-widest h-8 px-4 border border-slate-100">
+                    <RefreshCw className={cn("w-3 h-3 mr-2", loading && "animate-spin")} />
+                    {loading ? t.fetching : t.updateData}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="p-0 bg-white">
                 <Table>
@@ -397,6 +426,100 @@ export default function MonochromeAssetPage() {
           marketConditions={loading ? "Syncing" : "Stable"}
         />
       </main>
+
+      {/* History Dialog */}
+      <Dialog open={showHistory} onOpenChange={setShowHistory}>
+        <DialogContent className="max-w-2xl bg-white max-h-[80vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-8 border-b">
+            <DialogTitle className="text-2xl font-black tracking-tighter flex items-center gap-3">
+              <History className="w-6 h-6" />
+              {t.history}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden p-6 bg-slate-50/50">
+            <ScrollArea className="h-full pr-4">
+              {snapshots.length === 0 ? (
+                <div className="py-20 text-center opacity-30 flex flex-col items-center gap-4">
+                  <Activity className="w-12 h-12" />
+                  <p className="text-sm font-bold uppercase tracking-widest">{t.noHistory}</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {[...snapshots].reverse().map(snapshot => (
+                    <Card key={snapshot.id} className="border-slate-100 hover:border-black transition-all cursor-default group">
+                      <div className="p-6 flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date(snapshot.date).toLocaleString()}</div>
+                          <div className="text-xl font-black tracking-tight">{getCurrencySymbol(displayCurrency)}{convertTWDToDisplay(snapshot.totalTWD).toLocaleString()}</div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button variant="ghost" size="sm" className="h-9 px-4 font-bold text-[10px] uppercase tracking-widest border border-slate-200" onClick={() => setSelectedSnapshot(snapshot)}>
+                            <Eye className="w-3.5 h-3.5 mr-2" />
+                            {t.viewDetail}
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-300 hover:text-rose-600 hover:bg-rose-50" onClick={() => deleteSnapshot(snapshot.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Snapshot Detail Dialog */}
+      <Dialog open={!!selectedSnapshot} onOpenChange={(open) => !open && setSelectedSnapshot(null)}>
+        <DialogContent className="max-w-3xl bg-white max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="p-8 border-b">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <DialogTitle className="text-2xl font-black tracking-tighter">{t.snapshotDetail}</DialogTitle>
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.snapshotDate}: {selectedSnapshot && new Date(selectedSnapshot.date).toLocaleString()}</div>
+              </div>
+              {selectedSnapshot && (
+                <div className="text-right">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.totalValue}</div>
+                  <div className="text-3xl font-black tracking-tighter">{getCurrencySymbol(displayCurrency)}{convertTWDToDisplay(selectedSnapshot.totalTWD).toLocaleString()}</div>
+                </div>
+              )}
+            </div>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden p-0">
+            <ScrollArea className="h-[50vh]">
+              <div className="p-8">
+                <h4 className="text-[10px] font-bold text-black uppercase tracking-widest mb-6 flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-black rounded-full" />
+                  {t.details}
+                </h4>
+                <div className="space-y-3">
+                  {selectedSnapshot?.assets?.map(asset => (
+                    <div key={asset.id} className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded group hover:bg-white hover:border-black transition-all">
+                      <div className="flex items-center gap-4">
+                        <Badge variant="outline" className="h-5 px-2 bg-white text-[9px] font-black uppercase tracking-tighter">{asset.category}</Badge>
+                        <div>
+                          <div className="text-sm font-bold">{asset.name}</div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{asset.symbol}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold">{getCurrencySymbol(displayCurrency)}{convertTWDToDisplay(asset.valueInTWD || 0).toLocaleString()}</div>
+                        <div className="text-[10px] font-bold text-slate-400">{asset.amount} units</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ScrollArea>
+          </div>
+          <DialogFooter className="p-6 border-t bg-slate-50/50">
+            <Button className="bg-black text-white hover:bg-slate-800 font-bold text-[10px] uppercase tracking-widest px-8" onClick={() => setSelectedSnapshot(null)}>{t.cancel}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
         <DialogContent className="sm:max-w-[425px] bg-white">
