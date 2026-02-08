@@ -410,15 +410,17 @@ export default function AssetInsightsPage() {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
+    // 嚴格過濾所有互動組件，避免誤觸佈局模式
     if (
       target.closest('button') || 
       target.closest('select') || 
       target.closest('input') || 
       target.closest('[role="combobox"]') ||
       target.closest('[role="tab"]') ||
+      target.closest('[role="menuitem"]') ||
       target.closest('.radix-select-trigger') ||
       target.closest('.radix-tabs-trigger') ||
-      target.closest('tr') && target.closest('button') // table row buttons
+      (target.closest('tr') && target.closest('button'))
     ) {
       return;
     }
@@ -782,4 +784,3 @@ export default function AssetInsightsPage() {
     </div>
   );
 }
-
