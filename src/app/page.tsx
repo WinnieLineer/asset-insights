@@ -253,7 +253,6 @@ export default function MonochromeAssetPage() {
       const categories: Record<AssetCategory, number> = { 'Stock': 0, 'Crypto': 0, 'Bank': 0, 'Savings': 0 };
 
       processedAssets.forEach(asset => {
-        // 核心邏輯：如果該時間點小於持有日期，則不計算該資產價值
         const acqTime = new Date(asset.acquisitionDate).getTime();
         if (pointTime < acqTime) return;
 
@@ -280,7 +279,6 @@ export default function MonochromeAssetPage() {
       return item;
     });
 
-    // 合併手動快照
     const displayRate = marketData.rates[displayCurrency] || 1;
     snapshots.forEach(snap => {
       const snapPoint: any = {
