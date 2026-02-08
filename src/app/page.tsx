@@ -19,7 +19,8 @@ import {
   Wallet, 
   BarChart3,
   Edit2,
-  Loader2
+  Loader2,
+  DollarSign
 } from 'lucide-react';
 import { 
   Card, 
@@ -72,7 +73,8 @@ const translations = {
     editAsset: 'Edit Holdings',
     cancel: 'Cancel',
     saveChanges: 'Save Changes',
-    fetching: 'Fetching prices...'
+    fetching: 'Fetching prices...',
+    exchangeRate: 'Exchange Rate'
   },
   zh: {
     title: 'Asset Insights Pro',
@@ -95,7 +97,8 @@ const translations = {
     editAsset: '編輯持有數量',
     cancel: '取消',
     saveChanges: '儲存變更',
-    fetching: '正在抓取報價...'
+    fetching: '正在抓取報價...',
+    exchangeRate: '即時匯率'
   }
 };
 
@@ -265,7 +268,14 @@ export default function MonochromeAssetPage() {
               <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">{t.subtitle}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
+            <div className="hidden md:flex flex-col items-end">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.exchangeRate}</span>
+              <span className="text-xs font-bold text-black flex items-center gap-1.5">
+                <DollarSign className="w-3 h-3" />
+                1 USD = {marketData.exchangeRate.toFixed(2)} TWD
+              </span>
+            </div>
             <div className="flex bg-slate-100 p-1 rounded">
               <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-7 px-3 text-xs font-bold">繁中</Button>
               <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-7 px-3 text-xs font-bold">EN</Button>
