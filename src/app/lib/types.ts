@@ -10,19 +10,8 @@ export interface Asset {
   category: AssetCategory;
   amount: number;
   currency: Currency;
-  price?: number; // Current market price in its base currency
-  valueInTWD?: number; // 儲存快照時的台幣總價值
-}
-
-export interface Snapshot {
-  id: string;
-  date: string;
-  totalTWD: number;
-  allocations: {
-    category: AssetCategory;
-    value: number;
-  }[];
-  assets: Asset[]; // 確保每個快照都存有一份當時的詳細資產清單
+  price?: number; // 當前單價 (持有幣別)
+  valueInTWD?: number; // 換算後的台幣價值
 }
 
 export interface MarketData {
@@ -35,4 +24,10 @@ export interface MarketData {
   };
   cryptoPrices: Record<string, number>; // symbol to USD price
   stockPrices: Record<string, number>; // symbol to USD price
+}
+
+export interface HistoricalPoint {
+  date: string;
+  totalTWD: number;
+  [key: string]: any; // 用於存放各類別價值
 }
