@@ -392,13 +392,17 @@ export default function MonochromeAssetPage() {
                         </TableCell>
                         <TableCell><span className="text-sm font-bold">{asset.amount.toLocaleString()}</span></TableCell>
                         <TableCell>
-                          {loading && (asset.category === 'Stock' || asset.category === 'Crypto') ? (
-                            <Skeleton className="h-5 w-24" />
+                          {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
+                            loading ? (
+                              <Skeleton className="h-5 w-24" />
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs font-medium text-slate-500">{getCurrencySymbol(displayCurrency)}</span>
+                                <span className="text-sm font-bold">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                              </div>
+                            )
                           ) : (
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs font-medium text-slate-500">{getCurrencySymbol(displayCurrency)}</span>
-                              <span className="text-sm font-bold">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                            </div>
+                            <span className="text-xs text-slate-300">—</span>
                           )}
                         </TableCell>
                         <TableCell>
@@ -520,16 +524,18 @@ export default function MonochromeAssetPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-10">
-                        <div className="text-right">
-                          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                            <Tag className="w-2.5 h-2.5" />
-                            {t.historicalPrice}
+                        {(asset.category === 'Stock' || asset.category === 'Crypto') && (
+                          <div className="text-right">
+                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                              <Tag className="w-2.5 h-2.5" />
+                              {t.historicalPrice}
+                            </div>
+                            <div className="text-xs font-bold">
+                              {getCurrencySymbol(displayCurrency)}
+                              {asset.price?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                            </div>
                           </div>
-                          <div className="text-xs font-bold">
-                            {getCurrencySymbol(displayCurrency)}
-                            {asset.price?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                          </div>
-                        </div>
+                        )}
                         <div className="text-right min-w-[100px]">
                           <div className="text-sm font-bold">{getCurrencySymbol(displayCurrency)}{convertTWDToDisplay(asset.valueInTWD || 0).toLocaleString()}</div>
                           <div className="text-[10px] font-bold text-slate-400">{asset.amount} units</div>
