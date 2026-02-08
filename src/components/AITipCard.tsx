@@ -115,7 +115,6 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
     `;
 
     try {
-      // 完全依照指定格式 call gemini api
       const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent", {
         method: 'POST',
         headers: { 

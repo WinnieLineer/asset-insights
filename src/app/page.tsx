@@ -18,7 +18,8 @@ import {
   Globe, 
   Wallet, 
   BarChart3,
-  Edit2
+  Edit2,
+  Loader2
 } from 'lucide-react';
 import { 
   Card, 
@@ -62,7 +63,7 @@ const translations = {
     marketPrice: 'Price',
     holdings: 'Holdings',
     valuation: 'Valuation',
-    unitPrice: 'Unit Value',
+    unitPrice: 'Unit Market Value',
     dataUpdated: 'Market data updated.',
     snapshotSaved: 'Snapshot saved.',
     dashboard: 'Portfolio Overview',
@@ -70,7 +71,8 @@ const translations = {
     assetDeleted: 'Asset removed.',
     editAsset: 'Edit Holdings',
     cancel: 'Cancel',
-    saveChanges: 'Save Changes'
+    saveChanges: 'Save Changes',
+    fetching: 'Fetching prices...'
   },
   zh: {
     title: 'Asset Insights Pro',
@@ -84,7 +86,7 @@ const translations = {
     marketPrice: '當前市價',
     holdings: '持有數量',
     valuation: '帳面價值',
-    unitPrice: '單位市場價值',
+    unitPrice: '每單位市場價值',
     dataUpdated: '市場數據已更新',
     snapshotSaved: '快照已存入紀錄',
     dashboard: '投資組合概覽',
@@ -92,7 +94,8 @@ const translations = {
     assetDeleted: '資產已移除',
     editAsset: '編輯持有數量',
     cancel: '取消',
-    saveChanges: '儲存變更'
+    saveChanges: '儲存變更',
+    fetching: '正在抓取報價...'
   }
 };
 
@@ -190,7 +193,6 @@ export default function MonochromeAssetPage() {
       const diffTWD = previousAsset ? valueInTWD - (previousAsset.valueInTWD || 0) : 0;
       const diffPercent = previousAsset && previousAsset.valueInTWD ? (diffTWD / previousAsset.valueInTWD) * 100 : 0;
       
-      // Calculate individual unit price for display
       let unitPriceInDisplay = 0;
       if (asset.category === 'Stock' || asset.category === 'Crypto') {
         const unitValTWD = currentPrice * (asset.category === 'Crypto' || asset.currency === 'USD' ? rate : 1);
@@ -283,8 +285,11 @@ export default function MonochromeAssetPage() {
           <Card className="lg:col-span-8 modern-card p-10 relative overflow-hidden">
             <div className="space-y-4 z-20 relative">
               <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-widest"><Globe className="w-3.5 h-3.5" />{t.totalValue}</div>
-              <div className="text-5xl font-black tracking-tighter">{getCurrencySymbol(displayCurrency)}{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-              {lastSnapshot && (
+              <div className="text-5xl font-black tracking-tighter flex items-baseline gap-2">
+                {getCurrencySymbol(displayCurrency)}{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                {loading && <Loader2 className="w-5 h-5 animate-spin text-slate-300" />}
+              </div>
+              {lastSnapshot && !loading && (
                 <div className={cn("inline-flex items-center gap-1.5 py-1.5 px-3 rounded text-[11px] font-bold border", assetCalculations.totalDiffTWD >= 0 ? "text-emerald-600 bg-emerald-50 border-emerald-100" : "text-rose-600 bg-rose-50 border-rose-100")}>
                   {assetCalculations.totalDiffTWD >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                   {getCurrencySymbol(displayCurrency)}{Math.abs(assetCalculations.totalDiffDisplay).toLocaleString()} 
@@ -307,7 +312,12 @@ export default function MonochromeAssetPage() {
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
           <div className="xl:col-span-8 space-y-8">
             <Card className="modern-card overflow-hidden">
-              <CardHeader className="px-8 py-5 border-b border-slate-50 bg-white"><CardTitle className="text-sm font-bold flex items-center gap-2"><BarChart3 className="w-4 h-4" />{t.dashboard}</CardTitle></CardHeader>
+              <CardHeader className="px-8 py-5 border-b border-slate-50 bg-white">
+                <CardTitle className="text-sm font-bold flex items-center justify-between">
+                  <div className="flex items-center gap-2"><BarChart3 className="w-4 h-4" />{t.dashboard}</div>
+                  {loading && <div className="text-[10px] text-slate-400 animate-pulse uppercase tracking-widest">{t.fetching}</div>}
+                </CardTitle>
+              </CardHeader>
               <CardContent className="p-0 bg-white">
                 <Table>
                   <TableHeader className="bg-slate-50">
@@ -329,19 +339,29 @@ export default function MonochromeAssetPage() {
                         </TableCell>
                         <TableCell><span className="text-sm font-bold">{asset.amount.toLocaleString()}</span></TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs font-medium text-slate-500">{getCurrencySymbol(displayCurrency)}</span>
-                            <span className="text-sm font-bold">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                          </div>
+                          {loading && (asset.category === 'Stock' || asset.category === 'Crypto') ? (
+                            <div className="flex items-center gap-2 h-5 w-24 bg-slate-100 animate-pulse rounded" />
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs font-medium text-slate-500">{getCurrencySymbol(displayCurrency)}</span>
+                              <span className="text-sm font-bold">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell>
-                          {asset.hasHistory ? (
+                          {!loading && asset.hasHistory ? (
                             <div className={cn("text-[11px] font-bold", asset.diffTWD >= 0 ? "text-emerald-600" : "text-rose-600")}>
                               {asset.diffTWD >= 0 ? '+' : ''}{asset.diffPercent.toFixed(2)}%
                             </div>
-                          ) : <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Initial</span>}
+                          ) : <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">{loading ? '...' : 'Initial'}</span>}
                         </TableCell>
-                        <TableCell className="text-right"><span className="font-bold text-lg">{getCurrencySymbol(displayCurrency)}{asset.valueInDisplay.toLocaleString()}</span></TableCell>
+                        <TableCell className="text-right">
+                          {loading && (asset.category === 'Stock' || asset.category === 'Crypto') ? (
+                            <div className="ml-auto h-7 w-32 bg-slate-100 animate-pulse rounded" />
+                          ) : (
+                            <span className="font-bold text-lg">{getCurrencySymbol(displayCurrency)}{asset.valueInDisplay.toLocaleString()}</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center gap-2">
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-black" onClick={() => startEditing(asset)}><Edit2 className="w-3.5 h-3.5" /></Button>
@@ -364,7 +384,7 @@ export default function MonochromeAssetPage() {
           language={language} 
           assets={assetCalculations.processedAssets} 
           totalTWD={assetCalculations.totalTWD} 
-          marketConditions="Stable"
+          marketConditions={loading ? "Syncing" : "Stable"}
         />
       </main>
 
