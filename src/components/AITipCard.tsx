@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Brain, RefreshCw, ShieldCheck, TrendingUp, Sparkles, MessageSquare, AlertCircle } from 'lucide-react';
+import { Brain, RefreshCw, ShieldCheck, TrendingUp, Sparkles, MessageSquare, AlertCircle, LayoutDashboard, Target } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
@@ -37,32 +37,32 @@ interface AITipCardProps {
 
 const t = {
   en: {
-    title: 'Gemini Portfolio Insights',
-    desc: 'Advanced risk analysis and strategic recommendations powered by Gemini.',
+    title: 'Gemini Strategic Insights',
+    desc: 'Deep portfolio intelligence and risk matrix analysis.',
     analysis: 'Strategic Analysis',
-    risk: 'Portfolio Risk',
-    diversification: 'Diversity Score',
-    recommendations: 'Optimization Steps',
-    ctaButton: 'Run Gemini AI Analysis',
-    loading: 'Gemini is thinking...',
-    answer: 'AI Recommendation',
-    instructionLabel: 'Custom Instructions / Questions',
-    instructionPlaceholder: 'e.g., How can I reduce my crypto exposure risk?',
-    noApiKey: 'Gemini API Key is missing. Please set NEXT_PUBLIC_GEMINI_API_KEY in your environment.'
+    risk: 'Portfolio Risk Level',
+    diversification: 'Diversification Matrix',
+    recommendations: 'Tactical Recommendations',
+    ctaButton: 'Generate AI Report',
+    loading: 'Gemini is processing...',
+    answer: 'AI Executive Summary',
+    instructionLabel: 'Custom Context / Inquiry',
+    instructionPlaceholder: 'e.g., Analyze my risk exposure if US markets drop 10%',
+    noApiKey: 'Gemini API Key missing. Set NEXT_PUBLIC_GEMINI_API_KEY in repository secrets.'
   },
   zh: {
     title: 'Gemini 專業投資分析',
-    desc: '基於當前配置的深度風險評估與優化建議，由 Gemini 提供動力。',
-    analysis: '戰略分析報告',
-    risk: '組合風險等級',
-    diversification: '分散投資指數',
-    recommendations: '優化執行步驟',
-    ctaButton: '執行 Gemini AI 分析',
-    loading: 'Gemini 分析中...',
-    answer: 'AI 專業建議',
-    instructionLabel: '自定義指令 / 提問',
-    instructionPlaceholder: '例如：我該如何降低加密貨幣的曝險風險？',
-    noApiKey: '缺少 Gemini API 金鑰。請在環境變數中設定 NEXT_PUBLIC_GEMINI_API_KEY。'
+    desc: '基於當前資產配置的深度風險評估與戰略優化建議。',
+    analysis: '核心戰略分析',
+    risk: '投資組合風險等級',
+    diversification: '分散投資健康指數',
+    recommendations: '優化執行路徑',
+    ctaButton: '產出 AI 戰略報告',
+    loading: 'Gemini 正在掃描資產...',
+    answer: 'AI 專業總結建議',
+    instructionLabel: '自定義分析指令 / 提問',
+    instructionPlaceholder: '例如：如果美股大跌 10%，我的組合風險會如何變化？',
+    noApiKey: '缺少 Gemini API 金鑰。請在 GitHub Secrets 中設定 NEXT_PUBLIC_GEMINI_API_KEY。'
   }
 };
 
@@ -93,23 +93,25 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
     ).join('\n');
 
     const prompt = `
-      You are a professional financial advisor. Analyze the following user portfolio and provide strategic advice.
+      You are a high-end institutional financial analyst. Provide a professional portfolio audit.
       
-      User Portfolio:
+      PORTFOLIO DATA:
       ${portfolioSummary}
-      Total Portfolio Value (TWD): ${totalTWD.toFixed(0)}
-      Market Condition: ${marketConditions}
-      User's specific question/instruction: "${userQuestion || 'Provide a general analysis of my portfolio.'}"
+      Total Value (TWD): ${totalTWD.toFixed(0)}
+      Current Context: ${marketConditions}
+      User Custom Inquiry: "${userQuestion || 'Full portfolio audit'}"
       
-      Please provide your response in JSON format with the following keys:
-      - answer: A direct, professional answer to the user's question (String)
-      - analysis: A high-level strategic overview of the portfolio (String)
-      - riskLevel: Risk level like "Low/Conservative", "Moderate/Balanced", or "High/Aggressive" (String)
-      - diversificationScore: A score from 0 to 100 (Number)
-      - recommendations: An array of 3-4 specific, actionable optimization steps (Array of Strings)
+      OUTPUT FORMAT (JSON ONLY):
+      {
+        "answer": "Concise executive answer to the inquiry",
+        "analysis": "Professional strategic overview of current allocation",
+        "riskLevel": "Low | Moderate | High",
+        "diversificationScore": 0-100,
+        "recommendations": ["Step 1", "Step 2", "Step 3"]
+      }
       
-      Language: Respond in ${language === 'zh' ? 'Traditional Chinese' : 'English'}.
-      IMPORTANT: Return ONLY the raw JSON object, no markdown code blocks.
+      Language: ${language === 'zh' ? 'Traditional Chinese' : 'English'}.
+      IMPORTANT: Return ONLY raw JSON. No markdown code blocks.
     `;
 
     try {
@@ -118,30 +120,16 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            topP: 0.95,
-            topK: 40,
-            maxOutputTokens: 2048,
-          }
+          generationConfig: { temperature: 0.5 }
         })
       });
 
       const data = await response.json();
       const rawText = data.candidates[0].content.parts[0].text;
-      
-      // Attempt to clean JSON if model returned markdown blocks
       const cleanJson = rawText.replace(/```json|```/gi, '').trim();
-      const result = JSON.parse(cleanJson);
-      
-      setInsight(result);
+      setInsight(JSON.parse(cleanJson));
     } catch (error) {
-      console.error('Gemini API Error:', error);
-      toast({
-        variant: 'destructive',
-        title: 'AI Analysis Error',
-        description: 'Failed to connect to Gemini API or parse response.'
-      });
+      toast({ variant: 'destructive', title: 'AI Error', description: 'API connection failed.' });
     } finally {
       setLoading(false);
     }
@@ -149,108 +137,132 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
 
   const getRiskColor = (level: string) => {
     const l = level.toLowerCase();
-    if (l.includes('safe') || l.includes('low') || l.includes('保守') || l.includes('低')) return 'text-emerald-600 bg-emerald-50 border-emerald-100';
-    if (l.includes('medium') || l.includes('moderate') || l.includes('平衡') || l.includes('中')) return 'text-amber-600 bg-amber-50 border-amber-100';
-    return 'text-rose-600 bg-rose-50 border-rose-100';
+    if (l.includes('low') || l.includes('低') || l.includes('safe')) return 'bg-black text-white border-black';
+    if (l.includes('high') || l.includes('高') || l.includes('aggressive')) return 'bg-rose-500 text-white border-rose-600';
+    return 'bg-zinc-800 text-white border-zinc-900';
   };
 
   return (
-    <Card className="modern-card border-slate-200 bg-white overflow-hidden">
-      <CardHeader className="px-8 py-6 border-b border-slate-50 bg-slate-50/50">
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-          <div className="space-y-1">
-            <CardTitle className="flex items-center gap-2 text-xl font-bold text-black">
-              <Sparkles className="w-5 h-5" />
-              {lang.title}
-            </CardTitle>
-            <CardDescription className="text-xs font-bold text-slate-400 uppercase tracking-widest">{lang.desc}</CardDescription>
+    <Card className="modern-card border-slate-200 bg-white shadow-xl overflow-hidden animate-fade-in">
+      <CardHeader className="px-10 py-8 border-b border-slate-100 bg-zinc-50/30">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-black rounded-lg">
+                <Brain className="w-5 h-5 text-white" />
+              </div>
+              <CardTitle className="text-2xl font-black tracking-tight">{lang.title}</CardTitle>
+            </div>
+            <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{lang.desc}</CardDescription>
           </div>
-          <div className="flex flex-col gap-3 w-full md:w-80">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+
+          <div className="flex flex-col sm:flex-row items-end gap-4 flex-1 max-w-2xl">
+            <div className="w-full space-y-2">
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-1.5 ml-1">
                 <MessageSquare className="w-3 h-3" />
                 {lang.instructionLabel}
               </label>
               <Textarea 
                 placeholder={lang.instructionPlaceholder}
-                className="text-[11px] min-h-[60px] bg-white border-slate-200"
+                className="text-xs min-h-[50px] bg-white border-zinc-200 focus:ring-black focus:border-black rounded-xl transition-all"
                 value={userQuestion}
                 onChange={(e) => setUserQuestion(e.target.value)}
               />
             </div>
             <Button 
-              className="bg-black hover:bg-slate-800 text-white font-bold rounded px-8 h-10 shadow-sm transition-all"
+              className="bg-black hover:bg-zinc-800 text-white font-bold h-[50px] px-8 rounded-xl transition-all shrink-0 shadow-lg shadow-zinc-200"
               onClick={callGeminiAPI}
               disabled={loading || assets.length === 0}
             >
-              {loading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Brain className="w-4 h-4 mr-2" />}
-              <span className="text-[10px] tracking-widest uppercase">{loading ? lang.loading : lang.ctaButton}</span>
+              {loading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2 text-zinc-300" />}
+              <span className="text-[11px] tracking-widest uppercase">{loading ? lang.loading : lang.ctaButton}</span>
             </Button>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent className="p-8">
-        {insight && (
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 animate-fade-in">
-            <div className="xl:col-span-5 space-y-6">
-              <div className="space-y-3">
-                <h4 className="text-[10px] font-bold text-black uppercase tracking-widest">{lang.answer}</h4>
-                <div className="text-base text-slate-700 leading-relaxed bg-slate-50 p-6 rounded-lg border border-slate-100 font-medium italic">
+      <CardContent className="p-10">
+        {insight ? (
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 animate-fade-in">
+            {/* Left Column: Summary & Scores */}
+            <div className="xl:col-span-5 space-y-8">
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <Target className="w-3.5 h-3.5" />
+                  {lang.answer}
+                </h4>
+                <div className="text-lg font-medium text-zinc-900 leading-snug border-l-[3px] border-black pl-6 py-2 bg-zinc-50/50 italic">
                   "{insight.answer}"
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white p-5 rounded-lg border border-slate-100 shadow-sm">
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">{lang.risk}</h4>
-                  <Badge variant="outline" className={cn("text-[10px] font-bold py-1 px-3 rounded w-full justify-center border", getRiskColor(insight.riskLevel))}>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-2xl border border-zinc-100 shadow-sm flex flex-col justify-between">
+                  <h4 className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-4">{lang.risk}</h4>
+                  <Badge className={cn("text-[11px] font-black py-2 px-4 rounded-xl border-none shadow-sm", getRiskColor(insight.riskLevel))}>
                     {insight.riskLevel}
                   </Badge>
                 </div>
-                <div className="bg-white p-5 rounded-lg border border-slate-100 shadow-sm">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{lang.diversification}</h4>
-                    <span className="text-[10px] font-bold text-black">{insight.diversificationScore}%</span>
+                <div className="bg-white p-6 rounded-2xl border border-zinc-100 shadow-sm">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">{lang.diversification}</h4>
+                    <span className="text-xs font-black text-black">{insight.diversificationScore}%</span>
                   </div>
-                  <Progress value={insight.diversificationScore} className="h-1.5 bg-slate-100" />
+                  <Progress value={insight.diversificationScore} className="h-2 bg-zinc-100 [&>div]:bg-black" />
                 </div>
               </div>
             </div>
-            <div className="xl:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-10">
+
+            {/* Right Column: Detailed Analysis & Recommendations */}
+            <div className="xl:col-span-7 space-y-10">
               <div className="space-y-4">
-                <h4 className="text-xs font-bold flex items-center gap-2 text-black uppercase tracking-widest">
-                  <ShieldCheck className="w-4 h-4" />
+                <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-zinc-300" />
                   {lang.analysis}
                 </h4>
-                <p className="text-xs text-slate-500 leading-relaxed font-medium">{insight.analysis}</p>
+                <p className="text-sm text-zinc-600 leading-relaxed font-medium">
+                  {insight.analysis}
+                </p>
               </div>
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold flex items-center gap-2 text-black uppercase tracking-widest">
-                  <TrendingUp className="w-4 h-4" />
+
+              <div className="space-y-5">
+                <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-zinc-300" />
                   {lang.recommendations}
                 </h4>
-                <ul className="space-y-3">
+                <div className="grid gap-3">
                   {insight.recommendations.map((rec: string, i: number) => (
-                    <li key={i} className="text-[11px] flex gap-3 text-slate-600 items-start">
-                      <div className="w-5 h-5 rounded bg-slate-100 text-black flex items-center justify-center shrink-0 font-bold text-[10px] border border-slate-200">{i + 1}</div>
-                      <span className="pt-0.5 font-medium">{rec}</span>
-                    </li>
+                    <div key={i} className="group flex items-center gap-5 p-4 bg-zinc-50 border border-zinc-100 rounded-2xl hover:border-black hover:bg-white transition-all duration-300">
+                      <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center shrink-0 font-black text-[11px] shadow-sm group-hover:scale-110 transition-transform">
+                        {i + 1}
+                      </div>
+                      <span className="text-xs font-bold text-zinc-700 tracking-tight">{rec}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             </div>
           </div>
-        )}
-        {!insight && !loading && (
-          <div className="py-20 text-center flex flex-col items-center gap-4 opacity-20">
-            <Brain className="w-12 h-12" />
-            <p className="text-xs font-bold uppercase tracking-widest">Click run Gemini analysis to generate report</p>
+        ) : loading ? (
+          <div className="py-24 text-center flex flex-col items-center gap-6">
+            <div className="relative">
+              <div className="w-16 h-16 border-4 border-zinc-100 border-t-black rounded-full animate-spin"></div>
+              <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-zinc-200" />
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-xs font-black uppercase tracking-[0.3em] text-black">Scanning Assets</p>
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Generating Strategic Intelligence...</p>
+            </div>
           </div>
-        )}
-        {loading && (
-          <div className="py-20 text-center flex flex-col items-center gap-4">
-            <RefreshCw className="w-8 h-8 animate-spin text-slate-200" />
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Gemini is Scanning Portfolio...</p>
+        ) : (
+          <div className="py-32 text-center flex flex-col items-center gap-6 opacity-20 hover:opacity-30 transition-opacity">
+            <div className="p-6 bg-zinc-50 rounded-full">
+              <LayoutDashboard className="w-12 h-12 text-black" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-black uppercase tracking-[0.4em]">Strategic Engine Idle</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest">Click to initiate Gemini deep audit</p>
+            </div>
           </div>
         )}
       </CardContent>
