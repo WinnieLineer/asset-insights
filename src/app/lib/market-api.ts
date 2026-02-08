@@ -1,7 +1,7 @@
 
 import { MarketData } from '@/app/lib/types';
 
-const BATCH_STOCK_PROXY_URL = 'https://script.google.com/macros/s/AKfycbz8Wjfhc-k8G19ZLsyD_bGDaPDwKa8MA-eL_21FPGGLuReTIUxX3hV_SqOyCzsEFlFX/exec';
+const BATCH_STOCK_PROXY_URL = 'https://script.google.com/macros/s/AKfycbyqAt3Qj5u7WcodTTpiXd7u_LB0dBqaLmj4v-UM5QCh8uEIcTmaFeDgG8_1toiVxbMg/exec';
 const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
 function formatSymbol(s: string, category: string) {
