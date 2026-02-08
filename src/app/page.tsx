@@ -24,7 +24,8 @@ import {
   DollarSign,
   History,
   Eye,
-  Tag
+  Tag,
+  ArrowRightLeft
 } from 'lucide-react';
 import { 
   Card, 
@@ -81,7 +82,7 @@ const translations = {
     cancel: 'Cancel',
     saveChanges: 'Save',
     fetching: 'Syncing...',
-    exchangeRate: 'Real-time Rate',
+    exchangeRate: 'Live Exchange Rates',
     history: 'History',
     viewDetail: 'View',
     deleteSnapshot: 'Delete',
@@ -113,7 +114,7 @@ const translations = {
     cancel: '取消',
     saveChanges: '儲存變更',
     fetching: '同步中...',
-    exchangeRate: '即時基準匯率',
+    exchangeRate: '即時換算匯率',
     history: '資產歷史紀錄',
     viewDetail: '檢視詳情',
     deleteSnapshot: '刪除',
@@ -236,7 +237,6 @@ export default function MonochromeAssetPage() {
       
       let unitPriceInDisplay = 0;
       if (asset.category === 'Stock' || asset.category === 'Crypto') {
-        // unit price is in asset's native currency (USD for crypto/US stocks, TWD for TW stocks, SGD for SI stocks)
         let unitValTWD = 0;
         if (asset.category === 'Crypto' || asset.currency === 'USD') unitValTWD = currentPrice * rateTWD;
         else if (asset.currency === 'SGD') unitValTWD = currentPrice * (rateTWD / (marketData.rates.SGD || 1.35));
@@ -309,6 +309,15 @@ export default function MonochromeAssetPage() {
     toast({ title: t.dataUpdated });
   };
 
+  const dynamicRates = useMemo(() => {
+    const base = marketData.rates[displayCurrency] || 1;
+    const others = (['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).filter(c => c !== displayCurrency);
+    return others.map(c => {
+      const rate = marketData.rates[c] / base;
+      return { code: c, rate: rate.toFixed(displayCurrency === 'TWD' ? 4 : 2) };
+    });
+  }, [displayCurrency, marketData.rates]);
+
   if (!mounted) return null;
 
   return (
@@ -325,11 +334,11 @@ export default function MonochromeAssetPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto">
-            <div className="flex flex-col items-center sm:items-end">
+            <div className="flex flex-col items-center sm:items-end max-w-[280px]">
               <span className="text-[10px] lg:text-[11px] font-bold text-slate-400 uppercase tracking-widest">{t.exchangeRate}</span>
-              <span className="text-xs lg:text-sm font-bold text-black flex items-center gap-1.5 whitespace-nowrap">
-                <DollarSign className="w-3 h-3 lg:w-4 lg:h-4" />
-                1 USD = {marketData.exchangeRate.toFixed(2)} TWD
+              <span className="text-[10px] lg:text-xs font-bold text-black flex items-center gap-1.5 whitespace-nowrap bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                <ArrowRightLeft className="w-3 h-3 text-slate-400" />
+                1 {displayCurrency} = {dynamicRates.map(r => `${r.rate} ${r.code}`).join(' | ')}
               </span>
             </div>
             <div className="flex bg-slate-100 p-0.5 sm:p-1 rounded shrink-0">
