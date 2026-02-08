@@ -21,13 +21,12 @@ import {
   Clock,
   TrendingUp,
   TrendingDown,
-  GripVertical,
   ChevronUp,
   ChevronDown,
   Check,
   Maximize2,
   Minimize2,
-  Move
+  MessageSquare
 } from 'lucide-react';
 import { 
   Card, 
@@ -102,7 +101,7 @@ const translations = {
     acqDate: 'Hold Since',
     reorderMode: 'Layout Customization Mode',
     exitReorder: 'Save Layout',
-    longPressTip: 'Long press any section to unlock dashboard grid arrangement',
+    longPressTip: 'Long press to unlock and customize grid width/position',
     widen: 'Widen',
     shrink: 'Shrink',
     categoryNames: {
@@ -143,7 +142,7 @@ const translations = {
     acqDate: '持有日期',
     reorderMode: '佈局自由調整模式',
     exitReorder: '儲存目前佈局',
-    longPressTip: '長按任何區塊以解除鎖定並自由調整位置與長寬',
+    longPressTip: '長按任何區塊以解除鎖定並自由調整位置與寬度',
     widen: '增加寬度',
     shrink: '縮減寬度',
     categoryNames: {
@@ -159,7 +158,7 @@ type SectionId = 'summary' | 'controls' | 'table' | 'charts' | 'ai' | 'form';
 
 interface LayoutItem {
   id: SectionId;
-  w: number; // 1-12 columns
+  w: number; // 4, 6, 8, 10, 12 columns
   order: number;
 }
 
@@ -223,7 +222,7 @@ export default function AssetInsightsPage() {
     const savedAssets = localStorage.getItem('assets');
     if (savedAssets) setAssets(JSON.parse(savedAssets));
     
-    const savedLayout = localStorage.getItem('assetInsightsLayout');
+    const savedLayout = localStorage.getItem('assetInsightsLayoutV2');
     if (savedLayout) setLayout(JSON.parse(savedLayout));
   }, []);
 
@@ -241,7 +240,7 @@ export default function AssetInsightsPage() {
 
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem('assetInsightsLayout', JSON.stringify(layout));
+      localStorage.setItem('assetInsightsLayoutV2', JSON.stringify(layout));
     }
   }, [layout, mounted]);
 
@@ -393,7 +392,7 @@ export default function AssetInsightsPage() {
       }));
   }, [displayCurrency, marketData.rates]);
 
-  // Long press handler
+  // Long press handler for grid customization
   const handleMouseDown = () => {
     longPressTimer.current = setTimeout(() => {
       setIsReordering(true);
@@ -413,7 +412,11 @@ export default function AssetInsightsPage() {
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= newLayout.length) return;
     
-    [newLayout[index].order, newLayout[targetIndex].order] = [newLayout[targetIndex].order, newLayout[index].order];
+    // Swap orders
+    const currentOrder = newLayout[index].order;
+    newLayout[index].order = newLayout[targetIndex].order;
+    newLayout[targetIndex].order = currentOrder;
+    
     newLayout.sort((a, b) => a.order - b.order);
     setLayout(newLayout);
   };
@@ -421,7 +424,7 @@ export default function AssetInsightsPage() {
   const resizeSection = (id: SectionId, direction: 'widen' | 'shrink') => {
     setLayout(prev => prev.map(item => {
       if (item.id !== id) return item;
-      const step = 2; // Column steps
+      const step = 2; // Column steps (ShadCN/Tailwind 12-col base)
       let newW = direction === 'widen' ? item.w + step : item.w - step;
       newW = Math.max(4, Math.min(12, newW));
       return { ...item, w: newW };
@@ -430,21 +433,32 @@ export default function AssetInsightsPage() {
 
   const renderSection = (item: LayoutItem) => {
     const { id, w } = item;
-    const colClass = `xl:col-span-${w}`;
     
+    // Grid classes based on width
+    const colSpanClasses: Record<number, string> = {
+      4: 'xl:col-span-4',
+      6: 'xl:col-span-6',
+      8: 'xl:col-span-8',
+      10: 'xl:col-span-10',
+      12: 'xl:col-span-12',
+    };
+
     const wrapper = (content: React.ReactNode) => (
-      <div key={id} className={cn("relative group transition-all duration-300", colClass)}>
+      <div key={id} className={cn("relative group transition-all duration-500", colSpanClasses[w] || 'xl:col-span-12')}>
         {isReordering && (
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-[60] bg-white border border-slate-200 shadow-xl rounded-full px-4 py-2">
-            <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'up')} className="h-8 w-8"><ChevronUp /></Button>
-            <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'down')} className="h-8 w-8"><ChevronDown /></Button>
+          <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center gap-2 z-[60] bg-white border border-slate-200 shadow-2xl rounded-full px-4 py-2 border-primary/20 scale-100 animate-in fade-in zoom-in duration-300">
+            <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'up')} className="h-8 w-8 hover:bg-slate-100"><ChevronUp className="w-4 h-4" /></Button>
+            <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'down')} className="h-8 w-8 hover:bg-slate-100"><ChevronDown className="w-4 h-4" /></Button>
             <div className="w-px h-4 bg-slate-200 mx-1" />
-            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'shrink')} className="h-8 w-8"><Minimize2 /></Button>
-            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'widen')} className="h-8 w-8"><Maximize2 /></Button>
-            <div className="ml-2 font-bold text-xs text-slate-400">W: {w}/12</div>
+            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'shrink')} className="h-8 w-8 hover:bg-slate-100"><Minimize2 className="w-4 h-4" /></Button>
+            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'widen')} className="h-8 w-8 hover:bg-slate-100"><Maximize2 className="w-4 h-4" /></Button>
+            <div className="ml-2 font-black text-[10px] text-primary/40 tracking-tighter uppercase">{w}/12</div>
           </div>
         )}
-        <div className={cn(isReordering && "ring-4 ring-black/5 rounded-2xl p-1")}>
+        <div className={cn(
+          "h-full transition-all",
+          isReordering && "ring-4 ring-primary/10 rounded-2xl bg-slate-50/30 p-1"
+        )}>
           {content}
         </div>
       </div>
@@ -453,15 +467,15 @@ export default function AssetInsightsPage() {
     switch (id) {
       case 'summary':
         return wrapper(
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <Card className="lg:col-span-9 modern-card p-10 relative overflow-hidden bg-white shadow-xl border-slate-100">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+            <Card className="lg:col-span-9 modern-card p-8 lg:p-10 relative overflow-hidden bg-white shadow-xl border-slate-100 h-full">
               <div className="space-y-4 z-20 relative">
                 <div className="flex items-center gap-2 text-slate-400 text-sm font-bold uppercase tracking-widest">
                   <Globe className="w-5 h-5" />
                   {t.totalValue}
                 </div>
-                <div className="text-6xl font-bold tracking-tighter flex items-baseline flex-wrap gap-2">
-                  <span className="text-slate-300">{getCurrencySymbol(displayCurrency)}</span>
+                <div className="text-5xl lg:text-7xl font-bold tracking-tighter flex items-baseline flex-wrap gap-3">
+                  <span className="text-slate-200 font-medium">{getCurrencySymbol(displayCurrency)}</span>
                   <span className="break-all">{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                   {loading && <Loader2 className="w-8 h-8 animate-spin text-slate-200 ml-3" />}
                 </div>
@@ -474,25 +488,25 @@ export default function AssetInsightsPage() {
               <Button 
                 onClick={() => updateAllData(assets)} 
                 disabled={loading}
-                className="w-full h-full bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded-xl transition-all shadow-lg active:scale-95"
+                className="w-full h-full bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-3 rounded-xl transition-all shadow-lg active:scale-95 group"
               >
-                <RefreshCw className={cn("w-6 h-6", loading && "animate-spin")} />
-                <span className="text-sm tracking-widest uppercase">{loading ? t.fetching : t.syncMarket}</span>
+                <RefreshCw className={cn("w-7 h-7 group-hover:rotate-180 transition-transform duration-500", loading && "animate-spin")} />
+                <span className="text-xs tracking-widest uppercase font-black">{loading ? t.fetching : t.syncMarket}</span>
               </Button>
             </div>
           </div>
         );
       case 'controls':
         return wrapper(
-          <div className="bg-slate-50 p-6 border border-slate-100 rounded-xl flex items-center gap-8">
+          <div className="bg-slate-50/80 backdrop-blur-sm p-6 border border-slate-100 rounded-xl flex items-center gap-8 h-full shadow-inner">
             <div className="flex items-center gap-8 flex-1">
-              <div className="space-y-2 flex-1 max-w-[240px]">
-                <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+              <div className="space-y-2 flex-1 max-w-[280px]">
+                <Label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 ml-1">
                   <Calendar className="w-4 h-4" />
                   {t.baseRange}
                 </Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
-                  <SelectTrigger className="h-11 bg-white border-slate-200 font-bold text-sm rounded-lg">
+                  <SelectTrigger className="h-12 bg-white border-slate-200 font-bold text-sm rounded-lg shadow-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -503,13 +517,13 @@ export default function AssetInsightsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2 flex-1 max-w-[240px]">
-                <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+              <div className="space-y-2 flex-1 max-w-[280px]">
+                <Label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 ml-1">
                   <Clock className="w-4 h-4" />
                   {t.interval}
                 </Label>
                 <Select value={interval} onValueChange={setInterval}>
-                  <SelectTrigger className="h-11 bg-white border-slate-200 font-bold text-sm rounded-lg">
+                  <SelectTrigger className="h-12 bg-white border-slate-200 font-bold text-sm rounded-lg shadow-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -524,10 +538,10 @@ export default function AssetInsightsPage() {
         );
       case 'table':
         return wrapper(
-          <Card className="modern-card overflow-hidden bg-white shadow-xl border-slate-100 rounded-xl">
-            <CardHeader className="px-8 py-6 border-b border-slate-50">
+          <Card className="modern-card overflow-hidden bg-white shadow-xl border-slate-100 rounded-xl h-full">
+            <CardHeader className="px-8 py-6 border-b border-slate-50 flex flex-row items-center justify-between">
               <CardTitle className="text-xl font-bold flex items-center gap-3">
-                <BarChart3 className="w-6 h-6" />
+                <BarChart3 className="w-6 h-6 text-primary" />
                 {t.dashboard}
               </CardTitle>
             </CardHeader>
@@ -535,30 +549,30 @@ export default function AssetInsightsPage() {
               <div className="w-full overflow-auto">
                 <Table className="min-w-[1100px]">
                   <TableHeader className="bg-slate-50/50">
-                    <TableRow>
-                      <TableHead className="px-8 h-14 text-xs font-bold text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
-                      <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
-                      <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.unitPrice}</TableHead>
-                      <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.change}</TableHead>
-                      <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
-                      <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.acqDate}</TableHead>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="px-8 h-14 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{t.assetName}</TableHead>
+                      <TableHead className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{t.holdings}</TableHead>
+                      <TableHead className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{t.unitPrice}</TableHead>
+                      <TableHead className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{t.change}</TableHead>
+                      <TableHead className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">{t.valuation}</TableHead>
+                      <TableHead className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{t.acqDate}</TableHead>
                       <TableHead className="w-[120px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {assetCalculations.processedAssets.map(asset => (
-                      <TableRow key={asset.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50">
+                      <TableRow key={asset.id} className="group hover:bg-slate-50/40 transition-colors border-slate-50">
                         <TableCell className="px-8 py-6">
                           <div className="font-bold text-base text-black">{asset.name}</div>
-                          <div className="text-xs font-bold text-slate-400 tracking-widest uppercase mt-1">
+                          <div className="text-[10px] font-black text-slate-300 tracking-[0.2em] uppercase mt-1">
                             {asset.symbol || t.categoryNames[asset.category]}
                           </div>
                         </TableCell>
                         <TableCell><span className="text-base font-bold text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs font-bold text-slate-300">{getCurrencySymbol(displayCurrency)}</span>
-                            <span className="text-base font-bold">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-black text-slate-200">{getCurrencySymbol(displayCurrency)}</span>
+                            <span className="text-base font-bold text-slate-800">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -566,21 +580,21 @@ export default function AssetInsightsPage() {
                             <div className={cn("flex items-center gap-1 font-bold text-sm", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
                               {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
                               <span>{getCurrencySymbol(displayCurrency)}{Math.abs(asset.dayChangeInDisplay).toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
-                              <span className="text-xs opacity-70 ml-1">({asset.dayChangePercent >= 0 ? '+' : ''}{asset.dayChangePercent.toFixed(1)}%)</span>
+                              <span className="text-xs opacity-60 ml-1 font-medium">({asset.dayChangePercent >= 0 ? '+' : ''}{asset.dayChangePercent.toFixed(1)}%)</span>
                             </div>
                           ) : <span className="text-slate-200">—</span>}
                         </TableCell>
                         <TableCell className="text-right">
                           <span className="font-bold text-base whitespace-nowrap text-black">
-                            <span className="text-slate-300 text-xs mr-1">{getCurrencySymbol(displayCurrency)}</span>
+                            <span className="text-slate-200 text-xs mr-1 font-medium">{getCurrencySymbol(displayCurrency)}</span>
                             {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </span>
                         </TableCell>
-                        <TableCell><span className="text-sm font-bold text-slate-400">{asset.acquisitionDate}</span></TableCell>
+                        <TableCell><span className="text-sm font-bold text-slate-400 tracking-tight">{asset.acquisitionDate}</span></TableCell>
                         <TableCell>
                           <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-black" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); }}><Edit2 className="w-5 h-5" /></Button>
-                            <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-200 hover:text-rose-600" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); toast({ title: t.assetDeleted }); }}><Trash2 className="w-5 h-5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-black hover:bg-slate-100 rounded-lg" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); }}><Edit2 className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-200 hover:text-rose-600 hover:bg-rose-50 rounded-lg" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); toast({ title: t.assetDeleted }); }}><Trash2 className="w-4 h-4" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -593,29 +607,36 @@ export default function AssetInsightsPage() {
         );
       case 'charts':
         return wrapper(
-          <PortfolioCharts 
-            language={language} 
-            allocationData={assetCalculations.allocationData} 
-            historicalData={assetCalculations.chartData} 
-            displayCurrency={displayCurrency} 
-            rates={marketData.rates} 
-            loading={loading}
-          />
+          <div className="h-full">
+            <PortfolioCharts 
+              language={language} 
+              allocationData={assetCalculations.allocationData} 
+              historicalData={assetCalculations.chartData} 
+              displayCurrency={displayCurrency} 
+              rates={marketData.rates} 
+              loading={loading}
+            />
+          </div>
         );
       case 'ai':
         return wrapper(
-          <AITipCard 
-            language={language} 
-            assets={assetCalculations.processedAssets} 
-            totalTWD={assetCalculations.totalTWD} 
-            marketConditions={loading ? "同步中" : "市場穩定"}
-          />
+          <div className="h-full">
+            <AITipCard 
+              language={language} 
+              assets={assetCalculations.processedAssets} 
+              totalTWD={assetCalculations.totalTWD} 
+              marketConditions={loading ? "同步中" : "市場穩定"}
+            />
+          </div>
         );
       case 'form':
         return wrapper(
-          <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl">
+          <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl h-full">
             <CardHeader className="px-8 py-6 border-b border-slate-50">
-              <CardTitle className="text-xl font-bold uppercase tracking-widest text-black">{t.addAsset}</CardTitle>
+              <CardTitle className="text-xl font-bold uppercase tracking-widest text-black flex items-center gap-3">
+                <Activity className="w-5 h-5 text-primary" />
+                {t.addAsset}
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-8">
               <AssetForm language={language} onAdd={handleAddAsset} />
@@ -631,45 +652,45 @@ export default function AssetInsightsPage() {
 
   return (
     <div 
-      className="min-h-screen bg-white text-black pb-32 font-sans overflow-x-hidden"
+      className="min-h-screen bg-white text-black pb-32 font-sans overflow-x-hidden selection:bg-primary/5"
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onTouchStart={handleMouseDown}
       onTouchEnd={handleMouseUp}
     >
-      <header className="glass-nav py-6 border-b border-slate-100">
-        <div className="max-w-[1440px] mx-auto px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4 w-full sm:w-auto">
-            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg">
-              <Activity className="w-6 h-6 text-white" />
+      <header className="glass-nav py-6 border-b border-slate-100 sticky top-0 z-[100]">
+        <div className="max-w-[1600px] mx-auto px-8 flex flex-col lg:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4 w-full lg:w-auto">
+            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg group">
+              <Activity className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight uppercase leading-none">{t.title}</h1>
-              <p className="text-xs font-bold text-slate-400 tracking-widest uppercase mt-2">{t.subtitle}</p>
+              <h1 className="text-2xl font-black tracking-tighter uppercase leading-none">{t.title}</h1>
+              <p className="text-[10px] font-black text-slate-400 tracking-[0.3em] uppercase mt-2">{t.subtitle}</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-6 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center justify-center lg:justify-end gap-8 w-full lg:w-auto">
             {isReordering && (
-              <Button onClick={() => setIsReordering(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 px-6 h-11 rounded-full shadow-lg">
+              <Button onClick={() => setIsReordering(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black gap-2 px-8 h-12 rounded-full shadow-2xl animate-bounce">
                 <Check className="w-5 h-5" />
                 {t.exitReorder}
               </Button>
             )}
             <div className="flex flex-col items-end">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t.exchangeRate}</span>
-              <span className="text-sm font-bold text-black flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100 shadow-sm">
-                <ArrowRightLeft className="w-4 h-4 text-slate-400" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5">{t.exchangeRate}</span>
+              <span className="text-xs font-bold text-black flex items-center gap-3 bg-slate-50/80 px-5 py-2.5 rounded-xl border border-slate-100 shadow-sm">
+                <ArrowRightLeft className="w-4 h-4 text-primary" />
                 1 {getCurrencySymbol(displayCurrency)}{displayCurrency} = {dynamicRates.map(r => `${r.symbol}${r.rate} ${r.code}`).join(' | ')}
               </span>
             </div>
-            <div className="flex bg-slate-100 p-1 rounded-lg">
-              <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-9 px-4 font-bold text-sm">繁中</Button>
-              <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-9 px-4 font-bold text-sm">EN</Button>
+            <div className="flex bg-slate-100 p-1 rounded-xl">
+              <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-10 px-6 font-bold text-xs rounded-lg">繁中</Button>
+              <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-10 px-6 font-bold text-xs rounded-lg">EN</Button>
             </div>
             <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
-              <TabsList className="h-11 bg-slate-100 p-1 rounded-xl">
+              <TabsList className="h-12 bg-slate-100 p-1.5 rounded-xl">
                 {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (
-                  <TabsTrigger key={cur} value={cur} className="text-sm font-bold uppercase px-4 h-9">{cur}</TabsTrigger>
+                  <TabsTrigger key={cur} value={cur} className="text-xs font-black uppercase px-5 h-9 rounded-lg">{cur}</TabsTrigger>
                 ))}
               </TabsList>
             </Tabs>
@@ -677,32 +698,51 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1440px] mx-auto px-8 py-12">
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 auto-rows-auto">
+      <main className="max-w-[1600px] mx-auto px-8 py-12">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 auto-rows-auto items-stretch">
           {layout.map(item => renderSection(item))}
         </div>
       </main>
 
       <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
-        <DialogContent className="max-w-[425px] bg-white rounded-2xl p-8 shadow-2xl">
-          <DialogHeader><DialogTitle className="text-2xl font-bold uppercase tracking-tight text-black">{t.editAsset}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-[450px] bg-white rounded-3xl p-10 shadow-2xl border-none">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight text-black flex items-center gap-3">
+              <Edit2 className="w-6 h-6 text-primary" />
+              {t.editAsset}
+            </DialogTitle>
+          </DialogHeader>
           <div className="grid gap-8 py-8">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label>
-              <div className="p-5 bg-slate-50 rounded-xl font-bold text-base border border-slate-100 text-slate-700">{editingAsset?.name} ({editingAsset?.symbol || '—'})</div>
+            <div className="space-y-3">
+              <Label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{t.assetName}</Label>
+              <div className="p-5 bg-slate-50/80 rounded-2xl font-bold text-base border border-slate-100 text-slate-700 shadow-inner">
+                {editingAsset?.name} <span className="text-slate-300 font-medium ml-2">{editingAsset?.symbol || '—'}</span>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount" className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label>
-              <Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-14 font-bold bg-slate-50 border-slate-200 text-lg rounded-xl" />
+            <div className="space-y-3">
+              <Label htmlFor="amount" className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{t.holdings}</Label>
+              <Input 
+                id="amount" 
+                type="number" 
+                value={editAmount || 0} 
+                onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} 
+                className="h-14 font-black bg-slate-50 border-slate-200 text-xl rounded-2xl focus:ring-primary/20 focus:border-primary px-6" 
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="date" className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label>
-              <Input id="date" type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-14 font-bold bg-slate-50 border-slate-200 text-lg rounded-xl" />
+            <div className="space-y-3">
+              <Label htmlFor="date" className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{t.acqDate}</Label>
+              <Input 
+                id="date" 
+                type="date" 
+                value={editDate || ''} 
+                onChange={(e) => setEditDate(e.target.value)} 
+                className="h-14 font-black bg-slate-50 border-slate-200 text-lg rounded-2xl focus:ring-primary/20 focus:border-primary px-6" 
+              />
             </div>
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-4">
-            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-bold text-sm uppercase tracking-widest h-14 flex-1 rounded-xl">{t.cancel}</Button>
-            <Button onClick={saveEdit} className="bg-black text-white hover:bg-slate-800 font-bold text-sm uppercase tracking-widest h-14 flex-1 shadow-lg active:scale-95 rounded-xl">{t.saveChanges}</Button>
+            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-bold text-xs uppercase tracking-widest h-14 flex-1 rounded-2xl hover:bg-slate-100 transition-colors">{t.cancel}</Button>
+            <Button onClick={saveEdit} className="bg-black text-white hover:bg-slate-800 font-black text-xs uppercase tracking-widest h-14 flex-1 shadow-xl active:scale-95 rounded-2xl transition-all">{t.saveChanges}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
