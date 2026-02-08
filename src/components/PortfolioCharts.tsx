@@ -46,30 +46,28 @@ const renderActiveShape = (props: any) => {
   );
 };
 
-// Custom Label with Boundary Awareness and Improved Spacing
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, name, percent, symbol, langCategories }: any) => {
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
   
-  // Outer radius for labels (farther from center to avoid overlap)
-  const labelRadius = outerRadius + 35;
+  const labelRadius = outerRadius + 20;
   const sx = cx + (outerRadius + 8) * cos;
   const sy = cy + (outerRadius + 8) * sin;
   const mx = cx + labelRadius * cos;
   const my = cy + labelRadius * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 30;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 35; // 拉長一點避免吃字
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
   return (
     <g>
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#e2e8f0" strokeWidth={1.5} fill="none" />
-      <circle cx={ex} cy={ey} r={2.5} fill="#000" stroke="none" />
+      <circle cx={ex} cy={ey} r={2} fill="#000" stroke="none" />
       <text 
-        x={ex + (cos >= 0 ? 1 : -1) * 12} 
+        x={ex + (cos >= 0 ? 1 : -1) * 8} 
         y={ey} 
-        dy={-6} 
+        dy={-4} 
         textAnchor={textAnchor} 
         fill="#000" 
         fontSize={12} 
@@ -79,9 +77,9 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, 
         {langCategories[name] || name}
       </text>
       <text 
-        x={ex + (cos >= 0 ? 1 : -1) * 12} 
+        x={ex + (cos >= 0 ? 1 : -1) * 8} 
         y={ey} 
-        dy={16} 
+        dy={14} 
         textAnchor={textAnchor} 
         fill="#94a3b8" 
         fontSize={11} 
@@ -114,20 +112,20 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
       <div className="lg:col-span-4 modern-card p-10 flex flex-col items-center border-slate-100 bg-white relative shadow-xl rounded-2xl overflow-hidden h-full">
         <div className="w-full mb-6">
           <h3 className="text-xs font-black text-black uppercase tracking-[0.2em]">{lang.allocation}</h3>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-2">資產權重外部標註導引</p>
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em] mt-2">資產權重外部標註導引</p>
         </div>
         
         <div className="h-[380px] w-full relative">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart margin={{ top: 40, right: 60, bottom: 40, left: 60 }}>
+            <PieChart margin={{ top: 20, right: 120, bottom: 20, left: 120 }}>
               <Pie
                 activeIndex={activeIndex ?? undefined}
                 activeShape={renderActiveShape}
                 data={allocationData}
                 cx="50%"
                 cy="50%"
-                innerRadius={90}
-                outerRadius={120}
+                innerRadius={75}
+                outerRadius={100}
                 paddingAngle={6}
                 dataKey="value"
                 stroke="transparent"
@@ -144,11 +142,11 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                   if (active && payload?.length) {
                     const val = Number(payload[0].value);
                     return (
-                      <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-2xl z-[1000] min-w-[200px] pointer-events-none opacity-100 ring-4 ring-black/5 animate-in fade-in zoom-in duration-200">
-                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4 border-b border-slate-50 pb-2">
+                      <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-2xl z-[1000] min-w-[180px] pointer-events-none opacity-100 ring-4 ring-black/5">
+                        <p className="text-xs font-black text-slate-300 uppercase tracking-[0.2em] mb-2 border-b border-slate-50 pb-1">
                           {lang.categories[payload[0].name as keyof typeof lang.categories] || payload[0].name}
                         </p>
-                        <p className="text-lg font-black text-black tracking-tight">{symbol}{val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                        <p className="text-base font-black text-black tracking-tight">{symbol}{val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                       </div>
                     );
                   }
@@ -161,17 +159,17 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none w-full max-w-[140px]">
             {activeIndex !== null && allocationData[activeIndex] ? (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] truncate px-2">
+                <p className="text-xs font-black text-slate-300 uppercase tracking-[0.2em] truncate px-2">
                   {lang.categories[allocationData[activeIndex].name as keyof typeof lang.categories] || allocationData[activeIndex].name}
                 </p>
-                <p className="text-2xl font-black text-black tracking-tighter mt-1">
+                <p className="text-xl font-black text-black tracking-tighter mt-1">
                   {((allocationData[activeIndex].value / (totalAllocationValue || 1)) * 100).toFixed(1)}%
                 </p>
               </div>
             ) : (
               <div className="animate-in fade-in duration-500">
-                <p className="text-[10px] font-black text-slate-200 uppercase tracking-[0.2em]">{lang.total}</p>
-                <p className="text-2xl font-black text-slate-100 tracking-tighter mt-1">100%</p>
+                <p className="text-xs font-black text-slate-200 uppercase tracking-[0.2em]">{lang.total}</p>
+                <p className="text-xl font-black text-slate-100 tracking-tighter mt-1">100%</p>
               </div>
             )}
           </div>
@@ -181,12 +179,12 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
       <div className="lg:col-span-8 modern-card p-10 flex flex-col border-slate-100 bg-white relative shadow-xl rounded-2xl h-full">
         <div className="w-full mb-6">
           <h3 className="text-xs font-black text-black uppercase tracking-[0.2em]">{lang.trend}</h3>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-2">歷史累積價值演變軸</p>
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em] mt-2">歷史累積價值演變軸</p>
         </div>
 
         <div className="h-[400px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={historicalData} margin={{ top: 20, right: 30, bottom: 20, left: -20 }}>
+            <ComposedChart data={historicalData} margin={{ top: 20, right: 30, bottom: 20, left: 40 }}>
               <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f8fafc" />
               <XAxis 
                 dataKey="displayDate" 
@@ -207,16 +205,16 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 content={({ active, payload, label }) => {
                   if (active && payload?.length) {
                     return (
-                      <div className="bg-white border border-slate-100 p-8 rounded-2xl shadow-2xl z-[1000] min-w-[280px] pointer-events-none opacity-100 ring-8 ring-black/5">
-                        <div className="flex justify-between items-center mb-6 pb-2 border-b border-slate-100">
+                      <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-2xl z-[1000] min-w-[260px] pointer-events-none opacity-100 ring-8 ring-black/5">
+                        <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
                           <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{label}</p>
                         </div>
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                           {payload.map((p: any, i: number) => {
                             if (p.dataKey === 'totalValue' || !p.value) return null;
                             return (
                               <div key={i} className="flex justify-between items-center gap-6">
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2">
                                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
                                   <span className="text-xs font-black text-slate-500 uppercase tracking-widest">
                                     {lang.categories[p.name as keyof typeof lang.categories] || p.name}
@@ -226,7 +224,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                               </div>
                             );
                           })}
-                          <div className="mt-6 pt-6 border-t-2 border-slate-50 flex justify-between items-center">
+                          <div className="mt-4 pt-4 border-t-2 border-slate-50 flex justify-between items-center">
                             <span className="text-xs font-black text-black uppercase tracking-[0.2em]">{lang.total}</span>
                             <span className="text-lg font-black text-black">{symbol}{Number(payload.find((p:any)=>p.dataKey==='totalValue')?.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                           </div>
@@ -242,11 +240,11 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 align="right" 
                 iconType="circle"
                 content={({ payload }) => (
-                  <div className="flex flex-wrap justify-end gap-x-8 gap-y-3 mb-10">
+                  <div className="flex flex-wrap justify-end gap-x-6 gap-y-2 mb-8">
                     {payload?.map((entry: any, index: number) => (
-                      <div key={`item-${index}`} className="flex items-center gap-2.5">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.categories[entry.value as keyof typeof lang.categories] || entry.value}</span>
+                      <div key={`item-${index}`} className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                        <span className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{lang.categories[entry.value as keyof typeof lang.categories] || entry.value}</span>
                       </div>
                     ))}
                   </div>
@@ -259,9 +257,9 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 type="monotone" 
                 dataKey="totalValue" 
                 stroke="#000000" 
-                strokeWidth={4} 
+                strokeWidth={3} 
                 dot={false} 
-                activeDot={{ r: 6, fill: '#000000', stroke: '#fff', strokeWidth: 3 }} 
+                activeDot={{ r: 5, fill: '#000000', stroke: '#fff', strokeWidth: 2 }} 
               />
               <Brush 
                 dataKey="displayDate" 
@@ -269,7 +267,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 stroke="#e2e8f0" 
                 fill="#f8fafc" 
                 travellerWidth={10} 
-                className="font-bold text-[10px]"
+                className="font-bold text-xs"
               />
             </ComposedChart>
           </ResponsiveContainer>
