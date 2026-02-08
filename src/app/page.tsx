@@ -24,7 +24,10 @@ import {
   GripVertical,
   ChevronUp,
   ChevronDown,
-  Check
+  Check,
+  Maximize2,
+  Minimize2,
+  Move
 } from 'lucide-react';
 import { 
   Card, 
@@ -97,9 +100,11 @@ const translations = {
     assetDeleted: 'Asset removed.',
     dataUpdated: 'Market data synced.',
     acqDate: 'Hold Since',
-    reorderMode: 'Reorder Mode',
-    exitReorder: 'Done',
-    longPressTip: 'Long press any section to reorder dashboard',
+    reorderMode: 'Layout Customization Mode',
+    exitReorder: 'Save Layout',
+    longPressTip: 'Long press any section to unlock dashboard grid arrangement',
+    widen: 'Widen',
+    shrink: 'Shrink',
     categoryNames: {
       Stock: 'Equity',
       Crypto: 'Crypto',
@@ -136,9 +141,11 @@ const translations = {
     assetDeleted: '資產已移除',
     dataUpdated: '市場數據已更新',
     acqDate: '持有日期',
-    reorderMode: '佈局調整模式',
-    exitReorder: '完成安排',
-    longPressTip: '長按任何區塊以重新安排顯示位置',
+    reorderMode: '佈局自由調整模式',
+    exitReorder: '儲存目前佈局',
+    longPressTip: '長按任何區塊以解除鎖定並自由調整位置與長寬',
+    widen: '增加寬度',
+    shrink: '縮減寬度',
     categoryNames: {
       Stock: '股票',
       Crypto: '加密貨幣',
@@ -148,7 +155,22 @@ const translations = {
   }
 };
 
-type DashboardSection = 'summary' | 'controls' | 'table' | 'charts' | 'ai' | 'form';
+type SectionId = 'summary' | 'controls' | 'table' | 'charts' | 'ai' | 'form';
+
+interface LayoutItem {
+  id: SectionId;
+  w: number; // 1-12 columns
+  order: number;
+}
+
+const DEFAULT_LAYOUT: LayoutItem[] = [
+  { id: 'summary', w: 12, order: 0 },
+  { id: 'controls', w: 12, order: 1 },
+  { id: 'table', w: 12, order: 2 },
+  { id: 'charts', w: 12, order: 3 },
+  { id: 'ai', w: 12, order: 4 },
+  { id: 'form', w: 12, order: 5 },
+];
 
 export default function AssetInsightsPage() {
   const { toast } = useToast();
@@ -164,9 +186,9 @@ export default function AssetInsightsPage() {
   const [marketTimeline, setMarketTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   
-  // Reordering states
+  // Advanced Grid Layout State
   const [isReordering, setIsReordering] = useState(false);
-  const [dashboardOrder, setDashboardOrder] = useState<DashboardSection[]>(['summary', 'controls', 'table', 'charts', 'ai', 'form']);
+  const [layout, setLayout] = useState<LayoutItem[]>(DEFAULT_LAYOUT);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   const [marketData, setMarketData] = useState<MarketData>({
@@ -190,19 +212,19 @@ export default function AssetInsightsPage() {
       setMarketTimeline(historicalTimeline);
       toast({ title: t.dataUpdated });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Sync Error' });
+      toast({ variant: 'destructive', title: '市場同步失敗' });
     } finally {
       setLoading(false);
     }
-  }, [mounted, trackingDays, interval, t.dataUpdated, loading]);
+  }, [mounted, trackingDays, interval, t.dataUpdated, loading, toast]);
 
   useEffect(() => {
     setMounted(true);
     const savedAssets = localStorage.getItem('assets');
     if (savedAssets) setAssets(JSON.parse(savedAssets));
     
-    const savedOrder = localStorage.getItem('dashboardOrder');
-    if (savedOrder) setDashboardOrder(JSON.parse(savedOrder));
+    const savedLayout = localStorage.getItem('assetInsightsLayout');
+    if (savedLayout) setLayout(JSON.parse(savedLayout));
   }, []);
 
   useEffect(() => {
@@ -219,9 +241,9 @@ export default function AssetInsightsPage() {
 
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem('dashboardOrder', JSON.stringify(dashboardOrder));
+      localStorage.setItem('assetInsightsLayout', JSON.stringify(layout));
     }
-  }, [dashboardOrder, mounted]);
+  }, [layout, mounted]);
 
   const getCurrencySymbol = (cur: Currency) => CURRENCY_SYMBOLS[cur] || 'NT$';
 
@@ -332,8 +354,6 @@ export default function AssetInsightsPage() {
       return item;
     });
 
-    chartData.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
     return { 
       processedAssets, 
       totalTWD, 
@@ -373,7 +393,7 @@ export default function AssetInsightsPage() {
       }));
   }, [displayCurrency, marketData.rates]);
 
-  // Long press handler for reordering
+  // Long press handler
   const handleMouseDown = () => {
     longPressTimer.current = setTimeout(() => {
       setIsReordering(true);
@@ -385,47 +405,76 @@ export default function AssetInsightsPage() {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
   };
 
-  const moveSection = (index: number, direction: 'up' | 'down') => {
-    const newOrder = [...dashboardOrder];
+  const moveSection = (id: SectionId, direction: 'up' | 'down') => {
+    const newLayout = [...layout];
+    const index = newLayout.findIndex(i => i.id === id);
+    if (index === -1) return;
+
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newOrder.length) return;
+    if (targetIndex < 0 || targetIndex >= newLayout.length) return;
     
-    [newOrder[index], newOrder[targetIndex]] = [newOrder[targetIndex], newOrder[index]];
-    setDashboardOrder(newOrder);
+    [newLayout[index].order, newLayout[targetIndex].order] = [newLayout[targetIndex].order, newLayout[index].order];
+    newLayout.sort((a, b) => a.order - b.order);
+    setLayout(newLayout);
   };
 
-  const renderSection = (id: DashboardSection) => {
+  const resizeSection = (id: SectionId, direction: 'widen' | 'shrink') => {
+    setLayout(prev => prev.map(item => {
+      if (item.id !== id) return item;
+      const step = 2; // Column steps
+      let newW = direction === 'widen' ? item.w + step : item.w - step;
+      newW = Math.max(4, Math.min(12, newW));
+      return { ...item, w: newW };
+    }));
+  };
+
+  const renderSection = (item: LayoutItem) => {
+    const { id, w } = item;
+    const colClass = `xl:col-span-${w}`;
+    
+    const wrapper = (content: React.ReactNode) => (
+      <div key={id} className={cn("relative group transition-all duration-300", colClass)}>
+        {isReordering && (
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-[60] bg-white border border-slate-200 shadow-xl rounded-full px-4 py-2">
+            <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'up')} className="h-8 w-8"><ChevronUp /></Button>
+            <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'down')} className="h-8 w-8"><ChevronDown /></Button>
+            <div className="w-px h-4 bg-slate-200 mx-1" />
+            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'shrink')} className="h-8 w-8"><Minimize2 /></Button>
+            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'widen')} className="h-8 w-8"><Maximize2 /></Button>
+            <div className="ml-2 font-bold text-xs text-slate-400">W: {w}/12</div>
+          </div>
+        )}
+        <div className={cn(isReordering && "ring-4 ring-black/5 rounded-2xl p-1")}>
+          {content}
+        </div>
+      </div>
+    );
+
     switch (id) {
       case 'summary':
-        return (
-          <div key="summary" className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative group">
-            {isReordering && (
-              <div className="absolute -left-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-50">
-                <Button size="icon" variant="outline" onClick={() => moveSection(dashboardOrder.indexOf('summary'), 'up')}><ChevronUp /></Button>
-                <Button size="icon" variant="outline" onClick={() => moveSection(dashboardOrder.indexOf('summary'), 'down')}><ChevronDown /></Button>
-              </div>
-            )}
-            <Card className={cn("lg:col-span-9 modern-card p-8 sm:p-10 relative overflow-hidden bg-white shadow-xl", isReordering && "ring-2 ring-black")}>
+        return wrapper(
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <Card className="lg:col-span-9 modern-card p-10 relative overflow-hidden bg-white shadow-xl border-slate-100">
               <div className="space-y-4 z-20 relative">
                 <div className="flex items-center gap-2 text-slate-400 text-sm font-bold uppercase tracking-widest">
                   <Globe className="w-5 h-5" />
                   {t.totalValue}
                 </div>
-                <div className="text-5xl sm:text-7xl font-bold tracking-tighter flex items-baseline flex-wrap gap-2">
+                <div className="text-6xl font-bold tracking-tighter flex items-baseline flex-wrap gap-2">
                   <span className="text-slate-300">{getCurrencySymbol(displayCurrency)}</span>
                   <span className="break-all">{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                   {loading && <Loader2 className="w-8 h-8 animate-spin text-slate-200 ml-3" />}
                 </div>
               </div>
               <div className="absolute -bottom-10 -right-10 opacity-[0.03] pointer-events-none">
-                <Wallet className="w-48 h-48 sm:w-64 sm:h-64 text-black" />
+                <Wallet className="w-64 h-64 text-black" />
               </div>
             </Card>
-            <div className="lg:col-span-3 flex flex-col gap-3">
+            <div className="lg:col-span-3">
               <Button 
                 onClick={() => updateAllData(assets)} 
                 disabled={loading}
-                className="w-full h-full bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all shadow-lg active:scale-95"
+                className="w-full h-full bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded-xl transition-all shadow-lg active:scale-95"
               >
                 <RefreshCw className={cn("w-6 h-6", loading && "animate-spin")} />
                 <span className="text-sm tracking-widest uppercase">{loading ? t.fetching : t.syncMarket}</span>
@@ -434,186 +483,144 @@ export default function AssetInsightsPage() {
           </div>
         );
       case 'controls':
-        return (
-          <div key="controls" className="relative group">
-            {isReordering && (
-              <div className="absolute -left-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-50">
-                <Button size="icon" variant="outline" onClick={() => moveSection(dashboardOrder.indexOf('controls'), 'up')}><ChevronUp /></Button>
-                <Button size="icon" variant="outline" onClick={() => moveSection(dashboardOrder.indexOf('controls'), 'down')}><ChevronDown /></Button>
+        return wrapper(
+          <div className="bg-slate-50 p-6 border border-slate-100 rounded-xl flex items-center gap-8">
+            <div className="flex items-center gap-8 flex-1">
+              <div className="space-y-2 flex-1 max-w-[240px]">
+                <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+                  <Calendar className="w-4 h-4" />
+                  {t.baseRange}
+                </Label>
+                <Select value={trackingDays} onValueChange={setTrackingDays}>
+                  <SelectTrigger className="h-11 bg-white border-slate-200 font-bold text-sm rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30" className="font-bold">{t.days30}</SelectItem>
+                    <SelectItem value="90" className="font-bold">{t.days90}</SelectItem>
+                    <SelectItem value="180" className="font-bold">{t.days180}</SelectItem>
+                    <SelectItem value="365" className="font-bold">{t.days365}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-            <div className={cn("bg-slate-50 p-4 border border-slate-100 rounded-lg flex items-center gap-6", isReordering && "ring-2 ring-black")}>
-              <div className="flex items-center gap-6 flex-1">
-                <div className="space-y-1.5 flex-1 max-w-[200px]">
-                  <Label className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    {t.baseRange}
-                  </Label>
-                  <Select value={trackingDays} onValueChange={setTrackingDays}>
-                    <SelectTrigger className="h-10 bg-white border-slate-200 font-bold text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="30">{t.days30}</SelectItem>
-                      <SelectItem value="90">{t.days90}</SelectItem>
-                      <SelectItem value="180">{t.days180}</SelectItem>
-                      <SelectItem value="365">{t.days365}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5 flex-1 max-w-[200px]">
-                  <Label className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    {t.interval}
-                  </Label>
-                  <Select value={interval} onValueChange={setInterval}>
-                    <SelectTrigger className="h-10 bg-white border-slate-200 font-bold text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1d">{t.int1d}</SelectItem>
-                      <SelectItem value="1wk">{t.int1wk}</SelectItem>
-                      <SelectItem value="1mo">{t.int1mo}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2 flex-1 max-w-[240px]">
+                <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+                  <Clock className="w-4 h-4" />
+                  {t.interval}
+                </Label>
+                <Select value={interval} onValueChange={setInterval}>
+                  <SelectTrigger className="h-11 bg-white border-slate-200 font-bold text-sm rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1d" className="font-bold">{t.int1d}</SelectItem>
+                    <SelectItem value="1wk" className="font-bold">{t.int1wk}</SelectItem>
+                    <SelectItem value="1mo" className="font-bold">{t.int1mo}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
         );
       case 'table':
-        return (
-          <div key="table" className="xl:col-span-9 relative group">
-            {isReordering && (
-              <div className="absolute -left-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-50">
-                <Button size="icon" variant="outline" onClick={() => moveSection(dashboardOrder.indexOf('table'), 'up')}><ChevronUp /></Button>
-                <Button size="icon" variant="outline" onClick={() => moveSection(dashboardOrder.indexOf('table'), 'down')}><ChevronDown /></Button>
-              </div>
-            )}
-            <Card className={cn("modern-card overflow-hidden bg-white shadow-lg border-slate-100", isReordering && "ring-2 ring-black")}>
-              <CardHeader className="px-6 py-5 border-b border-slate-50">
-                <CardTitle className="text-xl font-bold flex items-center gap-3">
-                  <BarChart3 className="w-6 h-6" />
-                  {t.dashboard}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="w-full overflow-auto">
-                  <Table className="min-w-[1000px]">
-                    <TableHeader className="bg-slate-50/50">
-                      <TableRow>
-                        <TableHead className="px-6 h-12 text-sm font-bold text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
-                        <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
-                        <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest">{t.unitPrice}</TableHead>
-                        <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest">{t.change}</TableHead>
-                        <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
-                        <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest">{t.acqDate}</TableHead>
-                        <TableHead className="w-[100px]"></TableHead>
+        return wrapper(
+          <Card className="modern-card overflow-hidden bg-white shadow-xl border-slate-100 rounded-xl">
+            <CardHeader className="px-8 py-6 border-b border-slate-50">
+              <CardTitle className="text-xl font-bold flex items-center gap-3">
+                <BarChart3 className="w-6 h-6" />
+                {t.dashboard}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="w-full overflow-auto">
+                <Table className="min-w-[1100px]">
+                  <TableHeader className="bg-slate-50/50">
+                    <TableRow>
+                      <TableHead className="px-8 h-14 text-xs font-bold text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.unitPrice}</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.change}</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
+                      <TableHead className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t.acqDate}</TableHead>
+                      <TableHead className="w-[120px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assetCalculations.processedAssets.map(asset => (
+                      <TableRow key={asset.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50">
+                        <TableCell className="px-8 py-6">
+                          <div className="font-bold text-base text-black">{asset.name}</div>
+                          <div className="text-xs font-bold text-slate-400 tracking-widest uppercase mt-1">
+                            {asset.symbol || t.categoryNames[asset.category]}
+                          </div>
+                        </TableCell>
+                        <TableCell><span className="text-base font-bold text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-bold text-slate-300">{getCurrencySymbol(displayCurrency)}</span>
+                            <span className="text-base font-bold">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
+                            <div className={cn("flex items-center gap-1 font-bold text-sm", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                              {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                              <span>{getCurrencySymbol(displayCurrency)}{Math.abs(asset.dayChangeInDisplay).toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
+                              <span className="text-xs opacity-70 ml-1">({asset.dayChangePercent >= 0 ? '+' : ''}{asset.dayChangePercent.toFixed(1)}%)</span>
+                            </div>
+                          ) : <span className="text-slate-200">—</span>}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="font-bold text-base whitespace-nowrap text-black">
+                            <span className="text-slate-300 text-xs mr-1">{getCurrencySymbol(displayCurrency)}</span>
+                            {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </span>
+                        </TableCell>
+                        <TableCell><span className="text-sm font-bold text-slate-400">{asset.acquisitionDate}</span></TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-black" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); }}><Edit2 className="w-5 h-5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-200 hover:text-rose-600" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); toast({ title: t.assetDeleted }); }}><Trash2 className="w-5 h-5" /></Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {assetCalculations.processedAssets.map(asset => (
-                        <TableRow key={asset.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50">
-                          <TableCell className="px-6 py-5">
-                            <div className="font-bold text-base text-black">{asset.name}</div>
-                            <div className="text-sm text-slate-400 font-bold mt-0.5">{asset.symbol || t.categoryNames[asset.category]}</div>
-                          </TableCell>
-                          <TableCell><span className="text-base font-bold text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <span className="text-sm font-bold text-slate-300">{getCurrencySymbol(displayCurrency)}</span>
-                              <span className="text-base font-bold">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
-                              <div className={cn("flex items-center gap-1 font-bold text-sm", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
-                                {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                                <span>{getCurrencySymbol(displayCurrency)}{Math.abs(asset.dayChangeInDisplay).toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
-                                <span className="text-xs opacity-70">({asset.dayChangePercent >= 0 ? '+' : ''}{asset.dayChangePercent.toFixed(1)}%)</span>
-                              </div>
-                            ) : <span className="text-slate-200">—</span>}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className="font-bold text-base whitespace-nowrap text-black">
-                              <span className="text-slate-300 text-sm mr-1">{getCurrencySymbol(displayCurrency)}</span>
-                              {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                            </span>
-                          </TableCell>
-                          <TableCell><span className="text-sm font-bold text-slate-400">{asset.acquisitionDate}</span></TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-black" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); }}><Edit2 className="w-5 h-5" /></Button>
-                              <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-200 hover:text-rose-600" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); toast({ title: t.assetDeleted }); }}><Trash2 className="w-5 h-5" /></Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         );
       case 'charts':
-        return (
-          <div key="charts" className="xl:col-span-9 relative group">
-            {isReordering && (
-              <div className="absolute -left-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-50">
-                <Button size="icon" variant="outline" onClick={() => moveSection(dashboardOrder.indexOf('charts'), 'up')}><ChevronUp /></Button>
-                <Button size="icon" variant="outline" onClick={() => moveSection(dashboardOrder.indexOf('charts'), 'down')}><ChevronDown /></Button>
-              </div>
-            )}
-            <div className={cn(isReordering && "ring-2 ring-black rounded-xl p-4")}>
-              <PortfolioCharts 
-                language={language} 
-                allocationData={assetCalculations.allocationData} 
-                historicalData={assetCalculations.chartData} 
-                displayCurrency={displayCurrency} 
-                rates={marketData.rates} 
-                loading={loading}
-              />
-            </div>
-          </div>
+        return wrapper(
+          <PortfolioCharts 
+            language={language} 
+            allocationData={assetCalculations.allocationData} 
+            historicalData={assetCalculations.chartData} 
+            displayCurrency={displayCurrency} 
+            rates={marketData.rates} 
+            loading={loading}
+          />
         );
       case 'ai':
-        return (
-          <div key="ai" className="xl:col-span-12 relative group">
-            {isReordering && (
-              <div className="absolute -left-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-50">
-                <Button size="icon" variant="outline" onClick={() => moveSection(dashboardOrder.indexOf('ai'), 'up')}><ChevronUp /></Button>
-                <Button size="icon" variant="outline" onClick={() => moveSection(dashboardOrder.indexOf('ai'), 'down')}><ChevronDown /></Button>
-              </div>
-            )}
-            <div className={cn(isReordering && "ring-2 ring-black rounded-xl")}>
-              <AITipCard 
-                language={language} 
-                assets={assetCalculations.processedAssets} 
-                totalTWD={assetCalculations.totalTWD} 
-                marketConditions={loading ? "Syncing" : "Stable"}
-              />
-            </div>
-          </div>
+        return wrapper(
+          <AITipCard 
+            language={language} 
+            assets={assetCalculations.processedAssets} 
+            totalTWD={assetCalculations.totalTWD} 
+            marketConditions={loading ? "同步中" : "市場穩定"}
+          />
         );
       case 'form':
-        return (
-          <div key="form" className="xl:col-span-3 relative group">
-            {isReordering && (
-              <div className="absolute -left-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-50">
-                <Button size="icon" variant="outline" onClick={() => moveSection(dashboardOrder.indexOf('form'), 'up')}><ChevronUp /></Button>
-                <Button size="icon" variant="outline" onClick={() => moveSection(dashboardOrder.indexOf('form'), 'down')}><ChevronDown /></Button>
-              </div>
-            )}
-            <Card className={cn("modern-card bg-white shadow-lg border-slate-100", isReordering && "ring-2 ring-black")}>
-              <CardHeader className="px-6 py-5 border-b border-slate-50">
-                <CardTitle className="text-lg font-bold uppercase tracking-widest text-black">{t.addAsset}</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <AssetForm language={language} onAdd={handleAddAsset} />
-              </CardContent>
-            </Card>
-          </div>
+        return wrapper(
+          <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl">
+            <CardHeader className="px-8 py-6 border-b border-slate-50">
+              <CardTitle className="text-xl font-bold uppercase tracking-widest text-black">{t.addAsset}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8">
+              <AssetForm language={language} onAdd={handleAddAsset} />
+            </CardContent>
+          </Card>
         );
       default:
         return null;
@@ -624,45 +631,45 @@ export default function AssetInsightsPage() {
 
   return (
     <div 
-      className="min-h-screen bg-white text-black pb-20 font-sans overflow-x-hidden selection:bg-primary/10"
+      className="min-h-screen bg-white text-black pb-32 font-sans overflow-x-hidden"
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onTouchStart={handleMouseDown}
       onTouchEnd={handleMouseUp}
     >
-      <header className="glass-nav h-auto min-h-20 py-4 border-b border-slate-100">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="w-10 h-10 bg-black rounded flex items-center justify-center shrink-0">
-              <Activity className="w-5 h-5 text-white" />
+      <header className="glass-nav py-6 border-b border-slate-100">
+        <div className="max-w-[1440px] mx-auto px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg">
+              <Activity className="w-6 h-6 text-white" />
             </div>
-            <div className="min-w-0">
+            <div>
               <h1 className="text-2xl font-bold tracking-tight uppercase leading-none">{t.title}</h1>
-              <p className="text-sm font-bold text-slate-400 tracking-widest uppercase mt-1">{t.subtitle}</p>
+              <p className="text-xs font-bold text-slate-400 tracking-widest uppercase mt-2">{t.subtitle}</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-6 w-full sm:w-auto">
             {isReordering && (
-              <Button onClick={() => setIsReordering(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2">
-                <Check className="w-4 h-4" />
+              <Button onClick={() => setIsReordering(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 px-6 h-11 rounded-full shadow-lg">
+                <Check className="w-5 h-5" />
                 {t.exitReorder}
               </Button>
             )}
-            <div className="flex flex-col items-center sm:items-end">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t.exchangeRate}</span>
-              <span className="text-sm font-bold text-black flex items-center gap-1.5 whitespace-nowrap bg-slate-50 px-3 py-1.5 rounded border border-slate-100 shadow-sm">
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t.exchangeRate}</span>
+              <span className="text-sm font-bold text-black flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100 shadow-sm">
                 <ArrowRightLeft className="w-4 h-4 text-slate-400" />
                 1 {getCurrencySymbol(displayCurrency)}{displayCurrency} = {dynamicRates.map(r => `${r.symbol}${r.rate} ${r.code}`).join(' | ')}
               </span>
             </div>
-            <div className="flex bg-slate-100 p-0.5 rounded">
-              <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-8 px-3 font-bold text-sm">繁中</Button>
-              <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-8 px-3 font-bold text-sm">EN</Button>
+            <div className="flex bg-slate-100 p-1 rounded-lg">
+              <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-9 px-4 font-bold text-sm">繁中</Button>
+              <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-9 px-4 font-bold text-sm">EN</Button>
             </div>
             <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
-              <TabsList className="h-9 bg-slate-100">
+              <TabsList className="h-11 bg-slate-100 p-1 rounded-xl">
                 {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (
-                  <TabsTrigger key={cur} value={cur} className="text-sm font-bold uppercase">{cur}</TabsTrigger>
+                  <TabsTrigger key={cur} value={cur} className="text-sm font-bold uppercase px-4 h-9">{cur}</TabsTrigger>
                 ))}
               </TabsList>
             </Tabs>
@@ -670,34 +677,32 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-5 py-6 sm:py-10 space-y-8 sm:space-y-10">
-        {dashboardOrder.map(id => (
-          <div key={id} className={cn(id === 'form' || id === 'table' || id === 'charts' ? "grid grid-cols-1 xl:grid-cols-12 gap-8" : "w-full")}>
-            {renderSection(id)}
-          </div>
-        ))}
+      <main className="max-w-[1440px] mx-auto px-8 py-12">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 auto-rows-auto">
+          {layout.map(item => renderSection(item))}
+        </div>
       </main>
 
       <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[425px] bg-white rounded-lg p-6">
-          <DialogHeader><DialogTitle className="text-xl font-bold uppercase tracking-tight">{t.editAsset}</DialogTitle></DialogHeader>
-          <div className="grid gap-6 py-6">
+        <DialogContent className="max-w-[425px] bg-white rounded-2xl p-8 shadow-2xl">
+          <DialogHeader><DialogTitle className="text-2xl font-bold uppercase tracking-tight text-black">{t.editAsset}</DialogTitle></DialogHeader>
+          <div className="grid gap-8 py-8">
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label>
-              <div className="p-4 bg-slate-50 rounded font-bold text-base border border-slate-100">{editingAsset?.name} ({editingAsset?.symbol || '—'})</div>
+              <Label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label>
+              <div className="p-5 bg-slate-50 rounded-xl font-bold text-base border border-slate-100 text-slate-700">{editingAsset?.name} ({editingAsset?.symbol || '—'})</div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount" className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label>
-              <Input id="amount" type="number" value={editAmount ?? 0} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-12 font-bold bg-slate-50 border-slate-200 text-base" />
+              <Label htmlFor="amount" className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label>
+              <Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-14 font-bold bg-slate-50 border-slate-200 text-lg rounded-xl" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="date" className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label>
-              <Input id="date" type="date" value={editDate ?? ''} onChange={(e) => setEditDate(e.target.value)} className="h-12 font-bold bg-slate-50 border-slate-200 text-base" />
+              <Label htmlFor="date" className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label>
+              <Input id="date" type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-14 font-bold bg-slate-50 border-slate-200 text-lg rounded-xl" />
             </div>
           </div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-3">
-            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-bold text-sm uppercase tracking-widest h-12 flex-1">{t.cancel}</Button>
-            <Button onClick={saveEdit} className="bg-black text-white hover:bg-slate-800 font-bold text-sm uppercase tracking-widest h-12 flex-1 shadow-md active:scale-95">{t.saveChanges}</Button>
+          <DialogFooter className="flex flex-col sm:flex-row gap-4">
+            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-bold text-sm uppercase tracking-widest h-14 flex-1 rounded-xl">{t.cancel}</Button>
+            <Button onClick={saveEdit} className="bg-black text-white hover:bg-slate-800 font-bold text-sm uppercase tracking-widest h-14 flex-1 shadow-lg active:scale-95 rounded-xl">{t.saveChanges}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
