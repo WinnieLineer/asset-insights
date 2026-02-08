@@ -41,24 +41,24 @@ const renderActiveShape = (props: any) => {
         fill={fill} 
         className="transition-all duration-300"
       />
-      <circle cx={cx} cy={cy} r={innerRadius - 8} fill={fill} opacity={0.03} />
+      <circle cx={cx} cy={cy} r={innerRadius - 10} fill={fill} opacity={0.03} />
     </g>
   );
 };
 
-// Custom Label with Professional Leader Line
+// Custom Label with Boundary Awareness and Improved Spacing
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, name, percent, symbol, langCategories }: any) => {
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
   
-  // Outer radius for labels (farther from center)
-  const labelRadius = outerRadius + 25;
+  // Outer radius for labels (farther from center to avoid overlap)
+  const labelRadius = outerRadius + 35;
   const sx = cx + (outerRadius + 8) * cos;
   const sy = cy + (outerRadius + 8) * sin;
   const mx = cx + labelRadius * cos;
   const my = cy + labelRadius * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 25;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 30;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
@@ -72,7 +72,7 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, 
         dy={-6} 
         textAnchor={textAnchor} 
         fill="#000" 
-        fontSize={13} 
+        fontSize={12} 
         fontWeight={800} 
         className="uppercase tracking-[0.1em]"
       >
@@ -84,7 +84,7 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, 
         dy={16} 
         textAnchor={textAnchor} 
         fill="#94a3b8" 
-        fontSize={12} 
+        fontSize={11} 
         fontWeight={700}
       >
         {`${(percent * 100).toFixed(1)}%`}
@@ -102,32 +102,32 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
 
   if (loading && historicalData.length === 0) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 h-full">
-        <div className="lg:col-span-4 min-h-[550px]"><Skeleton className="w-full h-full rounded-2xl" /></div>
-        <div className="lg:col-span-8 min-h-[550px]"><Skeleton className="w-full h-full rounded-2xl" /></div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
+        <div className="lg:col-span-4 min-h-[500px]"><Skeleton className="w-full h-full rounded-2xl" /></div>
+        <div className="lg:col-span-8 min-h-[500px]"><Skeleton className="w-full h-full rounded-2xl" /></div>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 h-full items-stretch">
-      <div className="lg:col-span-4 modern-card p-10 flex flex-col items-center min-h-[550px] border-slate-100 bg-white relative shadow-xl rounded-2xl overflow-hidden h-full">
-        <div className="w-full mb-8">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full items-stretch">
+      <div className="lg:col-span-4 modern-card p-10 flex flex-col items-center border-slate-100 bg-white relative shadow-xl rounded-2xl overflow-hidden h-full">
+        <div className="w-full mb-6">
           <h3 className="text-xs font-black text-black uppercase tracking-[0.2em]">{lang.allocation}</h3>
-          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-2">資產權重外部標註導引</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-2">資產權重外部標註導引</p>
         </div>
         
         <div className="h-[380px] w-full relative">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
+            <PieChart margin={{ top: 40, right: 60, bottom: 40, left: 60 }}>
               <Pie
                 activeIndex={activeIndex ?? undefined}
                 activeShape={renderActiveShape}
                 data={allocationData}
                 cx="50%"
                 cy="50%"
-                innerRadius={95}
-                outerRadius={125}
+                innerRadius={90}
+                outerRadius={120}
                 paddingAngle={6}
                 dataKey="value"
                 stroke="transparent"
@@ -139,13 +139,13 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 {allocationData.map((_: any, i: number) => <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
               <RechartsTooltip 
-                wrapperStyle={{ zIndex: 1000 }}
+                wrapperStyle={{ zIndex: 1000, opacity: 1 }}
                 content={({ active, payload }) => {
                   if (active && payload?.length) {
                     const val = Number(payload[0].value);
                     return (
                       <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-2xl z-[1000] min-w-[200px] pointer-events-none opacity-100 ring-4 ring-black/5 animate-in fade-in zoom-in duration-200">
-                        <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4 border-b border-slate-50 pb-2">
+                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-4 border-b border-slate-50 pb-2">
                           {lang.categories[payload[0].name as keyof typeof lang.categories] || payload[0].name}
                         </p>
                         <p className="text-lg font-black text-black tracking-tight">{symbol}{val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
@@ -161,7 +161,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none w-full max-w-[140px]">
             {activeIndex !== null && allocationData[activeIndex] ? (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.2em] truncate px-2">
+                <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] truncate px-2">
                   {lang.categories[allocationData[activeIndex].name as keyof typeof lang.categories] || allocationData[activeIndex].name}
                 </p>
                 <p className="text-2xl font-black text-black tracking-tighter mt-1">
@@ -170,7 +170,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
               </div>
             ) : (
               <div className="animate-in fade-in duration-500">
-                <p className="text-[11px] font-black text-slate-200 uppercase tracking-[0.2em]">{lang.total}</p>
+                <p className="text-[10px] font-black text-slate-200 uppercase tracking-[0.2em]">{lang.total}</p>
                 <p className="text-2xl font-black text-slate-100 tracking-tighter mt-1">100%</p>
               </div>
             )}
@@ -178,31 +178,31 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
         </div>
       </div>
 
-      <div className="lg:col-span-8 modern-card p-10 flex flex-col min-h-[550px] border-slate-100 bg-white relative shadow-xl rounded-2xl h-full">
-        <div className="w-full mb-8">
+      <div className="lg:col-span-8 modern-card p-10 flex flex-col border-slate-100 bg-white relative shadow-xl rounded-2xl h-full">
+        <div className="w-full mb-6">
           <h3 className="text-xs font-black text-black uppercase tracking-[0.2em]">{lang.trend}</h3>
-          <p className="text-[11px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-2">歷史累積價值演變軸</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-2">歷史累積價值演變軸</p>
         </div>
 
         <div className="h-[400px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 20, left: -20 }}>
+            <ComposedChart data={historicalData} margin={{ top: 20, right: 30, bottom: 20, left: -20 }}>
               <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f8fafc" />
               <XAxis 
                 dataKey="displayDate" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fontSize: 12, fill: '#cbd5e1', fontWeight: 700 }} 
+                tick={{ fontSize: 11, fill: '#cbd5e1', fontWeight: 700 }} 
                 dy={12} 
               />
               <YAxis 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fontSize: 12, fill: '#e2e8f0', fontWeight: 600 }} 
+                tick={{ fontSize: 11, fill: '#e2e8f0', fontWeight: 600 }} 
                 tickFormatter={(v) => `${symbol}${(v/1000).toFixed(0)}k`} 
               />
               <RechartsTooltip 
-                wrapperStyle={{ zIndex: 1000 }}
+                wrapperStyle={{ zIndex: 1000, opacity: 1 }}
                 cursor={{ fill: '#f8fafc', opacity: 0.6 }}
                 content={({ active, payload, label }) => {
                   if (active && payload?.length) {
@@ -265,10 +265,10 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
               />
               <Brush 
                 dataKey="displayDate" 
-                height={35} 
+                height={30} 
                 stroke="#e2e8f0" 
                 fill="#f8fafc" 
-                travellerWidth={12} 
+                travellerWidth={10} 
                 className="font-bold text-[10px]"
               />
             </ComposedChart>
