@@ -410,7 +410,7 @@ export default function AssetInsightsPage() {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
-    // 嚴格過濾所有互動組件，避免誤觸佈局模式
+    // Strict filtering to avoid interference with interactive components
     if (
       target.closest('button') || 
       target.closest('select') || 
