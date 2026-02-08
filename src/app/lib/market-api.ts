@@ -19,7 +19,8 @@ export interface PriceInfo {
 
 export async function fetchMarketData(
   assets: any[], 
-  days: number = 30, 
+  p1: number, 
+  p2: number, 
   interval: string = '1d'
 ): Promise<{ marketData: MarketData; historicalTimeline: any[] }> {
   let rates = { TWD: 32.5, CNY: 7.2, USD: 1, SGD: 1.35 };
@@ -49,12 +50,10 @@ export async function fetchMarketData(
   }
 
   const symbols = stocksAndCryptos.map(a => formatSymbol(a.symbol, a.category));
-  const period2 = Math.floor(Date.now() / 1000);
-  const period1 = period2 - (days * 24 * 60 * 60);
 
   // 2. Fetch Combined Market Data (Current + Historical) in ONE request
   try {
-    const url = `${BATCH_STOCK_PROXY_URL}?symbols=${encodeURIComponent(symbols.join(','))}&period1=${period1}&period2=${period2}&interval=${interval}`;
+    const url = `${BATCH_STOCK_PROXY_URL}?symbols=${encodeURIComponent(symbols.join(','))}&period1=${p1}&period2=${p2}&interval=${interval}`;
     const response = await fetch(url);
     if (response.ok) {
       const dataArray = await response.json();
