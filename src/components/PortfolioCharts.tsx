@@ -145,11 +145,11 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                   if (active && payload && payload.length && payload[0]) {
                     const val = Number(payload[0].value);
                     return (
-                      <div className="bg-white border border-slate-200 p-2.5 rounded shadow-xl animate-fade-in z-50">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                      <div className="bg-white border border-slate-200 p-3 rounded shadow-2xl animate-fade-in z-50 opacity-100 ring-1 ring-black/5">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 border-b border-slate-50 pb-1">
                           {lang.categories[payload[0].name as keyof typeof lang.categories] || payload[0].name}
                         </p>
-                        <p className="text-xs sm:text-sm font-bold text-black">{symbol}{val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                        <p className="text-xs sm:text-sm lg:text-base font-black text-black">{symbol}{val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                       </div>
                     );
                   }
@@ -210,15 +210,15 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-white border border-slate-200 p-3 sm:p-4 rounded shadow-2xl animate-fade-in z-50 min-w-[180px]">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pb-1 border-b border-slate-50">{label}</p>
-                        <div className="space-y-1.5">
+                      <div className="bg-white border border-slate-200 p-3 sm:p-4 rounded shadow-2xl animate-fade-in z-50 min-w-[180px] opacity-100 ring-1 ring-black/5">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5 pb-1.5 border-b border-slate-100">{label}</p>
+                        <div className="space-y-2">
                           {payload.map((p: any, i: number) => {
                             if (p.dataKey === 'totalValue') return null;
                             if (!p.value) return null;
                             return (
                               <div key={i} className="flex justify-between items-center gap-4">
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-2">
                                   <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.color }} />
                                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
                                     {lang.categories[p.name as keyof typeof lang.categories] || p.name}
@@ -228,9 +228,9 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                               </div>
                             );
                           })}
-                          <div className="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center">
+                          <div className="mt-2.5 pt-2 border-t border-black/10 flex justify-between items-center">
                             <span className="text-[10px] font-black text-black uppercase tracking-widest">{lang.total}</span>
-                            <span className="text-xs font-black text-black">{symbol}{Number(payload.find((p:any)=>p.dataKey==='totalValue')?.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                            <span className="text-xs sm:text-sm font-black text-black">{symbol}{Number(payload.find((p:any)=>p.dataKey==='totalValue')?.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                           </div>
                         </div>
                       </div>
