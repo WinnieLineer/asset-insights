@@ -68,13 +68,11 @@ export async function fetchMarketData(
         const apiCurrency = chart.meta?.currency || (asset.category === 'Crypto' ? 'USD' : 'TWD');
         const currentPrice = chart.meta?.regularMarketPrice || 0;
         
-        // Store current price and its native currency
         assetMarketPrices[asset.id] = {
           price: currentPrice,
           currency: apiCurrency
         };
 
-        // Parse Historical Points
         const timestamps = chart.timestamp || [];
         const prices = chart.indicators?.adjclose?.[0]?.adjclose || chart.indicators?.quote?.[0]?.close || [];
 

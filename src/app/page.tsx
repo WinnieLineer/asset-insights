@@ -49,7 +49,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -233,7 +232,6 @@ export default function AssetInsightsPage() {
       if (asset.category === 'Stock' || asset.category === 'Crypto') {
         valueInTWD = asset.amount * priceInTWD;
         
-        // Calculate daily change based on timeline if available
         if (marketTimeline.length >= 2) {
           const lastPoint = marketTimeline[marketTimeline.length - 1];
           const prevPoint = marketTimeline[marketTimeline.length - 2];
@@ -317,16 +315,17 @@ export default function AssetInsightsPage() {
       return item;
     });
 
-    // Add manual snapshots to chart
+    // 安全地處理快照解析
     snapshots.forEach(s => {
       const sDate = new Date(s.date);
       const displayD = sDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      const allocationSafe = s.allocation || {};
       chartData.push({
         date: s.date,
         displayDate: displayD,
         totalValue: s.totalTWD * (displayRate / rateTWD),
         isSnapshot: true,
-        ...Object.fromEntries(Object.entries(s.allocation).map(([k, v]: [any, any]) => [k, v * (displayRate / rateTWD)]))
+        ...Object.fromEntries(Object.entries(allocationSafe).map(([k, v]: [any, any]) => [k, v * (displayRate / rateTWD)]))
       });
     });
 
@@ -349,7 +348,6 @@ export default function AssetInsightsPage() {
     const assetWithId = { ...newAsset, id: crypto.randomUUID() };
     const updatedAssets = [...assets, assetWithId];
     setAssets(updatedAssets);
-    // Auto refresh after adding
     await updateAllData(updatedAssets);
   };
 
@@ -394,7 +392,7 @@ export default function AssetInsightsPage() {
               <Activity className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-2xl font-black tracking-tight uppercase leading-none">{t.title}</h1>
+              <h1 className="text-2xl font-bold tracking-tight uppercase leading-none">{t.title}</h1>
               <p className="text-sm font-bold text-slate-400 tracking-widest uppercase mt-1">{t.subtitle}</p>
             </div>
           </div>
@@ -429,7 +427,7 @@ export default function AssetInsightsPage() {
                 <Globe className="w-5 h-5" />
                 {t.totalValue}
               </div>
-              <div className="text-4xl sm:text-6xl font-black tracking-tighter flex items-baseline flex-wrap gap-2">
+              <div className="text-4xl sm:text-6xl font-bold tracking-tighter flex items-baseline flex-wrap gap-2">
                 <span className="text-slate-300">{getCurrencySymbol(displayCurrency)}</span>
                 <span className="break-all">{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                 {loading && <Loader2 className="w-8 h-8 animate-spin text-slate-200 ml-3" />}
@@ -552,7 +550,7 @@ export default function AssetInsightsPage() {
                               {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                             </span>
                           </TableCell>
-                          <TableCell><span className="text-xs font-bold text-slate-400">{asset.acquisitionDate}</span></TableCell>
+                          <TableCell><span className="text-sm font-bold text-slate-400">{asset.acquisitionDate}</span></TableCell>
                           <TableCell>
                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-black" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); }}><Edit2 className="w-5 h-5" /></Button>
@@ -607,12 +605,10 @@ export default function AssetInsightsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="amount" className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label>
-              {/* Ensure value is never undefined to prevent React uncontrolled input warning */}
               <Input id="amount" type="number" value={editAmount ?? 0} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-12 font-bold bg-slate-50 border-slate-200 text-lg" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="date" className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label>
-              {/* Ensure value is never undefined to prevent React uncontrolled input warning */}
               <Input id="date" type="date" value={editDate ?? ''} onChange={(e) => setEditDate(e.target.value)} className="h-12 font-bold bg-slate-50 border-slate-200 text-lg" />
             </div>
           </div>
