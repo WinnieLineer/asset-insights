@@ -244,6 +244,9 @@ export default function MonochromeAssetPage() {
       };
     });
 
+    // 用於記錄每個資產最近一次已知的價格，處理非交易日數據缺失
+    const lastKnownPrices: Record<string, number> = {};
+
     const chartData = historicalTimeline.map((point: any) => {
       const item: any = {
         date: new Date(point.timestamp * 1000).toISOString(),
@@ -255,12 +258,22 @@ export default function MonochromeAssetPage() {
 
       processedAssets.forEach(asset => {
         let priceAtT = point.assets[asset.id];
+        
+        // 如果當前時間點沒有價格，沿用上一次已知的價格
+        if (priceAtT === undefined) {
+          priceAtT = lastKnownPrices[asset.id];
+        } else {
+          lastKnownPrices[asset.id] = priceAtT;
+        }
+
+        // 如果是銀行存款或現金，價格始終為 1 (基準單位)
         if (asset.category === 'Bank' || asset.category === 'Savings') {
           priceAtT = 1;
         }
 
         if (priceAtT !== undefined) {
           const assetCurrencyRate = marketData.rates[asset.currency] || 1;
+          // 股票與加密貨幣的價格通常是 USD，存款則是持有幣別
           const valueInTWD = (asset.amount * priceAtT) * (rateTWD / (asset.category === 'Bank' || asset.category === 'Savings' ? assetCurrencyRate : 1));
           pointTotalTWD += valueInTWD;
           categories[asset.category] += valueInTWD;

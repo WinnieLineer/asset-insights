@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -48,8 +47,12 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
   if (loading && historicalData.length === 0) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10">
-        <Skeleton className="lg:col-span-4 h-[400px]" />
-        <Skeleton className="lg:col-span-8 h-[400px]" />
+        <div className="lg:col-span-4 h-[400px]">
+          <Skeleton className="w-full h-full" />
+        </div>
+        <div className="lg:col-span-8 h-[400px]">
+          <Skeleton className="w-full h-full" />
+        </div>
       </div>
     );
   }
