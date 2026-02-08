@@ -3,13 +3,13 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Brain, RefreshCw, ShieldCheck, TrendingUp, Sparkles, MessageSquare } from 'lucide-react';
+import { Brain, RefreshCw, ShieldCheck, TrendingUp, Sparkles, MessageSquare, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
-// Static interface to avoid 'use server' issues in static export environment
 interface AssetDetail {
   name: string;
   symbol: string;
@@ -47,7 +47,8 @@ const t = {
     loading: 'Gemini is thinking...',
     answer: 'AI Recommendation',
     instructionLabel: 'Custom Instructions / Questions',
-    instructionPlaceholder: 'e.g., How can I reduce my crypto exposure risk?'
+    instructionPlaceholder: 'e.g., How can I reduce my crypto exposure risk?',
+    noApiKey: 'Gemini API Key is missing. Please set NEXT_PUBLIC_GEMINI_API_KEY in your environment.'
   },
   zh: {
     title: 'Gemini 專業投資分析',
@@ -60,60 +61,90 @@ const t = {
     loading: 'Gemini 分析中...',
     answer: 'AI 專業建議',
     instructionLabel: '自定義指令 / 提問',
-    instructionPlaceholder: '例如：我該如何降低加密貨幣的曝險風險？'
+    instructionPlaceholder: '例如：我該如何降低加密貨幣的曝險風險？',
+    noApiKey: '缺少 Gemini API 金鑰。請在環境變數中設定 NEXT_PUBLIC_GEMINI_API_KEY。'
   }
 };
 
 export function AITipCard({ assets, totalTWD, language, marketConditions = "Stable" }: AITipCardProps) {
+  const { toast } = useToast();
   const [insight, setInsight] = useState<FinancialTipOutput | null>(null);
   const [loading, setLoading] = useState(false);
   const [userQuestion, setUserQuestion] = useState('');
   const lang = t[language];
 
-  const simulateAIAnalysis = async () => {
+  const callGeminiAPI = async () => {
     if (assets.length === 0) return;
-    setLoading(true);
     
-    // In a static export environment, we simulate the analysis logic locally to ensure build success
-    // while providing professional insights.
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const cryptoCount = assets.filter(a => a.category === 'Crypto').length;
-    const stockCount = assets.filter(a => a.category === 'Stock').length;
-    const cryptoRatio = assets.filter(a => a.category === 'Crypto').reduce((acc, a) => acc + a.valueInTWD, 0) / totalTWD;
-    
-    let risk = language === 'zh' ? '中度風險 / 平衡型' : 'Moderate / Balanced';
-    let score = 75;
-    let analysis = language === 'zh' ? 
-      '您的投資組合目前展現出良好的分散性，但在當前市場環境下仍有優化空間。' : 
-      'Your portfolio shows good diversification, but there is room for optimization in current market conditions.';
-    
-    if (cryptoRatio > 0.4) {
-      risk = language === 'zh' ? '高度風險 / 激進型' : 'High Risk / Aggressive';
-      score = 45;
-    } else if (cryptoRatio < 0.1 && stockCount > 0) {
-      risk = language === 'zh' ? '低度風險 / 保守型' : 'Low Risk / Conservative';
-      score = 85;
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey) {
+      toast({
+        variant: 'destructive',
+        title: 'API Key Error',
+        description: lang.noApiKey
+      });
+      return;
     }
 
-    const recs = language === 'zh' ? [
-      '考慮分批調倉至高股息標的以增加現金流',
-      '建立定期定額機制以降低進場成本',
-      '觀察加密貨幣與大盤的相關性，動態調整部位'
-    ] : [
-      'Consider rebalancing to high-yield assets for better cash flow',
-      'Implement Dollar Cost Averaging to lower entry costs',
-      'Monitor crypto correlation with equity markets'
-    ];
+    setLoading(true);
+    
+    const portfolioSummary = assets.map(a => 
+      `${a.name} (${a.symbol}): ${a.amount} ${a.currency}, Value: ${a.valueInTWD.toFixed(0)} TWD`
+    ).join('\n');
 
-    setInsight({
-      answer: userQuestion || (language === 'zh' ? '根據您的現有配置，建議強化風險控管與固定收益比例。' : 'Based on your allocation, it is recommended to strengthen risk control and fixed-income ratios.'),
-      analysis,
-      riskLevel: risk,
-      diversificationScore: score,
-      recommendations: recs
-    });
-    setLoading(false);
+    const prompt = `
+      You are a professional financial advisor. Analyze the following user portfolio and provide strategic advice.
+      
+      User Portfolio:
+      ${portfolioSummary}
+      Total Portfolio Value (TWD): ${totalTWD.toFixed(0)}
+      Market Condition: ${marketConditions}
+      User's specific question/instruction: "${userQuestion || 'Provide a general analysis of my portfolio.'}"
+      
+      Please provide your response in JSON format with the following keys:
+      - answer: A direct, professional answer to the user's question (String)
+      - analysis: A high-level strategic overview of the portfolio (String)
+      - riskLevel: Risk level like "Low/Conservative", "Moderate/Balanced", or "High/Aggressive" (String)
+      - diversificationScore: A score from 0 to 100 (Number)
+      - recommendations: An array of 3-4 specific, actionable optimization steps (Array of Strings)
+      
+      Language: Respond in ${language === 'zh' ? 'Traditional Chinese' : 'English'}.
+      IMPORTANT: Return ONLY the raw JSON object, no markdown code blocks.
+    `;
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 2048,
+          }
+        })
+      });
+
+      const data = await response.json();
+      const rawText = data.candidates[0].content.parts[0].text;
+      
+      // Attempt to clean JSON if model returned markdown blocks
+      const cleanJson = rawText.replace(/```json|```/gi, '').trim();
+      const result = JSON.parse(cleanJson);
+      
+      setInsight(result);
+    } catch (error) {
+      console.error('Gemini API Error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'AI Analysis Error',
+        description: 'Failed to connect to Gemini API or parse response.'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getRiskColor = (level: string) => {
@@ -149,7 +180,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
             </div>
             <Button 
               className="bg-black hover:bg-slate-800 text-white font-bold rounded px-8 h-10 shadow-sm transition-all"
-              onClick={simulateAIAnalysis}
+              onClick={callGeminiAPI}
               disabled={loading || assets.length === 0}
             >
               {loading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Brain className="w-4 h-4 mr-2" />}

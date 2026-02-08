@@ -87,7 +87,7 @@ const translations = {
     marketPrice: '當前市價',
     holdings: '持有數量',
     valuation: '帳面價值',
-    unitPrice: '每單位市價',
+    unitPrice: '單位市場價值',
     dataUpdated: '市場數據已更新',
     snapshotSaved: '快照已存入紀錄',
     dashboard: '投資組合概覽',
@@ -194,14 +194,20 @@ export default function MonochromeAssetPage() {
       const diffTWD = previousAsset ? valueInTWD - (previousAsset.valueInTWD || 0) : 0;
       const diffPercent = previousAsset && previousAsset.valueInTWD ? (diffTWD / previousAsset.valueInTWD) * 100 : 0;
       
-      const priceInDisplay = convertTWDToDisplay(asset.currency === 'USD' ? (currentPrice * rate) : (asset.category === 'Stock' || asset.category === 'Crypto' ? currentPrice * (asset.currency === 'CNY' ? (rate / marketData.rates.CNY) : 1) : 1));
+      // Calculate individual unit price for display
+      let unitPriceInDisplay = 0;
+      if (asset.category === 'Stock' || asset.category === 'Crypto') {
+        unitPriceInDisplay = convertTWDToDisplay(currentPrice * (asset.category === 'Crypto' ? rate : (asset.currency === 'USD' ? rate : 1)));
+      } else {
+        unitPriceInDisplay = convertTWDToDisplay(asset.currency === 'USD' ? rate : (asset.currency === 'CNY' ? (rate/marketData.rates.CNY) : 1));
+      }
 
       return { 
         ...asset, 
         calculatedPrice: currentPrice, 
         valueInTWD, 
         valueInDisplay: convertTWDToDisplay(valueInTWD), 
-        priceInDisplay,
+        priceInDisplay: unitPriceInDisplay,
         diffTWD, 
         diffPercent, 
         hasHistory: !!previousAsset 
