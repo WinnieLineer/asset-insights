@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -426,17 +427,41 @@ export default function AssetInsightsPage() {
     }
   };
 
+  // 精確過濾交互元素，避免點擊選擇框時觸發重排
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
-    if (
-      target.closest('button') || 
-      target.closest('select') || 
-      target.closest('input') || 
-      target.closest('[role="combobox"]') ||
-      target.closest('[role="tab"]') ||
-      target.closest('.radix-select-trigger') ||
-      target.closest('.radix-tabs-trigger')
-    ) {
+    
+    // 檢查是否為交互元素或其子元素
+    const isInteractive = (el: HTMLElement | null): boolean => {
+      if (!el) return false;
+      const tagName = el.tagName.toLowerCase();
+      const role = el.getAttribute('role');
+      const isRadixTrigger = el.hasAttribute('data-radix-collection-item') || 
+                             el.className.includes('radix') ||
+                             el.hasAttribute('aria-haspopup');
+      
+      return (
+        tagName === 'button' ||
+        tagName === 'input' ||
+        tagName === 'select' ||
+        tagName === 'textarea' ||
+        tagName === 'a' ||
+        role === 'button' ||
+        role === 'checkbox' ||
+        role === 'combobox' ||
+        role === 'tab' ||
+        role === 'menuitem' ||
+        el.closest('button') !== null ||
+        el.closest('a') !== null ||
+        el.closest('[role="combobox"]') !== null ||
+        el.closest('[role="tab"]') !== null ||
+        el.closest('.radix-select-trigger') !== null ||
+        el.closest('.radix-tabs-trigger') !== null ||
+        isRadixTrigger
+      );
+    };
+
+    if (isInteractive(target)) {
       return;
     }
 
@@ -729,7 +754,8 @@ export default function AssetInsightsPage() {
       onTouchStart={handleMouseDown}
       onTouchEnd={handleMouseUp}
     >
-      <header className="glass-nav py-6 border-b border-slate-100 sticky top-0 z-[100] bg-white/80 backdrop-blur-xl">
+      {/* 導覽列強制置頂 (Fixed) */}
+      <header className="fixed top-0 left-0 right-0 py-6 border-b border-slate-100 z-[100] bg-white/80 backdrop-blur-xl">
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col xl:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 w-full xl:w-auto">
             <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg">
@@ -768,7 +794,8 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1600px] mx-auto px-6 py-10">
+      {/* 增加頂部 Padding 以抵消 Fixed Header 的高度 */}
+      <main className="max-w-[1600px] mx-auto px-6 pt-32 pb-10">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-stretch">
           {layout.map(item => renderSection(item))}
         </div>
