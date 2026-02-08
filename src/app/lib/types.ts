@@ -1,7 +1,7 @@
 
 export type Currency = 'TWD' | 'USD' | 'CNY' | 'SGD';
 
-export type AssetCategory = 'Stock' | 'Crypto' | 'Bank' | 'Fixed Deposit' | 'Savings';
+export type AssetCategory = 'Stock' | 'Crypto' | 'Bank' | 'Savings';
 
 export interface Asset {
   id: string;
@@ -10,7 +10,6 @@ export interface Asset {
   category: AssetCategory;
   amount: number;
   currency: Currency;
-  interestRate?: number; // For Fixed Deposit
   price?: number; // Current market price in its base currency
   valueInTWD?: number; // 儲存快照時的台幣總價值
 }

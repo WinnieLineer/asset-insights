@@ -8,17 +8,21 @@ import {
 } from 'recharts';
 import { AssetCategory, Currency } from '@/app/lib/types';
 
-// Monochrome colors for the charts - Professional Greyscale
 const COLORS = [
   '#000000', // Black (Stock)
   '#27272a', // Zinc 800 (Crypto)
   '#52525b', // Zinc 600 (Bank)
-  '#71717a', // Zinc 500 (Fixed Deposit)
   '#a1a1aa', // Zinc 400 (Savings)
-  '#e4e4e7', // Zinc 200 (Others)
 ];
 
-const CATEGORIES: AssetCategory[] = ['Stock', 'Crypto', 'Bank', 'Fixed Deposit', 'Savings'];
+const CATEGORIES: AssetCategory[] = ['Stock', 'Crypto', 'Bank', 'Savings'];
+
+const SYMBOLS: Record<Currency, string> = {
+  TWD: 'NT$',
+  USD: '$',
+  CNY: '¥',
+  SGD: 'S$',
+};
 
 const t = {
   en: { 
@@ -29,9 +33,8 @@ const t = {
     categories: {
       'Stock': 'Equity',
       'Crypto': 'Crypto',
-      'Bank': 'Bank',
-      'Fixed Deposit': 'Fixed Deposit',
-      'Savings': 'Savings'
+      'Bank': 'Other Assets',
+      'Savings': 'Deposits'
     }
   },
   zh: { 
@@ -42,9 +45,8 @@ const t = {
     categories: {
       'Stock': '股票資產',
       'Crypto': '加密貨幣',
-      'Bank': '銀行存款',
-      'Fixed Deposit': '定期存款',
-      'Savings': '活期儲蓄'
+      'Bank': '其他資產',
+      'Savings': '存款 (Deposits)'
     }
   }
 };
@@ -71,14 +73,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const lang = t[language as keyof typeof t] || t.zh;
   
-  const symbol = useMemo(() => {
-    switch(displayCurrency) {
-      case 'USD': return '$';
-      case 'CNY': return '¥';
-      case 'SGD': return 'S$';
-      default: return 'NT$';
-    }
-  }, [displayCurrency]);
+  const symbol = SYMBOLS[displayCurrency as Currency] || 'NT$';
   
   const convert = (val: number) => {
     const rate = rates.TWD || 32.5;
@@ -118,7 +113,6 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
-      {/* Allocation Pie Chart */}
       <div className="lg:col-span-4 modern-card p-6 sm:p-8 flex flex-col items-center min-h-[400px] border-slate-200 bg-white relative z-20">
         <div className="w-full mb-4 text-left">
           <h3 className="text-xs sm:text-sm font-black text-black uppercase tracking-widest">{lang.allocation}</h3>
@@ -187,7 +181,6 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
         </div>
       </div>
 
-      {/* Evolution Composed Chart */}
       <div className="lg:col-span-8 modern-card p-6 sm:p-8 flex flex-col min-h-[400px] border-slate-200 bg-white relative z-20">
         <div className="w-full mb-6 text-left flex justify-between items-start">
           <div>

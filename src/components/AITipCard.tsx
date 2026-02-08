@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -37,32 +38,32 @@ interface AITipCardProps {
 
 const t = {
   en: {
-    title: 'Gemini Strategic Audit',
-    desc: 'Professional portfolio intelligence powered by Gemini 3 Flash.',
-    analysis: 'Strategic Allocation Review',
+    title: 'Gemini Portfolio Analysis',
+    desc: 'Advanced portfolio auditing powered by Gemini 3 Flash Intelligence.',
+    analysis: 'Strategic Position Review',
     risk: 'Portfolio Risk Index',
     diversification: 'Diversification Health',
     recommendations: 'Tactical Optimization',
-    ctaButton: 'Initiate AI Audit',
+    ctaButton: 'Generate Analysis',
     loading: 'Processing Intelligence...',
     answer: 'Executive Summary',
     instructionLabel: 'Custom Analysis Directives',
-    instructionPlaceholder: 'e.g., How should I rebalance if interest rates rise?',
+    instructionPlaceholder: 'e.g., How should I rebalance if market volatility increases?',
     noApiKey: 'Gemini API Configuration missing.'
   },
   zh: {
-    title: 'Gemini 專業投資戰略審計',
-    desc: '整合 Gemini 3 Flash Preview 提供深度資產優化建議。',
-    analysis: '核心配置戰略評估',
-    risk: '投資組合風險等級',
+    title: 'Gemini 資產部位分析',
+    desc: '整合 Gemini 3 Flash Preview 提供專業級資產配置優化與戰略建議。',
+    analysis: '資產配置與核心戰略評估',
+    risk: '當前部位風險等級',
     diversification: '資產分散健康評分',
     recommendations: '具體優化執行路徑',
-    ctaButton: '生成 AI 戰略報告',
-    loading: 'Gemini 正在計算戰略模型...',
+    ctaButton: '生成 AI 部位分析',
+    loading: 'Gemini 正在分析資產模型...',
     answer: 'AI 專業執行總結',
     instructionLabel: '自定義分析指令 / 提問',
-    instructionPlaceholder: '例如：如果未來半年台幣持續升值，我的組合應如何調整？',
-    noApiKey: '請在 Settings 中設定 Gemini API Key。'
+    instructionPlaceholder: '例如：如果未來半年台幣持續升值，我的部位應如何調整？',
+    noApiKey: '請在環境設定中配置 Gemini API Key。'
   }
 };
 
@@ -89,7 +90,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
     setLoading(true);
     
     const portfolioSummary = assets.map(a => 
-      `${a.name} (${a.symbol}): ${a.amount} ${a.currency}, Value: ${a.valueInTWD.toFixed(0)} TWD`
+      `${a.name} (${a.symbol || a.category}): ${a.amount} ${a.currency}, Value: ${a.valueInTWD.toFixed(0)} TWD`
     ).join('\n');
 
     const promptText = `
@@ -99,7 +100,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
       ${portfolioSummary}
       Total Value (TWD): ${totalTWD.toFixed(0)}
       Current Context: ${marketConditions}
-      User Custom Inquiry: "${userQuestion || 'Full portfolio audit'}"
+      User Custom Inquiry: "${userQuestion || 'Full portfolio analysis'}"
       
       OUTPUT FORMAT (JSON ONLY):
       {
@@ -166,7 +167,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
               <div className="p-2 bg-black rounded shrink-0">
                 <Brain className="w-5 h-5 text-white" />
               </div>
-              <CardTitle className="text-sm sm:text-lg lg:text-xl font-black tracking-tight break-words uppercase">{lang.title}</CardTitle>
+              <CardTitle className="text-base sm:text-lg lg:text-xl font-black tracking-tight break-words uppercase">{lang.title}</CardTitle>
             </div>
             <CardDescription className="text-[10px] lg:text-[11px] font-black text-slate-400 uppercase tracking-widest break-words">{lang.desc}</CardDescription>
           </div>
@@ -179,13 +180,13 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
               </label>
               <Textarea 
                 placeholder={lang.instructionPlaceholder}
-                className="text-xs lg:text-sm min-h-[45px] sm:min-h-[55px] bg-white border-zinc-200 focus:ring-black focus:border-black rounded-sm p-3 font-bold"
+                className="text-xs lg:text-sm min-h-[50px] sm:min-h-[60px] bg-white border-zinc-200 focus:ring-black focus:border-black rounded-sm p-3 font-bold shadow-sm"
                 value={userQuestion}
                 onChange={(e) => setUserQuestion(e.target.value)}
               />
             </div>
             <Button 
-              className="bg-black hover:bg-zinc-800 text-white font-black h-[45px] sm:h-[55px] px-8 rounded-sm shrink-0 w-full sm:w-auto transition-all active:scale-95"
+              className="bg-black hover:bg-zinc-800 text-white font-black h-[50px] sm:h-[60px] px-8 rounded-sm shrink-0 w-full sm:w-auto transition-all active:scale-95 shadow-md"
               onClick={callGeminiAPI}
               disabled={loading || assets.length === 0}
             >
@@ -211,13 +212,13 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="bg-zinc-50 p-5 lg:p-7 rounded-sm border border-zinc-100">
+                <div className="bg-zinc-50 p-5 lg:p-7 rounded-sm border border-zinc-100 shadow-inner">
                   <h4 className="text-[10px] lg:text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3">{lang.risk}</h4>
                   <Badge className={cn("text-[10px] lg:text-[11px] font-black py-1.5 px-4 border-none uppercase tracking-widest", getRiskColor(insight.riskLevel))}>
                     {insight.riskLevel}
                   </Badge>
                 </div>
-                <div className="bg-zinc-50 p-5 lg:p-7 rounded-sm border border-zinc-100">
+                <div className="bg-zinc-50 p-5 lg:p-7 rounded-sm border border-zinc-100 shadow-inner">
                   <div className="flex justify-between items-center mb-3">
                     <h4 className="text-[10px] lg:text-[11px] font-black text-zinc-400 uppercase tracking-widest">{lang.diversification}</h4>
                     <span className="text-[11px] font-black text-black">{insight.diversificationScore}%</span>
@@ -245,7 +246,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
                 </h4>
                 <div className="grid gap-3 lg:gap-4">
                   {insight.recommendations.map((rec: string, i: number) => (
-                    <div key={i} className="flex items-start sm:items-center gap-4 p-4 lg:p-5 bg-zinc-50 border border-zinc-100 rounded-sm hover:border-black transition-all group">
+                    <div key={i} className="flex items-start sm:items-center gap-4 p-4 lg:p-5 bg-zinc-50 border border-zinc-100 rounded-sm hover:border-black transition-all group shadow-sm">
                       <div className="w-6 h-6 lg:w-7 lg:h-7 rounded-sm bg-black text-white flex items-center justify-center shrink-0 font-black text-[10px] lg:text-xs mt-0.5 sm:mt-0 group-hover:scale-110 transition-transform">
                         {i + 1}
                       </div>

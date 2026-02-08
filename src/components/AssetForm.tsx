@@ -27,19 +27,18 @@ import {
 const t = {
   en: {
     name: 'Asset Name',
-    namePlaceholder: 'e.g., My Stocks Account',
-    symbol: 'Symbol',
+    namePlaceholder: 'e.g., Global Equity Fund',
+    symbol: 'Ticker / Symbol',
     symbolPlaceholder: 'BTC, AAPL, 2330, D05.SI',
     category: 'Category',
-    currency: 'Currency',
-    amount: 'Amount',
+    currency: 'Base Currency',
+    amount: 'Quantity / Balance',
     submit: 'Add to Portfolio',
     categories: {
       Stock: 'Equity',
       Crypto: 'Crypto',
-      Savings: 'Savings',
-      FixedDeposit: 'Fixed Deposit',
-      Bank: 'Others'
+      Savings: 'Deposits',
+      Bank: 'Other Assets'
     },
     errors: {
       nameTooShort: 'Min 2 characters',
@@ -49,18 +48,17 @@ const t = {
   },
   zh: {
     name: '資產名稱',
-    namePlaceholder: '例如：台股證券帳戶',
-    symbol: '代號 (如: BTC, 2330, D05.SI)',
+    namePlaceholder: '例如：全球龍頭股組合',
+    symbol: '資產代碼 (Ticker)',
     symbolPlaceholder: 'BTC, AAPL, 2330, D05.SI',
     category: '資產類別',
     currency: '持有幣別',
-    amount: '持有數量',
+    amount: '持有數量 / 金額',
     submit: '新增部位',
     categories: {
-      Stock: '股票',
-      Crypto: '加密貨幣',
-      Savings: '活期存款',
-      FixedDeposit: '定期存款',
+      Stock: '股票 (Stock)',
+      Crypto: '加密貨幣 (Crypto)',
+      Savings: '存款 (Deposits)',
       Bank: '其他資產'
     },
     errors: {
@@ -82,7 +80,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const formSchema = useMemo(() => z.object({
     name: z.string().min(2, { message: lang.errors.nameTooShort }),
     symbol: z.string().optional(),
-    category: z.enum(['Stock', 'Crypto', 'Bank', 'Fixed Deposit', 'Savings']),
+    category: z.enum(['Stock', 'Crypto', 'Bank', 'Savings']),
     amount: z.number({ invalid_type_error: lang.errors.invalidAmount }).min(0, { message: lang.errors.invalidAmount }),
     currency: z.enum(['TWD', 'USD', 'CNY', 'SGD']),
   }), [lang]);
@@ -95,6 +93,8 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const category = form.watch('category');
   const symbol = form.watch('symbol');
   
+  const hasTicker = category === 'Stock' || category === 'Crypto';
+
   useEffect(() => {
     if (category === 'Stock') {
       const sym = (symbol || '').toUpperCase();
@@ -113,18 +113,18 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
           <FormItem>
             <FormLabel className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{lang.name}</FormLabel>
             <FormControl>
-              <Input placeholder={lang.namePlaceholder} {...field} className="bg-slate-50 border-slate-200 rounded h-9 text-xs" />
+              <Input placeholder={lang.namePlaceholder} {...field} className="bg-slate-50 border-slate-200 rounded h-10 text-xs sm:text-sm" />
             </FormControl>
             <FormMessage className="text-[10px] text-rose-500" />
           </FormItem>
         )} />
         
-        {category !== 'Savings' && (
+        {hasTicker && (
           <FormField control={form.control} name="symbol" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{lang.symbol}</FormLabel>
               <FormControl>
-                <Input placeholder={lang.symbolPlaceholder} {...field} className="bg-slate-50 border-slate-200 rounded h-9 text-xs font-bold uppercase" />
+                <Input placeholder={lang.symbolPlaceholder} {...field} className="bg-slate-50 border-slate-200 rounded h-10 text-xs sm:text-sm font-bold uppercase" />
               </FormControl>
               <FormMessage className="text-[10px] text-rose-500" />
             </FormItem>
@@ -137,7 +137,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
               <FormLabel className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{lang.category}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger className="h-9 bg-slate-50 border-slate-200 rounded text-xs">
+                  <SelectTrigger className="h-10 bg-slate-50 border-slate-200 rounded text-xs">
                     <SelectValue />
                   </SelectTrigger>
                 </FormControl>
@@ -145,7 +145,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                   <SelectItem value="Stock" className="text-xs">{lang.categories.Stock}</SelectItem>
                   <SelectItem value="Crypto" className="text-xs">{lang.categories.Crypto}</SelectItem>
                   <SelectItem value="Savings" className="text-xs">{lang.categories.Savings}</SelectItem>
-                  <SelectItem value="Fixed Deposit" className="text-xs">{lang.categories.FixedDeposit}</SelectItem>
                   <SelectItem value="Bank" className="text-xs">{lang.categories.Bank}</SelectItem>
                 </SelectContent>
               </Select>
@@ -157,7 +156,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
               <FormLabel className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{lang.currency}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value} disabled={category === 'Crypto'}>
                 <FormControl>
-                  <SelectTrigger className="h-9 bg-slate-50 border-slate-200 rounded text-xs">
+                  <SelectTrigger className="h-10 bg-slate-50 border-slate-200 rounded text-xs">
                     <SelectValue />
                   </SelectTrigger>
                 </FormControl>
@@ -176,13 +175,13 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
           <FormItem>
             <FormLabel className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{lang.amount}</FormLabel>
             <FormControl>
-              <Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-9 font-bold bg-slate-50 border-slate-200 rounded text-xs" />
+              <Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-10 font-bold bg-slate-50 border-slate-200 rounded text-sm" />
             </FormControl>
             <FormMessage className="text-[10px] text-rose-500" />
           </FormItem>
         )} />
         
-        <Button type="submit" className="w-full h-10 bg-black hover:bg-slate-800 text-white font-bold rounded text-[10px] uppercase tracking-widest shadow-sm transition-all">
+        <Button type="submit" className="w-full h-11 bg-black hover:bg-slate-800 text-white font-bold rounded text-[11px] uppercase tracking-widest shadow-md transition-all active:scale-[0.98]">
           {lang.submit}
         </Button>
       </form>

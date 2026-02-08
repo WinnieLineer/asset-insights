@@ -21,7 +21,6 @@ import {
   BarChart3,
   Edit2,
   Loader2,
-  DollarSign,
   History,
   Eye,
   Tag,
@@ -62,7 +61,7 @@ type Language = 'en' | 'zh';
 const translations = {
   en: {
     title: 'Asset Insights Pro',
-    subtitle: 'MONOCHROME PORTFOLIO',
+    subtitle: 'PROFESSIONAL ASSET INSIGHT TRACKING',
     updateData: 'Sync Market',
     takeSnapshot: 'Snapshot',
     totalValue: 'Total Portfolio Value',
@@ -90,11 +89,11 @@ const translations = {
     snapshotDetail: 'Snapshot Details',
     snapshotDate: 'Date',
     details: 'Holdings at the time',
-    historicalPrice: 'Historical Price'
+    historicalPrice: 'Price'
   },
   zh: {
     title: 'Asset Insights Pro',
-    subtitle: '專業資產追蹤系統',
+    subtitle: '專業資產部位追蹤系統',
     updateData: '同步最新市場數據',
     takeSnapshot: '建立當前快照',
     totalValue: '投資組合總淨值',
@@ -107,7 +106,7 @@ const translations = {
     unitPrice: '單位市場價值',
     dataUpdated: '市場數據已更新',
     snapshotSaved: '快照已存入紀錄',
-    dashboard: '投資組合概覽與分析',
+    dashboard: '資產部位概覽與分析',
     change: '昨日漲跌',
     assetDeleted: '資產已移除',
     editAsset: '編輯持有數量',
@@ -124,6 +123,13 @@ const translations = {
     details: '當時持倉明細',
     historicalPrice: '當時單位市價'
   }
+};
+
+const CURRENCY_SYMBOLS: Record<Currency, string> = {
+  TWD: 'NT$',
+  USD: '$',
+  CNY: '¥',
+  SGD: 'S$',
 };
 
 export default function MonochromeAssetPage() {
@@ -185,14 +191,7 @@ export default function MonochromeAssetPage() {
 
   const lastSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
   
-  const getCurrencySymbol = (cur: Currency) => {
-    switch(cur) {
-      case 'USD': return '$';
-      case 'CNY': return '¥';
-      case 'SGD': return 'S$';
-      default: return 'NT$';
-    }
-  };
+  const getCurrencySymbol = (cur: Currency) => CURRENCY_SYMBOLS[cur] || 'NT$';
 
   const convertTWDToDisplay = (twdVal: number, ratesObj = marketData.rates) => {
     const rate = ratesObj.TWD || 32.5;
@@ -205,7 +204,7 @@ export default function MonochromeAssetPage() {
   const assetCalculations = useMemo(() => {
     let totalTWD = 0;
     const allocationMap: Record<AssetCategory, number> = {
-      'Stock': 0, 'Crypto': 0, 'Bank': 0, 'Fixed Deposit': 0, 'Savings': 0,
+      'Stock': 0, 'Crypto': 0, 'Bank': 0, 'Savings': 0,
     };
     const processedAssets = assets.map(asset => {
       let currentPrice = 0; 
@@ -314,7 +313,11 @@ export default function MonochromeAssetPage() {
     const others = (['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).filter(c => c !== displayCurrency);
     return others.map(c => {
       const rate = marketData.rates[c] / base;
-      return { code: c, rate: rate.toFixed(displayCurrency === 'TWD' ? 4 : 2) };
+      return { 
+        code: c, 
+        symbol: getCurrencySymbol(c),
+        rate: rate.toFixed(displayCurrency === 'TWD' ? 3 : 2) 
+      };
     });
   }, [displayCurrency, marketData.rates]);
 
@@ -329,16 +332,16 @@ export default function MonochromeAssetPage() {
               <Activity className="w-5 h-5 lg:w-6 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl lg:text-2xl font-black tracking-tight truncate">{t.title}</h1>
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-black tracking-tight truncate uppercase">{t.title}</h1>
               <p className="text-[10px] lg:text-[11px] font-bold text-slate-400 tracking-widest uppercase truncate">{t.subtitle}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto">
-            <div className="flex flex-col items-center sm:items-end max-w-[280px]">
-              <span className="text-[10px] lg:text-[11px] font-bold text-slate-400 uppercase tracking-widest">{t.exchangeRate}</span>
+            <div className="flex flex-col items-center sm:items-end max-w-[320px]">
+              <span className="text-[10px] lg:text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">{t.exchangeRate}</span>
               <span className="text-[10px] lg:text-xs font-bold text-black flex items-center gap-1.5 whitespace-nowrap bg-slate-50 px-2 py-1 rounded border border-slate-100">
                 <ArrowRightLeft className="w-3 h-3 text-slate-400" />
-                1 {displayCurrency} = {dynamicRates.map(r => `${r.rate} ${r.code}`).join(' | ')}
+                1 {displayCurrency} = {dynamicRates.map(r => `${r.symbol}${r.rate} ${r.code}`).join(' | ')}
               </span>
             </div>
             <div className="flex bg-slate-100 p-0.5 sm:p-1 rounded shrink-0">
@@ -347,9 +350,9 @@ export default function MonochromeAssetPage() {
             </div>
             <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
               <TabsList className="h-8 sm:h-9 lg:h-10 bg-slate-100">
-                <TabsTrigger value="TWD" className="text-[10px] sm:text-[11px] lg:text-xs px-2 sm:px-3 font-bold uppercase">TWD</TabsTrigger>
-                <TabsTrigger value="USD" className="text-[10px] sm:text-[11px] lg:text-xs px-2 sm:px-3 font-bold uppercase">USD</TabsTrigger>
-                <TabsTrigger value="SGD" className="text-[10px] sm:text-[11px] lg:text-xs px-2 sm:px-3 font-bold uppercase">SGD</TabsTrigger>
+                {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (
+                  <TabsTrigger key={cur} value={cur} className="text-[10px] sm:text-[11px] lg:text-xs px-2 sm:px-3 font-bold uppercase">{cur}</TabsTrigger>
+                ))}
               </TabsList>
             </Tabs>
           </div>
@@ -365,7 +368,7 @@ export default function MonochromeAssetPage() {
                 {t.totalValue}
               </div>
               <div className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter flex items-baseline flex-wrap gap-2">
-                <span className="shrink-0">{getCurrencySymbol(displayCurrency)}</span>
+                <span className="shrink-0 text-slate-400">{getCurrencySymbol(displayCurrency)}</span>
                 <span className="break-all">{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                 {loading && <Loader2 className="w-5 h-5 lg:w-8 lg:h-8 animate-spin text-slate-300 ml-2" />}
               </div>
@@ -373,7 +376,7 @@ export default function MonochromeAssetPage() {
                 <div className={cn("inline-flex items-center gap-1.5 py-1 px-2.5 lg:px-4 rounded text-[11px] sm:text-xs lg:text-sm font-bold border", assetCalculations.totalDiffTWD >= 0 ? "text-emerald-600 bg-emerald-50 border-emerald-100" : "text-rose-600 bg-rose-50 border-rose-100")}>
                   {assetCalculations.totalDiffTWD >= 0 ? <TrendingUp className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> : <TrendingDown className="w-3.5 h-3.5 lg:w-4 lg:h-4" />}
                   {getCurrencySymbol(displayCurrency)}{Math.abs(assetCalculations.totalDiffDisplay).toLocaleString()} 
-                  <span className="opacity-70">({assetCalculations.totalDiffPercent >= 0 ? '+' : ''}{assetCalculations.totalDiffPercent.toFixed(2)}%)</span>
+                  <span className="opacity-70">({assetCalculations.totalDiffPercent >= 0 ? '+' : ''}{assetCalculations.totalDiffPercent.toFixed(1)}%)</span>
                 </div>
               )}
             </div>
@@ -392,11 +395,11 @@ export default function MonochromeAssetPage() {
               <span className="text-[11px] sm:text-xs lg:text-sm tracking-widest uppercase">{loading ? t.fetching : t.updateData}</span>
             </Button>
             <div className="grid grid-cols-2 gap-4 h-full">
-              <Button onClick={takeSnapshot} className="h-full bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all min-h-[60px] lg:min-h-[70px]">
+              <Button onClick={takeSnapshot} className="h-full bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all min-h-[60px] lg:min-h-[70px] active:scale-95">
                 <Clock className="w-5 h-5 lg:w-6 lg:h-6" />
                 <span className="text-[10px] sm:text-[11px] lg:text-xs tracking-widest uppercase">{t.takeSnapshot}</span>
               </Button>
-              <Button variant="outline" onClick={() => setShowHistory(true)} className="h-full font-bold flex flex-col items-center justify-center gap-2 rounded transition-all border-slate-200 min-h-[60px] lg:min-h-[70px]">
+              <Button variant="outline" onClick={() => setShowHistory(true)} className="h-full font-bold flex flex-col items-center justify-center gap-2 rounded transition-all border-slate-200 min-h-[60px] lg:min-h-[70px] active:scale-95">
                 <History className="w-5 h-5 lg:w-6 lg:h-6" />
                 <span className="text-[10px] sm:text-[11px] lg:text-xs tracking-widest uppercase">{t.history}</span>
               </Button>
@@ -428,10 +431,10 @@ export default function MonochromeAssetPage() {
                     </TableHeader>
                     <TableBody>
                       {assetCalculations.processedAssets.map(asset => (
-                        <TableRow key={asset.id} className="group hover:bg-slate-50/50">
+                        <TableRow key={asset.id} className="group hover:bg-slate-50/50 transition-colors">
                           <TableCell className="px-4 sm:px-6 lg:px-8 py-4 lg:py-5">
                             <div className="font-bold text-sm lg:text-base truncate max-w-[150px] sm:max-w-none">{asset.name}</div>
-                            <div className="text-[10px] lg:text-[11px] text-slate-400 font-bold uppercase tracking-widest truncate">{asset.symbol}</div>
+                            <div className="text-[10px] lg:text-[11px] text-slate-400 font-bold uppercase tracking-widest truncate">{asset.symbol || asset.category}</div>
                           </TableCell>
                           <TableCell><span className="text-xs sm:text-sm lg:text-base font-bold">{asset.amount.toLocaleString()}</span></TableCell>
                           <TableCell>
@@ -451,15 +454,18 @@ export default function MonochromeAssetPage() {
                           <TableCell>
                             {!loading && asset.hasHistory ? (
                               <div className={cn("text-[11px] sm:text-xs lg:text-sm font-bold", asset.diffTWD >= 0 ? "text-emerald-600" : "text-rose-600")}>
-                                {asset.diffTWD >= 0 ? '+' : ''}{asset.diffPercent.toFixed(2)}%
+                                {asset.diffTWD >= 0 ? '+' : ''}{asset.diffPercent.toFixed(1)}%
                               </div>
-                            ) : <span className="text-[10px] sm:text-[11px] lg:text-xs text-slate-300 font-bold uppercase tracking-widest">{loading ? '...' : 'Initial'}</span>}
+                            ) : <span className="text-[10px] sm:text-[11px] lg:text-xs text-slate-300 font-bold uppercase tracking-widest">{loading ? '...' : '—'}</span>}
                           </TableCell>
                           <TableCell className="text-right">
                             {loading && (asset.category === 'Stock' || asset.category === 'Crypto') ? (
                               <Skeleton className="ml-auto h-5 sm:h-7 w-24 sm:w-32" />
                             ) : (
-                              <span className="font-bold text-sm sm:text-base lg:text-lg xl:text-lg whitespace-nowrap">{getCurrencySymbol(displayCurrency)}{asset.valueInDisplay.toLocaleString()}</span>
+                              <span className="font-bold text-sm sm:text-base lg:text-lg xl:text-lg whitespace-nowrap">
+                                <span className="text-slate-400 text-xs sm:text-sm mr-1">{getCurrencySymbol(displayCurrency)}</span>
+                                {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                              </span>
                             )}
                           </TableCell>
                           <TableCell>
@@ -521,11 +527,14 @@ export default function MonochromeAssetPage() {
               ) : (
                 <div className="space-y-3 sm:space-y-4">
                   {[...snapshots].reverse().map(snapshot => (
-                    <Card key={snapshot.id} className="border-slate-100 hover:border-black transition-all cursor-default group bg-white">
+                    <Card key={snapshot.id} className="border-slate-100 hover:border-black transition-all cursor-default group bg-white shadow-sm hover:shadow-md">
                       <div className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div className="space-y-1">
                           <div className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest">{new Date(snapshot.date).toLocaleString()}</div>
-                          <div className="text-lg sm:text-xl lg:text-2xl font-black tracking-tight">{getCurrencySymbol(displayCurrency)}{convertTWDToDisplay(snapshot.totalTWD).toLocaleString()}</div>
+                          <div className="text-lg sm:text-xl lg:text-2xl font-black tracking-tight">
+                            <span className="text-slate-400 mr-1">{getCurrencySymbol(displayCurrency)}</span>
+                            {convertTWDToDisplay(snapshot.totalTWD).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
                           <Button variant="ghost" size="sm" className="h-8 sm:h-9 lg:h-10 px-3 sm:px-4 lg:px-6 font-bold text-[10px] lg:text-xs uppercase tracking-widest border border-slate-200" onClick={() => setSelectedSnapshot(snapshot)}>
@@ -558,7 +567,10 @@ export default function MonochromeAssetPage() {
               {selectedSnapshot && (
                 <div className="text-left sm:text-right">
                   <div className="text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest">{t.totalValue}</div>
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tighter">{getCurrencySymbol(displayCurrency)}{convertTWDToDisplay(selectedSnapshot.totalTWD).toLocaleString()}</div>
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tighter">
+                    <span className="text-slate-400 mr-1">{getCurrencySymbol(displayCurrency)}</span>
+                    {convertTWDToDisplay(selectedSnapshot.totalTWD).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </div>
                 </div>
               )}
             </div>
@@ -577,11 +589,11 @@ export default function MonochromeAssetPage() {
                         <Badge variant="outline" className="h-5 lg:h-6 px-2 lg:px-3 bg-white text-[10px] font-black uppercase tracking-tighter shrink-0">{asset.category}</Badge>
                         <div className="min-w-0">
                           <div className="text-xs sm:text-sm lg:text-base font-bold truncate">{asset.name}</div>
-                          <div className="text-[10px] lg:text-[11px] font-bold text-slate-400 uppercase tracking-widest truncate">{asset.symbol}</div>
+                          <div className="text-[10px] lg:text-[11px] font-bold text-slate-400 uppercase tracking-widest truncate">{asset.symbol || '—'}</div>
                         </div>
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-6 sm:gap-10 lg:gap-14 w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0">
-                        {asset.price !== undefined && (
+                        {asset.price !== undefined && (asset.category === 'Stock' || asset.category === 'Crypto') && (
                           <div className="text-left sm:text-right">
                             <div className="text-[9px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
                               <Tag className="w-2.5 h-2.5 lg:w-3 lg:h-3" />
@@ -594,8 +606,11 @@ export default function MonochromeAssetPage() {
                           </div>
                         )}
                         <div className="text-right min-w-[80px] sm:min-w-[100px] lg:min-w-[120px]">
-                          <div className="text-xs sm:text-sm lg:text-base font-bold">{getCurrencySymbol(displayCurrency)}{convertTWDToDisplay(asset.valueInTWD || 0).toLocaleString()}</div>
-                          <div className="text-[10px] lg:text-xs font-bold text-slate-400">{asset.amount} units</div>
+                          <div className="text-xs sm:text-sm lg:text-base font-bold">
+                            <span className="text-slate-400 text-[10px] sm:text-xs mr-1">{getCurrencySymbol(displayCurrency)}</span>
+                            {convertTWDToDisplay(asset.valueInTWD || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </div>
+                          <div className="text-[10px] lg:text-xs font-bold text-slate-400">{asset.amount.toLocaleString()} units</div>
                         </div>
                       </div>
                     </div>
@@ -616,7 +631,7 @@ export default function MonochromeAssetPage() {
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label className="text-[10px] lg:text-xs font-bold text-slate-500 uppercase tracking-widest">{t.assetName}</Label>
-              <div className="text-xs sm:text-sm lg:text-base font-bold p-3 bg-slate-50 rounded truncate">{editingAsset?.name} ({editingAsset?.symbol})</div>
+              <div className="text-xs sm:text-sm lg:text-base font-bold p-3 bg-slate-50 rounded truncate">{editingAsset?.name} ({editingAsset?.symbol || '—'})</div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="amount" className="text-[10px] lg:text-xs font-bold text-slate-500 uppercase tracking-widest">{t.holdings}</Label>
