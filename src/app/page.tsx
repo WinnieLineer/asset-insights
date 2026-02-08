@@ -430,14 +430,14 @@ export default function AssetInsightsPage() {
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
     
-    // 精確偵測所有互動組件，包含 Radix UI 的各種觸發元素
+    // 加強識別所有交互組件，確保點擊這些區域時絕對不會開啟計時器
     const isInteractive = (el: HTMLElement | null): boolean => {
       if (!el) return false;
       const tagName = el.tagName.toLowerCase();
       const role = el.getAttribute('role');
-      const isRadixTrigger = el.hasAttribute('data-radix-collection-item') || 
-                             el.className?.toString().includes('radix') ||
-                             el.hasAttribute('aria-haspopup');
+      const isRadix = el.getAttribute('data-radix-collection-item') !== null || 
+                       el.className?.toString().includes('radix') ||
+                       el.hasAttribute('aria-haspopup');
       
       return (
         tagName === 'button' ||
@@ -446,32 +446,39 @@ export default function AssetInsightsPage() {
         tagName === 'textarea' ||
         tagName === 'a' ||
         role === 'button' ||
-        role === 'checkbox' ||
         role === 'combobox' ||
         role === 'tab' ||
         role === 'menuitem' ||
         el.closest('button') !== null ||
-        el.closest('a') !== null ||
         el.closest('[role="combobox"]') !== null ||
         el.closest('[role="tab"]') !== null ||
         el.closest('.radix-select-trigger') !== null ||
-        el.closest('.radix-tabs-trigger') !== null ||
-        isRadixTrigger
+        el.closest('[data-radix-popper-content-wrapper]') !== null ||
+        isRadix
       );
     };
 
-    if (isInteractive(target)) {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-      }
-      return;
-    }
+    if (isInteractive(target)) return;
+
+    // 清理舊的計時器
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
 
     longPressTimer.current = setTimeout(() => {
       setIsReordering(true);
       toast({ title: t.reorderMode });
     }, 1500);
+
+    // 同步監聽全局 mouseup 確保不論滑鼠移到哪都能清理
+    const clearTimer = () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+      window.removeEventListener('mouseup', clearTimer);
+      window.removeEventListener('touchend', clearTimer);
+    };
+    window.addEventListener('mouseup', clearTimer);
+    window.addEventListener('touchend', clearTimer);
   };
 
   const handleMouseUp = () => {
@@ -760,7 +767,7 @@ export default function AssetInsightsPage() {
       onTouchStart={handleMouseDown}
       onTouchEnd={handleMouseUp}
     >
-      {/* 強制置頂的導航列 (Fixed Header) */}
+      {/* 永久固定置頂的導航列 (Fixed Header) */}
       <header className="fixed top-0 left-0 right-0 py-6 border-b border-slate-100 z-[100] bg-white/80 backdrop-blur-xl">
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col xl:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 w-full xl:w-auto">
@@ -800,7 +807,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      {/* 增加頂部 Padding 以抵消 Fixed Header 的高度，防止內容被遮擋 */}
+      {/* 增加頂部 Padding 以抵消 Fixed Header 的高度，並防止內容被遮擋 */}
       <main className="max-w-[1600px] mx-auto px-6 pt-40 pb-10">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-stretch">
           {layout.map(item => renderSection(item))}
