@@ -62,7 +62,7 @@ const translations = {
     marketPrice: 'Price',
     holdings: 'Holdings',
     valuation: 'Valuation',
-    unitPrice: 'Unit Price',
+    unitPrice: 'Unit Value',
     dataUpdated: 'Market data updated.',
     snapshotSaved: 'Snapshot saved.',
     dashboard: 'Portfolio Overview',
@@ -193,9 +193,13 @@ export default function MonochromeAssetPage() {
       // Calculate individual unit price for display
       let unitPriceInDisplay = 0;
       if (asset.category === 'Stock' || asset.category === 'Crypto') {
-        unitPriceInDisplay = convertTWDToDisplay(currentPrice * (asset.category === 'Crypto' ? rate : (asset.currency === 'USD' ? rate : 1)));
+        // For stocks and crypto, we display the per-share/coin value in the selected currency
+        const unitValTWD = currentPrice * (asset.category === 'Crypto' || asset.currency === 'USD' ? rate : 1);
+        unitPriceInDisplay = convertTWDToDisplay(unitValTWD);
       } else {
-        unitPriceInDisplay = convertTWDToDisplay(asset.currency === 'USD' ? rate : (asset.currency === 'CNY' ? (rate/marketData.rates.CNY) : 1));
+        // For bank/savings, unit value is essentially the exchange rate for 1 unit
+        const unitValTWD = asset.currency === 'USD' ? rate : (asset.currency === 'CNY' ? (rate/marketData.rates.CNY) : 1);
+        unitPriceInDisplay = convertTWDToDisplay(unitValTWD);
       }
 
       return { 
