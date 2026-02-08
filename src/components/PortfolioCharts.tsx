@@ -85,13 +85,10 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
         totalValue: convert(snapshot.totalTWD),
       };
       
-      // Aggregate values by category for this snapshot
       CATEGORIES.forEach(cat => {
-        // Find assets of this category in the snapshot
         const catAssets = snapshot.assets?.filter((a: any) => a.category === cat) || [];
         const sumTWD = catAssets.reduce((acc: number, curr: any) => acc + (curr.valueInTWD || 0), 0);
         
-        // If snapshot doesn't have detailed assets (legacy), fallback to allocations
         if (sumTWD === 0 && snapshot.allocations) {
           const alloc = snapshot.allocations.filter((a: any) => a.category === cat);
           const allocSum = alloc.reduce((acc: number, curr: any) => acc + curr.value, 0);
@@ -112,7 +109,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
       {/* Allocation Pie Chart */}
-      <div className="lg:col-span-4 modern-card p-6 sm:p-8 flex flex-col items-center min-h-[400px] border-slate-200 bg-white">
+      <div className="lg:col-span-4 modern-card p-6 sm:p-8 flex flex-col items-center min-h-[400px] border-slate-200 bg-white relative z-20">
         <div className="w-full mb-4 text-left">
           <h3 className="text-xs sm:text-sm font-black text-black uppercase tracking-widest">{lang.allocation}</h3>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Asset Mix Matrix</p>
@@ -141,11 +138,12 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 ))}
               </Pie>
               <RechartsTooltip 
+                wrapperStyle={{ zIndex: 9999 }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length && payload[0]) {
                     const val = Number(payload[0].value);
                     return (
-                      <div className="bg-white border border-slate-200 p-3 rounded shadow-2xl animate-fade-in z-50 opacity-100 ring-1 ring-black/5">
+                      <div className="bg-white border border-slate-200 p-3 rounded shadow-2xl animate-fade-in z-[10000] opacity-100 ring-1 ring-black/5 pointer-events-none min-w-[140px]">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 border-b border-slate-50 pb-1">
                           {lang.categories[payload[0].name as keyof typeof lang.categories] || payload[0].name}
                         </p>
@@ -180,7 +178,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
       </div>
 
       {/* Evolution Composed Chart */}
-      <div className="lg:col-span-8 modern-card p-6 sm:p-8 flex flex-col min-h-[400px] border-slate-200 bg-white">
+      <div className="lg:col-span-8 modern-card p-6 sm:p-8 flex flex-col min-h-[400px] border-slate-200 bg-white relative z-20">
         <div className="w-full mb-6 text-left flex justify-between items-start">
           <div>
             <h3 className="text-xs sm:text-sm font-black text-black uppercase tracking-widest">{lang.trend}</h3>
@@ -206,11 +204,12 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 tickFormatter={(value) => `${symbol}${(value/1000).toFixed(0)}k`}
               />
               <RechartsTooltip 
+                wrapperStyle={{ zIndex: 9999 }}
                 cursor={{ fill: '#f8fafc' }}
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="bg-white border border-slate-200 p-3 sm:p-4 rounded shadow-2xl animate-fade-in z-50 min-w-[180px] opacity-100 ring-1 ring-black/5">
+                      <div className="bg-white border border-slate-200 p-3 sm:p-4 rounded shadow-2xl animate-fade-in z-[10000] min-w-[180px] opacity-100 ring-1 ring-black/5 pointer-events-none">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5 pb-1.5 border-b border-slate-100">{label}</p>
                         <div className="space-y-2">
                           {payload.map((p: any, i: number) => {
@@ -256,7 +255,6 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                   </div>
                 )}
               />
-              {/* Stacked Bars for categories */}
               {CATEGORIES.map((cat, i) => (
                 <Bar 
                   key={cat}
@@ -267,7 +265,6 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                   radius={i === 0 ? [0, 0, 2, 2] : [0, 0, 0, 0]}
                 />
               ))}
-              {/* Trend Line for total value */}
               <Line 
                 type="monotone" 
                 dataKey="totalValue" 
