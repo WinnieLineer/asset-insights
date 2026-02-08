@@ -26,6 +26,8 @@ import {
   Check,
   Maximize2,
   Minimize2,
+  History,
+  Briefcase,
 } from 'lucide-react';
 import { 
   Card, 
@@ -42,7 +44,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { 
   Dialog,
   DialogContent,
@@ -79,15 +81,17 @@ const translations = {
     holdings: 'Quantity',
     valuation: 'Market Value',
     unitPrice: 'Unit Price',
-    dashboard: 'Portfolio Overview',
+    dashboard: 'Portfolio Insights',
+    activePositions: 'Current Holdings',
+    closedPositions: 'Historical Record',
     change: 'Daily Change',
     editAsset: 'Edit Position',
     cancel: 'Cancel',
     saveChanges: 'Save',
     fetching: 'Syncing...',
-    exchangeRate: 'Live Exchange Rates',
-    baseRange: 'Tracking Range',
-    interval: 'Frequency',
+    exchangeRate: 'Exchange Rates',
+    baseRange: 'Range',
+    interval: 'Interval',
     days30: '30 Days',
     days90: '90 Days',
     days180: '180 Days',
@@ -97,12 +101,11 @@ const translations = {
     int1mo: 'Monthly',
     assetDeleted: 'Asset removed.',
     dataUpdated: 'Market data synced.',
-    acqDate: 'Hold Since',
-    reorderMode: 'Layout Customization Mode',
+    acqDate: 'Acquired',
+    endDate: 'Closed',
+    reorderMode: 'Layout Mode',
     exitReorder: 'Save Layout',
-    longPressTip: 'Long press to unlock and customize grid width/position',
-    widen: 'Widen',
-    shrink: 'Shrink',
+    longPressTip: 'Long press space to adjust layout',
     categoryNames: {
       Stock: 'Equity',
       Crypto: 'Crypto',
@@ -121,6 +124,8 @@ const translations = {
     valuation: '帳面價值',
     unitPrice: '單位市場價值',
     dashboard: '資產部位概覽與分析',
+    activePositions: '當前持有部位',
+    closedPositions: '歷史結清部位',
     change: '今日漲跌',
     editAsset: '編輯部位資訊',
     cancel: '取消',
@@ -139,11 +144,10 @@ const translations = {
     assetDeleted: '資產已移除',
     dataUpdated: '市場數據已更新',
     acqDate: '持有日期',
+    endDate: '結清日期',
     reorderMode: '佈局自由調整模式',
     exitReorder: '儲存目前佈局',
-    longPressTip: '長按任何區塊以解除鎖定並自由調整位置與寬度',
-    widen: '增加寬度',
-    shrink: '縮減寬度',
+    longPressTip: '長按背景區域以解除鎖定並自由調整位置與寬度',
     categoryNames: {
       Stock: '股票',
       Crypto: '加密貨幣',
@@ -179,6 +183,7 @@ export default function AssetInsightsPage() {
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editAmount, setEditAmount] = useState<number>(0);
   const [editDate, setEditDate] = useState<string>('');
+  const [editEndDate, setEditEndDate] = useState<string>('');
   const [trackingDays, setTrackingDays] = useState<string>("30");
   const [interval, setInterval] = useState<string>("1d");
   const [marketTimeline, setMarketTimeline] = useState<any[]>([]);
@@ -242,8 +247,6 @@ export default function AssetInsightsPage() {
     }
   }, [layout, mounted]);
 
-  const getCurrencySymbol = (cur: Currency) => CURRENCY_SYMBOLS[cur] || 'NT$';
-
   const assetCalculations = useMemo(() => {
     let totalTWD = 0;
     const allocationMap: Record<AssetCategory, number> = {
@@ -252,12 +255,12 @@ export default function AssetInsightsPage() {
     
     const rateTWD = marketData.rates.TWD || 32.5;
     const displayRate = marketData.rates[displayCurrency] || 1;
+    const today = new Date().getTime();
 
     const processedAssets = assets.map(asset => {
       const marketInfo = marketData.assetMarketPrices[asset.id];
       const nativePrice = marketInfo?.price || 0;
       const apiCurrency = marketInfo?.currency || 'TWD';
-      
       const apiCurrencyRate = (marketData.rates[apiCurrency as Currency] || 1);
       const priceInTWD = nativePrice * (rateTWD / apiCurrencyRate);
       
@@ -265,27 +268,30 @@ export default function AssetInsightsPage() {
       let dayChangeInTWD = 0;
       let dayChangePercent = 0;
 
-      if (asset.category === 'Stock' || asset.category === 'Crypto') {
-        valueInTWD = asset.amount * priceInTWD;
-        
-        if (marketTimeline.length >= 2) {
-          const lastPoint = marketTimeline[marketTimeline.length - 1];
-          const prevPoint = marketTimeline[marketTimeline.length - 2];
-          const currentP = lastPoint.assets[asset.id];
-          const prevP = prevPoint.assets[asset.id];
-          if (currentP !== undefined && prevP !== undefined) {
-            const priceDiff = (currentP - prevP) * (rateTWD / apiCurrencyRate);
-            dayChangeInTWD = asset.amount * priceDiff;
-            dayChangePercent = ((currentP - prevP) / prevP) * 100;
+      // Check if the position is currently active
+      const isClosed = asset.endDate ? new Date(asset.endDate).getTime() <= today : false;
+
+      if (!isClosed) {
+        if (asset.category === 'Stock' || asset.category === 'Crypto') {
+          valueInTWD = asset.amount * priceInTWD;
+          if (marketTimeline.length >= 2) {
+            const lastPoint = marketTimeline[marketTimeline.length - 1];
+            const prevPoint = marketTimeline[marketTimeline.length - 2];
+            const currentP = lastPoint.assets[asset.id];
+            const prevP = prevPoint.assets[asset.id];
+            if (currentP !== undefined && prevP !== undefined) {
+              const priceDiff = (currentP - prevP) * (rateTWD / apiCurrencyRate);
+              dayChangeInTWD = asset.amount * priceDiff;
+              dayChangePercent = ((currentP - prevP) / prevP) * 100;
+            }
           }
+        } else {
+          const assetCurrencyRate = marketData.rates[asset.currency] || 1;
+          valueInTWD = asset.amount * (rateTWD / assetCurrencyRate);
         }
-      } else {
-        const assetCurrencyRate = marketData.rates[asset.currency] || 1;
-        valueInTWD = asset.amount * (rateTWD / assetCurrencyRate);
+        totalTWD += valueInTWD;
+        allocationMap[asset.category] += valueInTWD;
       }
-      
-      totalTWD += valueInTWD;
-      allocationMap[asset.category] += valueInTWD;
       
       const valueInDisplay = valueInTWD * (displayRate / rateTWD);
       const unitPriceInDisplay = (asset.category === 'Stock' || asset.category === 'Crypto') 
@@ -294,6 +300,7 @@ export default function AssetInsightsPage() {
 
       return { 
         ...asset, 
+        isClosed,
         nativePrice,
         nativeCurrency: apiCurrency,
         valueInTWD, 
@@ -317,7 +324,10 @@ export default function AssetInsightsPage() {
 
       processedAssets.forEach(asset => {
         const acqTime = new Date(asset.acquisitionDate).getTime();
-        if (pointTime < acqTime) return; 
+        const endTime = asset.endDate ? new Date(asset.endDate).getTime() : Infinity;
+        
+        // Asset only exists in the timeline during its held period
+        if (pointTime < acqTime || pointTime > endTime) return; 
 
         let priceAtT = point.assets[asset.id];
         if (priceAtT === undefined) priceAtT = lastKnownPrices[asset.id];
@@ -353,14 +363,15 @@ export default function AssetInsightsPage() {
 
     return { 
       processedAssets, 
+      activeAssets: processedAssets.filter(a => !a.isClosed),
+      closedAssets: processedAssets.filter(a => a.isClosed),
       totalTWD, 
       totalDisplay: totalTWD * (displayRate / rateTWD), 
       allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ 
         name, 
         value: value * (displayRate / rateTWD) 
       })),
-      chartData,
-      allocationMap
+      chartData
     };
   }, [assets, marketData, displayCurrency, marketTimeline]);
 
@@ -373,27 +384,33 @@ export default function AssetInsightsPage() {
 
   const saveEdit = () => {
     if (!editingAsset) return;
-    const updated = assets.map(a => a.id === editingAsset.id ? { ...a, amount: editAmount || 0, acquisitionDate: editDate || a.acquisitionDate } : a);
+    const updated = assets.map(a => a.id === editingAsset.id ? { 
+      ...a, 
+      amount: editAmount || 0, 
+      acquisitionDate: editDate || a.acquisitionDate,
+      endDate: editEndDate || undefined
+    } : a);
     setAssets(updated);
     setEditingAsset(null);
     updateAllData(updated);
   };
 
-  const dynamicRates = useMemo(() => {
-    const base = marketData.rates[displayCurrency] || 1;
-    return (['TWD', 'USD', 'CNY', 'SGD'] as Currency[])
-      .filter(c => c !== displayCurrency)
-      .map(c => ({ 
-        code: c, 
-        symbol: getCurrencySymbol(c),
-        rate: (marketData.rates[c] / base).toFixed(3) 
-      }));
-  }, [displayCurrency, marketData.rates]);
+  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    // Check if user is clicking an interactive element
+    if (
+      target.closest('button') || 
+      target.closest('select') || 
+      target.closest('input') || 
+      target.closest('[role="combobox"]') ||
+      target.closest('.radix-select-trigger')
+    ) {
+      return;
+    }
 
-  const handleMouseDown = () => {
     longPressTimer.current = setTimeout(() => {
       setIsReordering(true);
-      toast({ title: t.reorderMode, description: t.longPressTip });
+      toast({ title: t.reorderMode });
     }, 1500);
   };
 
@@ -404,15 +421,12 @@ export default function AssetInsightsPage() {
   const moveSection = (id: SectionId, direction: 'up' | 'down') => {
     const newLayout = [...layout];
     const index = newLayout.findIndex(i => i.id === id);
-    if (index === -1) return;
-
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= newLayout.length) return;
     
     const currentOrder = newLayout[index].order;
     newLayout[index].order = newLayout[targetIndex].order;
     newLayout[targetIndex].order = currentOrder;
-    
     newLayout.sort((a, b) => a.order - b.order);
     setLayout(newLayout);
   };
@@ -420,8 +434,7 @@ export default function AssetInsightsPage() {
   const resizeSection = (id: SectionId, direction: 'widen' | 'shrink') => {
     setLayout(prev => prev.map(item => {
       if (item.id !== id) return item;
-      const step = 2; 
-      let newW = direction === 'widen' ? item.w + step : item.w - step;
+      let newW = direction === 'widen' ? item.w + 2 : item.w - 2;
       newW = Math.max(4, Math.min(12, newW));
       return { ...item, w: newW };
     }));
@@ -429,31 +442,20 @@ export default function AssetInsightsPage() {
 
   const renderSection = (item: LayoutItem) => {
     const { id, w } = item;
-    
-    const colSpanClasses: Record<number, string> = {
-      4: 'xl:col-span-4',
-      6: 'xl:col-span-6',
-      8: 'xl:col-span-8',
-      10: 'xl:col-span-10',
-      12: 'xl:col-span-12',
-    };
+    const colSpanClasses: Record<number, string> = { 4: 'xl:col-span-4', 6: 'xl:col-span-6', 8: 'xl:col-span-8', 10: 'xl:col-span-10', 12: 'xl:col-span-12' };
 
     const wrapper = (content: React.ReactNode) => (
-      <div key={id} className={cn("relative group transition-all duration-500", colSpanClasses[w] || 'xl:col-span-12')}>
+      <div key={id} className={cn("relative transition-all duration-500", colSpanClasses[w] || 'xl:col-span-12')}>
         {isReordering && (
-          <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-[60] bg-white border border-slate-200 shadow-2xl rounded-full px-4 py-2 border-primary/20 scale-100 animate-in fade-in zoom-in duration-300">
-            <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'up')} className="h-8 w-8 hover:bg-slate-100"><ChevronUp className="w-4 h-4" /></Button>
-            <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'down')} className="h-8 w-8 hover:bg-slate-100"><ChevronDown className="w-4 h-4" /></Button>
+          <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-[60] bg-white border border-slate-200 shadow-2xl rounded-full px-4 py-2 scale-100 animate-in fade-in zoom-in">
+            <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'up')} className="h-8 w-8"><ChevronUp className="w-4 h-4" /></Button>
+            <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'down')} className="h-8 w-8"><ChevronDown className="w-4 h-4" /></Button>
             <div className="w-px h-4 bg-slate-200 mx-1" />
-            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'shrink')} className="h-8 w-8 hover:bg-slate-100"><Minimize2 className="w-4 h-4" /></Button>
-            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'widen')} className="h-8 w-8 hover:bg-slate-100"><Maximize2 className="w-4 h-4" /></Button>
-            <div className="ml-2 font-black text-xs text-primary/40 tracking-tighter uppercase">{w}/12</div>
+            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'shrink')} className="h-8 w-8"><Minimize2 className="w-4 h-4" /></Button>
+            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'widen')} className="h-8 w-8"><Maximize2 className="w-4 h-4" /></Button>
           </div>
         )}
-        <div className={cn(
-          "h-full transition-all overflow-hidden",
-          isReordering && "ring-4 ring-primary/10 rounded-2xl bg-slate-50/30 p-1"
-        )}>
+        <div className={cn("h-full", isReordering && "ring-4 ring-primary/10 rounded-2xl bg-slate-50/30 p-1")}>
           {content}
         </div>
       </div>
@@ -463,15 +465,15 @@ export default function AssetInsightsPage() {
       case 'summary':
         return wrapper(
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-            <Card className="lg:col-span-9 modern-card p-8 lg:p-10 relative overflow-hidden bg-white shadow-xl border-slate-100 h-full">
+            <Card className="lg:col-span-9 modern-card p-8 relative overflow-hidden bg-white shadow-xl border-slate-100 h-full">
               <div className="space-y-4 z-20 relative">
                 <div className="flex items-center gap-2 text-slate-400 text-sm font-bold uppercase tracking-widest">
                   <Globe className="w-5 h-5" />
                   {t.totalValue}
                 </div>
-                <div className="text-4xl lg:text-5xl font-bold tracking-tighter flex items-baseline flex-wrap gap-3">
-                  <span className="text-slate-200 font-medium">{getCurrencySymbol(displayCurrency)}</span>
-                  <span className="break-all">{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                <div className="text-4xl lg:text-5xl font-black tracking-tighter flex items-baseline gap-3">
+                  <span className="text-slate-200 font-medium">{CURRENCY_SYMBOLS[displayCurrency]}</span>
+                  <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                   {loading && <Loader2 className="w-8 h-8 animate-spin text-slate-200 ml-3" />}
                 </div>
               </div>
@@ -480,13 +482,9 @@ export default function AssetInsightsPage() {
               </div>
             </Card>
             <div className="lg:col-span-3">
-              <Button 
-                onClick={() => updateAllData(assets)} 
-                disabled={loading}
-                className="w-full h-full bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-3 rounded-xl transition-all shadow-lg active:scale-95 group"
-              >
-                <RefreshCw className={cn("w-7 h-7 group-hover:rotate-180 transition-transform duration-500", loading && "animate-spin")} />
-                <span className="text-xs tracking-widest uppercase font-black">{loading ? t.fetching : t.syncMarket}</span>
+              <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-3 rounded-xl shadow-lg group">
+                <RefreshCw className={cn("w-7 h-7 transition-transform duration-500", loading && "animate-spin")} />
+                <span className="text-xs tracking-widest uppercase">{loading ? t.fetching : t.syncMarket}</span>
               </Button>
             </div>
           </div>
@@ -496,14 +494,11 @@ export default function AssetInsightsPage() {
           <div className="bg-slate-50/80 backdrop-blur-sm p-6 border border-slate-100 rounded-xl flex items-center gap-8 h-full shadow-inner">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6 sm:gap-12 flex-1">
               <div className="space-y-2 flex-1">
-                <Label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 ml-1">
-                  <Calendar className="w-4 h-4" />
-                  {t.baseRange}
+                <Label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+                  <Calendar className="w-4 h-4" /> {t.baseRange}
                 </Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
-                  <SelectTrigger className="h-12 bg-white border-slate-200 font-bold text-sm rounded-lg shadow-sm">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="h-12 bg-white font-bold text-sm rounded-lg shadow-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="30" className="font-bold">{t.days30}</SelectItem>
                     <SelectItem value="90" className="font-bold">{t.days90}</SelectItem>
@@ -513,14 +508,11 @@ export default function AssetInsightsPage() {
                 </Select>
               </div>
               <div className="space-y-2 flex-1">
-                <Label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 ml-1">
-                  <Clock className="w-4 h-4" />
-                  {t.interval}
+                <Label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+                  <Clock className="w-4 h-4" /> {t.interval}
                 </Label>
                 <Select value={interval} onValueChange={setInterval}>
-                  <SelectTrigger className="h-12 bg-white border-slate-200 font-bold text-sm rounded-lg shadow-sm">
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger className="h-12 bg-white font-bold text-sm rounded-lg shadow-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1d" className="font-bold">{t.int1d}</SelectItem>
                     <SelectItem value="1wk" className="font-bold">{t.int1wk}</SelectItem>
@@ -533,69 +525,35 @@ export default function AssetInsightsPage() {
         );
       case 'table':
         return wrapper(
-          <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl h-full flex flex-col">
-            <CardHeader className="px-6 py-5 border-b border-slate-50 flex flex-row items-center justify-between">
-              <CardTitle className="text-xl font-bold flex items-center gap-3">
-                <BarChart3 className="w-6 h-6 text-primary" />
-                {t.dashboard}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 flex-1 overflow-auto">
-              <Table className="min-w-[1000px]">
-                <TableHeader className="bg-slate-50/50">
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="px-6 h-12 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{t.assetName}</TableHead>
-                    <TableHead className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{t.holdings}</TableHead>
-                    <TableHead className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{t.unitPrice}</TableHead>
-                    <TableHead className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{t.change}</TableHead>
-                    <TableHead className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] text-right">{t.valuation}</TableHead>
-                    <TableHead className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{t.acqDate}</TableHead>
-                    <TableHead className="w-[100px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {assetCalculations.processedAssets.map(asset => (
-                    <TableRow key={asset.id} className="group hover:bg-slate-50/40 transition-colors border-slate-50">
-                      <TableCell className="px-6 py-4">
-                        <div className="font-bold text-sm text-black truncate max-w-[150px]">{asset.name}</div>
-                        <div className="text-xs font-black text-slate-300 tracking-[0.2em] uppercase mt-1">
-                          {asset.symbol || t.categoryNames[asset.category]}
-                        </div>
-                      </TableCell>
-                      <TableCell><span className="text-sm font-bold text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-black text-slate-200">{getCurrencySymbol(displayCurrency)}</span>
-                          <span className="text-sm font-bold text-slate-800">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
-                          <div className={cn("flex items-center gap-1 font-bold text-xs", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
-                            {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                            <span>{getCurrencySymbol(displayCurrency)}{Math.abs(asset.dayChangeInDisplay).toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
-                            <span className="text-xs opacity-60 ml-1 font-medium">({asset.dayChangePercent >= 0 ? '+' : ''}{asset.dayChangePercent.toFixed(1)}%)</span>
-                          </div>
-                        ) : <span className="text-slate-200">—</span>}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-bold text-sm whitespace-nowrap text-black">
-                          <span className="text-slate-200 text-xs mr-1 font-medium">{getCurrencySymbol(displayCurrency)}</span>
-                          {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                        </span>
-                      </TableCell>
-                      <TableCell><span className="text-xs font-bold text-slate-400 tracking-tight">{asset.acquisitionDate}</span></TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-black hover:bg-slate-100 rounded-lg" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount || 0); setEditDate(asset.acquisitionDate || ''); }}><Edit2 className="w-3.5 h-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-200 hover:text-rose-600 hover:bg-rose-50 rounded-lg" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); toast({ title: t.assetDeleted }); }}><Trash2 className="w-3.5 h-3.5" /></Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
+          <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl h-full flex flex-col overflow-hidden">
+            <Tabs defaultValue="active" className="w-full">
+              <CardHeader className="px-6 py-5 border-b border-slate-50 flex flex-col gap-4 sticky top-0 bg-white z-40">
+                <div className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-xl font-black flex items-center gap-3">
+                    <BarChart3 className="w-6 h-6 text-primary" />
+                    {t.dashboard}
+                  </CardTitle>
+                </div>
+                <TabsList className="bg-slate-100 p-1 rounded-xl w-fit">
+                  <TabsTrigger value="active" className="text-xs font-black px-6 gap-2">
+                    <Briefcase className="w-3.5 h-3.5" />
+                    {t.activePositions}
+                  </TabsTrigger>
+                  <TabsTrigger value="closed" className="text-xs font-black px-6 gap-2">
+                    <History className="w-3.5 h-3.5" />
+                    {t.closedPositions}
+                  </TabsTrigger>
+                </TabsList>
+              </CardHeader>
+              <CardContent className="p-0 flex-1 overflow-auto">
+                <TabsContent value="active" className="m-0">
+                  {renderTable(assetCalculations.activeAssets)}
+                </TabsContent>
+                <TabsContent value="closed" className="m-0">
+                  {renderTable(assetCalculations.closedAssets, true)}
+                </TabsContent>
+              </CardContent>
+            </Tabs>
           </Card>
         );
       case 'charts':
@@ -626,7 +584,7 @@ export default function AssetInsightsPage() {
         return wrapper(
           <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl h-full">
             <CardHeader className="px-6 py-5 border-b border-slate-50">
-              <CardTitle className="text-lg font-bold uppercase tracking-widest text-black flex items-center gap-3">
+              <CardTitle className="text-lg font-black uppercase tracking-widest flex items-center gap-3">
                 <Activity className="w-5 h-5 text-primary" />
                 {t.addAsset}
               </CardTitle>
@@ -641,11 +599,83 @@ export default function AssetInsightsPage() {
     }
   };
 
+  const renderTable = (data: any[], isClosed = false) => (
+    <Table className="min-w-[1000px]">
+      <TableHeader className="bg-slate-50/50">
+        <TableRow className="hover:bg-transparent">
+          <TableHead className="px-6 h-12 text-xs font-black text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
+          <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
+          {!isClosed && <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest">{t.unitPrice}</TableHead>}
+          {!isClosed && <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest">{t.change}</TableHead>}
+          <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
+          <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest">{t.acqDate}</TableHead>
+          {isClosed && <TableHead className="text-xs font-black text-slate-400 uppercase tracking-widest">{t.endDate}</TableHead>}
+          <TableHead className="w-[100px]"></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {data.map(asset => (
+          <TableRow key={asset.id} className={cn("group hover:bg-slate-50/40 transition-colors border-slate-50", isClosed && "opacity-60")}>
+            <TableCell className="px-6 py-4">
+              <div className="font-bold text-sm text-black truncate max-w-[150px]">{asset.name}</div>
+              <div className="text-xs font-black text-slate-300 tracking-widest uppercase mt-1">
+                {asset.symbol || t.categoryNames[asset.category]}
+              </div>
+            </TableCell>
+            <TableCell><span className="text-sm font-bold text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
+            {!isClosed && (
+              <TableCell>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black text-slate-200">{CURRENCY_SYMBOLS[displayCurrency]}</span>
+                  <span className="text-sm font-bold text-slate-800">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                </div>
+              </TableCell>
+            )}
+            {!isClosed && (
+              <TableCell>
+                {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
+                  <div className={cn("flex items-center gap-1 font-bold text-xs", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                    {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                    <span>{CURRENCY_SYMBOLS[displayCurrency]}{Math.abs(asset.dayChangeInDisplay).toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
+                    <span className="text-xs opacity-60 ml-1 font-medium">({asset.dayChangePercent >= 0 ? '+' : ''}{asset.dayChangePercent.toFixed(1)}%)</span>
+                  </div>
+                ) : <span className="text-slate-200">—</span>}
+              </TableCell>
+            )}
+            <TableCell className="text-right">
+              <span className="font-bold text-sm whitespace-nowrap text-black">
+                <span className="text-slate-200 text-xs mr-1 font-medium">{CURRENCY_SYMBOLS[displayCurrency]}</span>
+                {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </span>
+            </TableCell>
+            <TableCell><span className="text-xs font-bold text-slate-400">{asset.acquisitionDate}</span></TableCell>
+            {isClosed && <TableCell><span className="text-xs font-bold text-rose-400">{asset.endDate}</span></TableCell>}
+            <TableCell>
+              <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-black" onClick={() => { 
+                  setEditingAsset(asset); 
+                  setEditAmount(asset.amount || 0); 
+                  setEditDate(asset.acquisitionDate || '');
+                  setEditEndDate(asset.endDate || '');
+                }}>
+                  <Edit2 className="w-3.5 h-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-200 hover:text-rose-600" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); toast({ title: t.assetDeleted }); }}>
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
   if (!mounted) return null;
 
   return (
     <div 
-      className="min-h-screen bg-white text-black pb-32 font-sans overflow-x-hidden selection:bg-primary/5"
+      className="min-h-screen bg-white text-black pb-32 font-sans overflow-x-hidden"
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onTouchStart={handleMouseDown}
@@ -654,8 +684,8 @@ export default function AssetInsightsPage() {
       <header className="glass-nav py-6 border-b border-slate-100 sticky top-0 z-[100]">
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col xl:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 w-full xl:w-auto">
-            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg group">
-              <Activity className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg">
+              <Activity className="w-6 h-6 text-white" />
             </div>
             <div>
               <h1 className="text-2xl font-black tracking-tighter uppercase leading-none">{t.title}</h1>
@@ -665,15 +695,14 @@ export default function AssetInsightsPage() {
           <div className="flex flex-wrap items-center justify-center xl:justify-end gap-6 w-full xl:w-auto">
             {isReordering && (
               <Button onClick={() => setIsReordering(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black gap-2 px-8 h-12 rounded-full shadow-2xl animate-bounce">
-                <Check className="w-5 h-5" />
-                {t.exitReorder}
+                <Check className="w-5 h-5" /> {t.exitReorder}
               </Button>
             )}
-            <div className="flex flex-col items-end">
-              <span className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-1.5">{t.exchangeRate}</span>
-              <span className="text-xs font-bold text-black flex items-center gap-3 bg-slate-50/80 px-4 py-2 rounded-xl border border-slate-100 shadow-sm">
+            <div className="hidden sm:flex flex-col items-end">
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{t.exchangeRate}</span>
+              <span className="text-xs font-bold text-black flex items-center gap-3 bg-slate-50/80 px-4 py-1.5 rounded-xl border border-slate-100">
                 <ArrowRightLeft className="w-4 h-4 text-primary" />
-                1 {getCurrencySymbol(displayCurrency)}{displayCurrency} = {dynamicRates.map(r => `${r.symbol}${r.rate} ${r.code}`).join(' | ')}
+                1 {displayCurrency} = {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).filter(c => c !== displayCurrency).map(c => `${CURRENCY_SYMBOLS[c]}${(marketData.rates[c] / marketData.rates[displayCurrency]).toFixed(2)}`).join(' | ')}
               </span>
             </div>
             <div className="flex bg-slate-100 p-1 rounded-xl">
@@ -692,7 +721,7 @@ export default function AssetInsightsPage() {
       </header>
       
       <main className="max-w-[1600px] mx-auto px-6 py-10">
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 auto-rows-auto items-stretch overflow-visible">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-stretch overflow-visible">
           {layout.map(item => renderSection(item))}
         </div>
       </main>
@@ -707,35 +736,29 @@ export default function AssetInsightsPage() {
           </DialogHeader>
           <div className="grid gap-6 py-6">
             <div className="space-y-2.5">
-              <Label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{t.assetName}</Label>
-              <div className="p-4 bg-slate-50/80 rounded-xl font-bold text-sm border border-slate-100 text-slate-700 shadow-inner">
+              <Label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label>
+              <div className="p-4 bg-slate-50/80 rounded-xl font-bold text-sm border border-slate-100 text-slate-700">
                 {editingAsset?.name} <span className="text-slate-300 font-medium ml-2">{editingAsset?.symbol || '—'}</span>
               </div>
             </div>
             <div className="space-y-2.5">
-              <Label htmlFor="amount" className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{t.holdings}</Label>
-              <Input 
-                id="amount" 
-                type="number" 
-                value={editAmount} 
-                onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} 
-                className="h-12 font-black bg-slate-50 border-slate-200 text-lg rounded-xl focus:ring-primary/20 focus:border-primary px-5" 
-              />
+              <Label htmlFor="amount" className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label>
+              <Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-12 font-black bg-slate-50 border-slate-200 text-lg rounded-xl" />
             </div>
-            <div className="space-y-2.5">
-              <Label htmlFor="date" className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">{t.acqDate}</Label>
-              <Input 
-                id="date" 
-                type="date" 
-                value={editDate} 
-                onChange={(e) => setEditDate(e.target.value)} 
-                className="h-12 font-black bg-slate-50 border-slate-200 text-sm rounded-xl focus:ring-primary/20 focus:border-primary px-5" 
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2.5">
+                <Label htmlFor="date" className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label>
+                <Input id="date" type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-12 font-black bg-slate-50 border-slate-200 text-sm rounded-xl" />
+              </div>
+              <div className="space-y-2.5">
+                <Label htmlFor="endDate" className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t.endDate}</Label>
+                <Input id="endDate" type="date" value={editEndDate || ''} onChange={(e) => setEditEndDate(e.target.value)} className="h-12 font-black bg-slate-50 border-slate-200 text-sm rounded-xl" />
+              </div>
             </div>
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-3">
-            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-bold text-xs uppercase tracking-widest h-12 flex-1 rounded-xl hover:bg-slate-100 transition-colors">{t.cancel}</Button>
-            <Button onClick={saveEdit} className="bg-black text-white hover:bg-slate-800 font-black text-xs uppercase tracking-widest h-12 flex-1 shadow-xl active:scale-95 rounded-xl transition-all">{t.saveChanges}</Button>
+            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-bold text-xs uppercase tracking-widest h-12 flex-1 rounded-xl">{t.cancel}</Button>
+            <Button onClick={saveEdit} className="bg-black text-white hover:bg-slate-800 font-black text-xs uppercase tracking-widest h-12 flex-1 shadow-xl rounded-xl transition-all">{t.saveChanges}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

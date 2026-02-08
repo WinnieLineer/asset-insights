@@ -10,6 +10,7 @@ export interface Asset {
   amount: number;
   currency: Currency;
   acquisitionDate: string; // YYYY-MM-DD
+  endDate?: string;        // YYYY-MM-DD (Optional, if set means position is closed)
   price?: number; 
   valueInTWD?: number;
 }
