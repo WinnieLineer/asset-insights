@@ -542,9 +542,9 @@ export default function AssetInsightsPage() {
         );
       case 'table':
         return wrapper(
-          <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl h-full flex flex-col overflow-hidden">
-            <Tabs defaultValue="active" className="w-full flex flex-col h-full">
-              <CardHeader className="px-6 py-4 border-b border-slate-50 flex flex-col gap-4 sticky top-[88px] bg-white z-40">
+          <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl flex flex-col overflow-hidden">
+            <Tabs defaultValue="active" className="w-full flex flex-col">
+              <CardHeader className="px-6 py-4 border-b border-slate-50 flex flex-col gap-4">
                 <div className="flex flex-row items-center justify-between">
                   <CardTitle className="text-lg font-black flex items-center gap-3">
                     <BarChart3 className="w-5 h-5 text-primary" />
@@ -562,7 +562,7 @@ export default function AssetInsightsPage() {
                   </TabsTrigger>
                 </TabsList>
               </CardHeader>
-              <CardContent className="p-0 flex-1 overflow-visible">
+              <CardContent className="p-0 flex-1">
                 <TabsContent value="active" className="m-0 focus-visible:outline-none">
                   {renderTable(assetCalculations.activeAssets)}
                 </TabsContent>
