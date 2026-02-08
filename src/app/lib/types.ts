@@ -14,6 +14,14 @@ export interface Asset {
   valueInTWD?: number; // 換算後的台幣價值
 }
 
+export interface Snapshot {
+  id: string;
+  timestamp: number;
+  totalTWD: number;
+  displayDate: string;
+  categoryValues: Record<AssetCategory, number>;
+}
+
 export interface MarketData {
   exchangeRate: number; // 1 USD to TWD
   rates: {
@@ -28,6 +36,7 @@ export interface MarketData {
 
 export interface HistoricalPoint {
   date: string;
-  totalTWD: number;
-  [key: string]: any; // 用於存放各類別價值
+  displayDate: string;
+  totalValue: number;
+  [key: string]: any; 
 }
