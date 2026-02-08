@@ -3,22 +3,49 @@
 import React, { useState, useMemo } from 'react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Sector,
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend,
 } from 'recharts';
-import { cn } from '@/lib/utils';
+import { AssetCategory } from '@/app/lib/types';
 
-// Monochrome colors for the pie chart - Professional Greyscale
+// Monochrome colors for the charts - Professional Greyscale
 const COLORS = [
-  '#000000', // Black
-  '#27272a', // Zinc 800
-  '#52525b', // Zinc 600
-  '#a1a1aa', // Zinc 400
-  '#e4e4e7', // Zinc 200
+  '#000000', // Black (Stock)
+  '#27272a', // Zinc 800 (Crypto)
+  '#52525b', // Zinc 600 (Bank)
+  '#71717a', // Zinc 500 (Fixed Deposit)
+  '#a1a1aa', // Zinc 400 (Savings)
+  '#e4e4e7', // Zinc 200 (Others)
 ];
 
+const CATEGORIES: AssetCategory[] = ['Stock', 'Crypto', 'Bank', 'Fixed Deposit', 'Savings'];
+
 const t = {
-  en: { allocation: 'Portfolio Allocation', trend: 'Valuation Trend', total: 'Total', ratio: 'Ratio' },
-  zh: { allocation: '資產配置比例', trend: '資產價值走勢', total: '總計', ratio: '佔比' }
+  en: { 
+    allocation: 'Portfolio Allocation', 
+    trend: 'Asset Evolution Matrix', 
+    total: 'Total Portfolio', 
+    ratio: 'Ratio',
+    categories: {
+      'Stock': 'Equity',
+      'Crypto': 'Crypto',
+      'Bank': 'Bank',
+      'Fixed Deposit': 'Fixed Deposit',
+      'Savings': 'Savings'
+    }
+  },
+  zh: { 
+    allocation: '當前資產配置比例', 
+    trend: '歷史資產演變走勢', 
+    total: '投資組合總計', 
+    ratio: '佔比',
+    categories: {
+      'Stock': '股票資產',
+      'Crypto': '加密貨幣',
+      'Bank': '銀行存款',
+      'Fixed Deposit': '定期存款',
+      'Savings': '活期儲蓄'
+    }
+  }
 };
 
 const renderActiveShape = (props: any) => {
@@ -51,23 +78,44 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
     return val;
   };
 
-  const chartData = historicalData.map((d: any) => ({
-    ...d,
-    displayDate: new Date(d.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-    totalValue: convert(d.totalTWD)
-  }));
+  const chartData = useMemo(() => {
+    return historicalData.map((snapshot: any) => {
+      const item: any = {
+        displayDate: new Date(snapshot.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        totalValue: convert(snapshot.totalTWD),
+      };
+      
+      // Aggregate values by category for this snapshot
+      CATEGORIES.forEach(cat => {
+        // Find assets of this category in the snapshot
+        const catAssets = snapshot.assets?.filter((a: any) => a.category === cat) || [];
+        const sumTWD = catAssets.reduce((acc: number, curr: any) => acc + (curr.valueInTWD || 0), 0);
+        
+        // If snapshot doesn't have detailed assets (legacy), fallback to allocations
+        if (sumTWD === 0 && snapshot.allocations) {
+          const alloc = snapshot.allocations.filter((a: any) => a.category === cat);
+          const allocSum = alloc.reduce((acc: number, curr: any) => acc + curr.value, 0);
+          item[cat] = convert(allocSum);
+        } else {
+          item[cat] = convert(sumTWD);
+        }
+      });
+      
+      return item;
+    });
+  }, [historicalData, displayCurrency, rates]);
 
   const totalAllocationValue = useMemo(() => {
     return allocationData.reduce((acc: number, curr: any) => acc + curr.value, 0);
   }, [allocationData]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
       {/* Allocation Pie Chart */}
-      <div className="modern-card p-8 flex flex-col items-center min-h-[400px] border-slate-200 bg-white">
-        <div className="w-full mb-2 text-left">
-          <h3 className="text-[10px] font-bold text-black uppercase tracking-widest">{lang.allocation}</h3>
-          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Asset Mix Matrix</p>
+      <div className="lg:col-span-4 modern-card p-6 sm:p-8 flex flex-col items-center min-h-[400px] border-slate-200 bg-white">
+        <div className="w-full mb-4 text-left">
+          <h3 className="text-xs sm:text-sm font-black text-black uppercase tracking-widest">{lang.allocation}</h3>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Asset Mix Matrix</p>
         </div>
         
         <div className="h-[280px] w-full relative">
@@ -79,8 +127,8 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 data={allocationData}
                 cx="50%"
                 cy="50%"
-                innerRadius={75}
-                outerRadius={95}
+                innerRadius={70}
+                outerRadius={90}
                 paddingAngle={4}
                 dataKey="value"
                 stroke="transparent"
@@ -97,9 +145,11 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                   if (active && payload && payload.length && payload[0]) {
                     const val = Number(payload[0].value);
                     return (
-                      <div className="bg-white border border-slate-200 p-2.5 rounded shadow-sm animate-fade-in">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{payload[0].name}</p>
-                        <p className="text-xs font-bold text-black">{symbol}{val.toLocaleString()}</p>
+                      <div className="bg-white border border-slate-200 p-2.5 rounded shadow-xl animate-fade-in z-50">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                          {lang.categories[payload[0].name as keyof typeof lang.categories] || payload[0].name}
+                        </p>
+                        <p className="text-xs sm:text-sm font-bold text-black">{symbol}{val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                       </div>
                     );
                   }
@@ -112,8 +162,8 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none w-full max-w-[120px] px-2">
             {activeIndex !== null && allocationData[activeIndex] ? (
               <div className="animate-fade-in">
-                <p className="text-[9px] font-bold text-black uppercase tracking-widest truncate">
-                  {allocationData[activeIndex].name}
+                <p className="text-[10px] font-black text-black uppercase tracking-widest truncate">
+                  {lang.categories[allocationData[activeIndex].name as keyof typeof lang.categories] || allocationData[activeIndex].name}
                 </p>
                 <p className="text-2xl font-black text-black tracking-tighter">
                   {((allocationData[activeIndex].value / (totalAllocationValue || 1)) * 100).toFixed(1)}%
@@ -121,7 +171,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
               </div>
             ) : (
               <div className="animate-fade-in">
-                <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">{lang.total}</p>
+                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{lang.total}</p>
                 <p className="text-2xl font-black text-slate-200 tracking-tighter">100%</p>
               </div>
             )}
@@ -129,55 +179,105 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
         </div>
       </div>
 
-      {/* Trend Area Chart */}
-      <div className="modern-card p-8 flex flex-col min-h-[400px] border-slate-200 bg-white">
-        <div className="w-full mb-8 text-left">
-          <h3 className="text-[10px] font-bold text-black uppercase tracking-widest">{lang.trend}</h3>
-          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Performance Log</p>
+      {/* Evolution Composed Chart */}
+      <div className="lg:col-span-8 modern-card p-6 sm:p-8 flex flex-col min-h-[400px] border-slate-200 bg-white">
+        <div className="w-full mb-6 text-left flex justify-between items-start">
+          <div>
+            <h3 className="text-xs sm:text-sm font-black text-black uppercase tracking-widest">{lang.trend}</h3>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Historical Proportions & Net Growth</p>
+          </div>
         </div>
 
-        <div className="h-[220px] w-full mt-auto">
+        <div className="h-[280px] w-full mt-auto">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="colorMonochrome" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#000000" stopOpacity={0.08}/>
-                  <stop offset="95%" stopColor="#000000" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
+            <ComposedChart data={chartData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis 
                 dataKey="displayDate" 
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 600 }}
+                tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 700 }}
                 dy={10}
               />
-              <YAxis hide domain={['auto', 'auto']} />
+              <YAxis 
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 9, fill: '#cbd5e1', fontWeight: 600 }}
+                tickFormatter={(value) => `${symbol}${(value/1000).toFixed(0)}k`}
+              />
               <RechartsTooltip 
+                cursor={{ fill: '#f8fafc' }}
                 content={({ active, payload, label }) => {
-                  if (active && payload && payload.length && payload[0]) {
-                    const val = Number(payload[0].value);
+                  if (active && payload && payload.length) {
                     return (
-                      <div className="bg-white border border-slate-200 p-2.5 rounded shadow-sm animate-fade-in">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{label}</p>
-                        <p className="text-xs font-bold text-black">{symbol}{val.toLocaleString()}</p>
+                      <div className="bg-white border border-slate-200 p-3 sm:p-4 rounded shadow-2xl animate-fade-in z-50 min-w-[180px]">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 pb-1 border-b border-slate-50">{label}</p>
+                        <div className="space-y-1.5">
+                          {payload.map((p: any, i: number) => {
+                            if (p.dataKey === 'totalValue') return null;
+                            if (!p.value) return null;
+                            return (
+                              <div key={i} className="flex justify-between items-center gap-4">
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.color }} />
+                                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+                                    {lang.categories[p.name as keyof typeof lang.categories] || p.name}
+                                  </span>
+                                </div>
+                                <span className="text-[11px] font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                              </div>
+                            );
+                          })}
+                          <div className="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center">
+                            <span className="text-[10px] font-black text-black uppercase tracking-widest">{lang.total}</span>
+                            <span className="text-xs font-black text-black">{symbol}{Number(payload.find((p:any)=>p.dataKey==='totalValue')?.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                          </div>
+                        </div>
                       </div>
                     );
                   }
                   return null;
                 }}
               />
-              <Area 
+              <Legend 
+                verticalAlign="top" 
+                align="right" 
+                iconType="circle"
+                content={({ payload }) => (
+                  <div className="flex flex-wrap justify-end gap-x-4 gap-y-1 mb-4">
+                    {payload?.map((entry: any, index: number) => (
+                      <div key={`item-${index}`} className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                          {lang.categories[entry.value as keyof typeof lang.categories] || entry.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              />
+              {/* Stacked Bars for categories */}
+              {CATEGORIES.map((cat, i) => (
+                <Bar 
+                  key={cat}
+                  dataKey={cat} 
+                  stackId="a" 
+                  fill={COLORS[i % COLORS.length]} 
+                  barSize={12}
+                  radius={i === 0 ? [0, 0, 2, 2] : [0, 0, 0, 0]}
+                />
+              ))}
+              {/* Trend Line for total value */}
+              <Line 
                 type="monotone" 
                 dataKey="totalValue" 
                 stroke="#000000" 
-                strokeWidth={2} 
-                fill="url(#colorMonochrome)" 
-                animationDuration={800}
-                activeDot={{ r: 4, strokeWidth: 0, fill: '#000000' }}
+                strokeWidth={2.5} 
+                dot={{ r: 3.5, fill: '#000000', strokeWidth: 0 }} 
+                activeDot={{ r: 5, strokeWidth: 0, fill: '#000000' }}
+                animationDuration={1000}
               />
-            </AreaChart>
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </div>
