@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -13,14 +12,14 @@ import {
   RefreshCw, 
   Trash2, 
   TrendingUp, 
-  TrendingDown, 
   Globe, 
   Wallet, 
   BarChart3,
   Edit2,
   Loader2,
   Calendar,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Clock
 } from 'lucide-react';
 import { 
   Card, 
@@ -83,10 +82,14 @@ const translations = {
     fetching: 'Syncing...',
     exchangeRate: 'Live Exchange Rates',
     baseDate: 'Tracking Range',
+    interval: 'Interval',
     days30: 'Last 30 Days',
     days90: 'Last 90 Days',
     days180: 'Last 6 Months',
     days365: 'Last 1 Year',
+    int1d: 'Daily',
+    int1wk: 'Weekly',
+    int1mo: 'Monthly',
     assetDeleted: 'Asset removed.',
     dataUpdated: 'Market data synced.',
   },
@@ -108,10 +111,14 @@ const translations = {
     fetching: '同步中...',
     exchangeRate: '即時換算匯率',
     baseDate: '資產追蹤區間',
+    interval: '數據頻率',
     days30: '過去 30 天',
     days90: '過去 90 天',
     days180: '過去半年',
     days365: '過去一年',
+    int1d: '日線 (Daily)',
+    int1wk: '週線 (Weekly)',
+    int1mo: '月線 (Monthly)',
     assetDeleted: '資產已移除',
     dataUpdated: '市場數據已更新',
   }
@@ -126,6 +133,7 @@ export default function MonochromeAssetPage() {
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editAmount, setEditAmount] = useState<number>(0);
   const [trackingDays, setTrackingDays] = useState<string>("30");
+  const [interval, setInterval] = useState<string>("1d");
   const [historicalTimeline, setHistoricalTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -160,8 +168,6 @@ export default function MonochromeAssetPage() {
       const data = await fetchMarketData({ cryptos, stocks });
       setMarketData(data);
       toast({ title: t.dataUpdated });
-      
-      // 同步完即時數據後，也要更新歷史走勢
       fetchHistory();
     } catch (error) {
       toast({ variant: 'destructive', title: 'Sync Error' });
@@ -174,7 +180,7 @@ export default function MonochromeAssetPage() {
     if (assets.length === 0) return;
     setHistoryLoading(true);
     try {
-      const history = await fetchHistoricalData(assets, parseInt(trackingDays));
+      const history = await fetchHistoricalData(assets, parseInt(trackingDays), interval);
       setHistoricalTimeline(history);
     } catch (e) {
       console.error(e);
@@ -193,7 +199,7 @@ export default function MonochromeAssetPage() {
     if (mounted && assets.length > 0) {
       fetchHistory();
     }
-  }, [trackingDays]);
+  }, [trackingDays, interval]);
 
   const getCurrencySymbol = (cur: Currency) => CURRENCY_SYMBOLS[cur] || 'NT$';
 
@@ -212,20 +218,19 @@ export default function MonochromeAssetPage() {
       else if (asset.category === 'Stock') currentPrice = marketData.stockPrices[sym] || 0;
       
       const assetCurrencyRate = marketData.rates[asset.currency] || 1;
-      
       let valueInBaseCurrency = asset.amount;
       if (asset.category === 'Stock' || asset.category === 'Crypto') {
         valueInBaseCurrency = asset.amount * (currentPrice || 0);
       }
       
-      const valueInTWD = valueInBaseCurrency * (rateTWD / assetCurrencyRate);
+      const valueInTWD = valueInBaseCurrency * (rateTWD / (asset.category === 'Stock' || asset.category === 'Crypto' ? 1 : assetCurrencyRate));
       totalTWD += valueInTWD;
       allocationMap[asset.category] += valueInTWD;
       
       const displayRate = marketData.rates[displayCurrency] || 1;
       let unitPriceInDisplay = 0;
       if (asset.category === 'Stock' || asset.category === 'Crypto') {
-        unitPriceInDisplay = currentPrice * (displayRate / 1); // Current price is in USD from Yahoo
+        unitPriceInDisplay = currentPrice * (displayRate / 1);
       } else {
         unitPriceInDisplay = 1 * (displayRate / assetCurrencyRate);
       }
@@ -239,7 +244,6 @@ export default function MonochromeAssetPage() {
       };
     });
 
-    // 動態計算歷史數據供圖表使用
     const chartData = historicalTimeline.map((point: any) => {
       const item: any = {
         date: new Date(point.timestamp * 1000).toISOString(),
@@ -251,8 +255,6 @@ export default function MonochromeAssetPage() {
 
       processedAssets.forEach(asset => {
         let priceAtT = point.assets[asset.id];
-        
-        // 如果是存款類，假設價格穩定為 1
         if (asset.category === 'Bank' || asset.category === 'Savings') {
           priceAtT = 1;
         }
@@ -324,7 +326,7 @@ export default function MonochromeAssetPage() {
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.exchangeRate}</span>
               <span className="text-[10px] lg:text-xs font-bold text-black flex items-center gap-1.5 whitespace-nowrap bg-slate-50 px-2.5 py-1 rounded border border-slate-100 shadow-sm">
                 <ArrowRightLeft className="w-3 h-3 text-slate-400" />
-                1 {displayCurrency} = {dynamicRates.map(r => `${r.symbol}${r.rate} ${r.code}`).join(' | ')}
+                1 {getCurrencySymbol(displayCurrency)}{displayCurrency} = {dynamicRates.map(r => `${r.symbol}${r.rate} ${r.code}`).join(' | ')}
               </span>
             </div>
             <div className="flex bg-slate-100 p-0.5 rounded">
@@ -344,7 +346,7 @@ export default function MonochromeAssetPage() {
       
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-          <Card className="lg:col-span-9 modern-card p-6 sm:p-10 relative overflow-hidden bg-white shadow-xl">
+          <Card className="lg:col-span-8 modern-card p-6 sm:p-10 relative overflow-hidden bg-white shadow-xl">
             <div className="space-y-4 z-20 relative">
               <div className="flex items-center gap-2 text-slate-400 text-[10px] sm:text-xs font-black uppercase tracking-widest">
                 <Globe className="w-3.5 h-3.5" />
@@ -361,7 +363,7 @@ export default function MonochromeAssetPage() {
             </div>
           </Card>
           
-          <div className="lg:col-span-3 flex flex-col gap-4">
+          <div className="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
             <Button 
               onClick={updateMarketData} 
               disabled={loading}
@@ -370,22 +372,40 @@ export default function MonochromeAssetPage() {
               <RefreshCw className={cn("w-5 h-5", loading && "animate-spin")} />
               <span className="text-[10px] lg:text-xs tracking-widest uppercase">{loading ? t.fetching : t.syncMarket}</span>
             </Button>
-            <div className="bg-slate-50 p-4 border border-slate-100 rounded space-y-3">
-              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                <Calendar className="w-3 h-3" />
-                {t.baseDate}
-              </Label>
-              <Select value={trackingDays} onValueChange={setTrackingDays}>
-                <SelectTrigger className="h-9 bg-white border-slate-200 font-black text-[11px] uppercase tracking-wider">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">{t.days30}</SelectItem>
-                  <SelectItem value="90">{t.days90}</SelectItem>
-                  <SelectItem value="180">{t.days180}</SelectItem>
-                  <SelectItem value="365">{t.days365}</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="bg-slate-50 p-4 border border-slate-100 rounded grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Calendar className="w-3 h-3" />
+                  {t.baseDate}
+                </Label>
+                <Select value={trackingDays} onValueChange={setTrackingDays}>
+                  <SelectTrigger className="h-9 bg-white border-slate-200 font-black text-[11px] uppercase tracking-wider">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">{t.days30}</SelectItem>
+                    <SelectItem value="90">{t.days90}</SelectItem>
+                    <SelectItem value="180">{t.days180}</SelectItem>
+                    <SelectItem value="365">{t.days365}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Clock className="w-3 h-3" />
+                  {t.interval}
+                </Label>
+                <Select value={interval} onValueChange={setInterval}>
+                  <SelectTrigger className="h-9 bg-white border-slate-200 font-black text-[11px] uppercase tracking-wider">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1d">{t.int1d}</SelectItem>
+                    <SelectItem value="1wk">{t.int1wk}</SelectItem>
+                    <SelectItem value="1mo">{t.int1mo}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </div>
@@ -430,12 +450,10 @@ export default function MonochromeAssetPage() {
                             ) : <span className="text-slate-200">—</span>}
                           </TableCell>
                           <TableCell className="text-right">
-                            {loading && (asset.category === 'Stock' || asset.category === 'Crypto') ? <Skeleton className="ml-auto h-5 w-24" /> : (
-                              <span className="font-black text-sm lg:text-lg whitespace-nowrap">
-                                <span className="text-slate-300 text-xs mr-1">{getCurrencySymbol(displayCurrency)}</span>
-                                {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                              </span>
-                            )}
+                            <span className="font-black text-sm lg:text-lg whitespace-nowrap">
+                              <span className="text-slate-300 text-xs mr-1">{getCurrencySymbol(displayCurrency)}</span>
+                              {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                            </span>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

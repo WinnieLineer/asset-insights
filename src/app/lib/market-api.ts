@@ -1,7 +1,6 @@
-
 import { MarketData } from '@/app/lib/types';
 
-const BATCH_STOCK_PROXY_URL = 'https://script.google.com/macros/s/AKfycbyqAt3Qj5u7WcodTTpiXd7u_LB0dBqaLmj4v-UM5QCh8uEIcTmaFeDgG8_1toiVxbMg/exec';
+const BATCH_STOCK_PROXY_URL = 'https://script.google.com/macros/s/AKfycbylQ_A_KtOL3zEjJPfxe_T039D6PIXWrmNx0k6La6FaHBPdGvHXYl9KizxCeVjt_0yA/exec';
 const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
 function formatSymbol(s: string, category: string) {
@@ -32,7 +31,6 @@ export async function fetchMarketData(symbols: { cryptos: string[]; stocks: stri
 
   if (allSymbols.length > 0) {
     try {
-      // 請求即時價格 (不帶 period 參數)
       const url = `${BATCH_STOCK_PROXY_URL}?symbols=${encodeURIComponent(allSymbols.join(','))}`;
       const response = await fetch(url);
       if (response.ok) {
@@ -51,7 +49,7 @@ export async function fetchMarketData(symbols: { cryptos: string[]; stocks: stri
   return { exchangeRate: rates.TWD, rates, cryptoPrices, stockPrices };
 }
 
-export async function fetchHistoricalData(assets: any[], days: number) {
+export async function fetchHistoricalData(assets: any[], days: number, interval: string = '1d') {
   const stocksAndCryptos = assets.filter(a => a.category === 'Stock' || a.category === 'Crypto');
   if (stocksAndCryptos.length === 0) return [];
 
@@ -60,15 +58,12 @@ export async function fetchHistoricalData(assets: any[], days: number) {
   const period1 = period2 - (days * 24 * 60 * 60);
 
   try {
-    // 按照要求的格式構建 Proxy URL
-    const proxyUrl = `${BATCH_STOCK_PROXY_URL}?symbols=${encodeURIComponent(symbols.join(','))}&period1=${period1}&period2=${period2}&interval=1d`;
+    const proxyUrl = `${BATCH_STOCK_PROXY_URL}?symbols=${encodeURIComponent(symbols.join(','))}&period1=${period1}&period2=${period2}&interval=${interval}`;
     
     const response = await fetch(proxyUrl);
     if (!response.ok) return [];
     
     const dataArray = await response.json();
-    
-    // 建立時間線對應表
     const timelineMap: Record<number, any> = {};
     
     dataArray.forEach((result: any, assetIdx: number) => {
@@ -76,7 +71,6 @@ export async function fetchHistoricalData(assets: any[], days: number) {
       if (!chart) return;
       
       const timestamps = chart.timestamp || [];
-      // 優先使用調整後的收盤價 (adjclose)，若無則使用收盤價 (close)
       const prices = chart.indicators?.adjclose?.[0]?.adjclose || chart.indicators?.quote?.[0]?.close || [];
       const asset = stocksAndCryptos[assetIdx];
 
@@ -85,12 +79,10 @@ export async function fetchHistoricalData(assets: any[], days: number) {
         if (price === null || price === undefined) return;
         
         if (!timelineMap[ts]) timelineMap[ts] = { timestamp: ts, assets: {} };
-        // 紀錄該資產在該時間點的單價
         timelineMap[ts].assets[asset.id] = price;
       });
     });
 
-    // 轉換為陣列並排序
     return Object.values(timelineMap).sort((a: any, b: any) => a.timestamp - b.timestamp);
   } catch (e) {
     console.error('Fetch historical data error:', e);
