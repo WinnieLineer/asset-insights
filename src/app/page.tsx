@@ -427,17 +427,16 @@ export default function AssetInsightsPage() {
     }
   };
 
-  // 精確過濾交互元素，避免點擊選擇框時觸發重排
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
     
-    // 檢查是否為交互元素或其子元素
+    // 精確偵測所有互動組件，包含 Radix UI 的各種觸發元素
     const isInteractive = (el: HTMLElement | null): boolean => {
       if (!el) return false;
       const tagName = el.tagName.toLowerCase();
       const role = el.getAttribute('role');
       const isRadixTrigger = el.hasAttribute('data-radix-collection-item') || 
-                             el.className.includes('radix') ||
+                             el.className?.toString().includes('radix') ||
                              el.hasAttribute('aria-haspopup');
       
       return (
@@ -462,6 +461,10 @@ export default function AssetInsightsPage() {
     };
 
     if (isInteractive(target)) {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
       return;
     }
 
@@ -472,7 +475,10 @@ export default function AssetInsightsPage() {
   };
 
   const handleMouseUp = () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
   };
 
   const moveSection = (id: SectionId, direction: 'up' | 'down') => {
@@ -754,7 +760,7 @@ export default function AssetInsightsPage() {
       onTouchStart={handleMouseDown}
       onTouchEnd={handleMouseUp}
     >
-      {/* 導覽列強制置頂 (Fixed) */}
+      {/* 強制置頂的導航列 (Fixed Header) */}
       <header className="fixed top-0 left-0 right-0 py-6 border-b border-slate-100 z-[100] bg-white/80 backdrop-blur-xl">
         <div className="max-w-[1600px] mx-auto px-6 flex flex-col xl:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 w-full xl:w-auto">
@@ -794,8 +800,8 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      {/* 增加頂部 Padding 以抵消 Fixed Header 的高度 */}
-      <main className="max-w-[1600px] mx-auto px-6 pt-32 pb-10">
+      {/* 增加頂部 Padding 以抵消 Fixed Header 的高度，防止內容被遮擋 */}
+      <main className="max-w-[1600px] mx-auto px-6 pt-40 pb-10">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-stretch">
           {layout.map(item => renderSection(item))}
         </div>
