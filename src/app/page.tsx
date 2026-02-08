@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -19,8 +18,7 @@ import {
   Globe, 
   Wallet, 
   BarChart3,
-  Edit2,
-  DollarSign
+  Edit2
 } from 'lucide-react';
 import { 
   Card, 
@@ -65,7 +63,7 @@ const translations = {
     marketPrice: 'Price',
     holdings: 'Holdings',
     valuation: 'Valuation',
-    unitPrice: 'Unit Price',
+    unitPrice: 'Market Price',
     dataUpdated: 'Market data updated.',
     snapshotSaved: 'Snapshot saved.',
     dashboard: 'Portfolio Overview',
@@ -196,12 +194,14 @@ export default function MonochromeAssetPage() {
       const diffTWD = previousAsset ? valueInTWD - (previousAsset.valueInTWD || 0) : 0;
       const diffPercent = previousAsset && previousAsset.valueInTWD ? (diffTWD / previousAsset.valueInTWD) * 100 : 0;
       
+      const priceInDisplay = convertTWDToDisplay(asset.currency === 'USD' ? (currentPrice * rate) : (asset.category === 'Stock' || asset.category === 'Crypto' ? currentPrice * (asset.currency === 'CNY' ? (rate / marketData.rates.CNY) : 1) : 1));
+
       return { 
         ...asset, 
         calculatedPrice: currentPrice, 
         valueInTWD, 
         valueInDisplay: convertTWDToDisplay(valueInTWD), 
-        priceInDisplay: convertTWDToDisplay(asset.currency === 'USD' ? (currentPrice * rate) : (asset.category === 'Stock' || asset.category === 'Crypto' ? currentPrice * (asset.currency === 'CNY' ? (rate / marketData.rates.CNY) : 1) : 1)),
+        priceInDisplay,
         diffTWD, 
         diffPercent, 
         hasHistory: !!previousAsset 

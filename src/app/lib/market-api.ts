@@ -1,4 +1,3 @@
-
 import { MarketData } from '@/app/lib/types';
 
 const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';

@@ -1,12 +1,11 @@
-'use server';
 /**
- * @fileOverview Asset Insights AI - Professional portfolio analysis engine.
+ * Asset Insights AI - Professional portfolio analysis engine.
+ * Disabled 'use server' to ensure compatibility with GitHub Pages static export.
  */
 
-import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const AssetDetailSchema = z.object({
+export const AssetDetailSchema = z.object({
   name: z.string(),
   symbol: z.string(),
   category: z.string(),
@@ -16,75 +15,18 @@ const AssetDetailSchema = z.object({
   valueInTWD: z.number(),
 });
 
-const FinancialTipInputSchema = z.object({
-  assets: z.array(AssetDetailSchema).describe('The full list of assets in the user portfolio.'),
-  totalTWD: z.number().describe('The total valuation of the portfolio in TWD.'),
-  marketConditions: z.string().describe('A summary of current market conditions.'),
-  userQuestion: z.string().optional().describe('A specific question from the user about their portfolio.'),
-  language: z.enum(['en', 'zh']).default('zh').describe('The language to provide the report in.'),
-});
-export type FinancialTipInput = z.infer<typeof FinancialTipInputSchema>;
-
-const FinancialTipOutputSchema = z.object({
-  answer: z.string().describe('The direct strategic advice.'),
-  analysis: z.string().describe('A high-level professional portfolio analysis.'),
-  riskLevel: z.string().describe('The risk classification (e.g., Low, Moderate, High).'),
-  diversificationScore: z.number().min(0).max(100).describe('A score from 0-100 indicating portfolio efficiency.'),
-  recommendations: z.array(z.string()).describe('A list of actionable optimization steps.'),
-});
-export type FinancialTipOutput = z.infer<typeof FinancialTipOutputSchema>;
-
-export async function getFinancialTip(input: FinancialTipInput): Promise<FinancialTipOutput> {
-  return financialTipFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'financialTipPrompt',
-  input: {
-    schema: FinancialTipInputSchema.extend({
-      languageName: z.string(),
-      assetListString: z.string(),
-    }),
-  },
-  output: {schema: FinancialTipOutputSchema},
-  prompt: `You are a highly experienced and professional financial advisor. Your tone is calm, objective, data-driven, and supportive.
-
-PORTFOLIO DATA:
-{{{assetListString}}}
-TOTAL VALUATION: NT\${{{totalTWD}}}
-
-MARKET CONDITIONS: {{{marketConditions}}}
-
-USER QUESTION: {{#if userQuestion}}{{{userQuestion}}}{{else}}Please analyze my current portfolio and provide optimization advice.{{/if}}
-
-LANGUAGE: {{{languageName}}}
-
-INSTRUCTIONS:
-1. Provide professional, objective analysis. Avoid overly dramatic or futuristic jargon.
-2. The "answer" should be a clear, direct summary of your findings or a specific response to the user's question.
-3. "riskLevel" should use standard risk categories (e.g., "Low Risk / Conservative", "Moderate / Balanced", "High Risk / Aggressive").
-4. "analysis" should evaluate the asset allocation, concentration risk, and alignment with general market trends.
-5. Ensure the entire output is in the specified language ({{{languageName}}}).`,
+export const FinancialTipInputSchema = z.object({
+  assets: z.array(AssetDetailSchema),
+  totalTWD: z.number(),
+  marketConditions: z.string(),
+  userQuestion: z.string().optional(),
+  language: z.enum(['en', 'zh']).default('zh'),
 });
 
-const financialTipFlow = ai.defineFlow(
-  {
-    name: 'financialTipFlow',
-    inputSchema: FinancialTipInputSchema,
-    outputSchema: FinancialTipOutputSchema,
-  },
-  async input => {
-    const languageName = input.language === 'en' ? 'English' : 'Traditional Chinese (Taiwan)';
-    
-    const assetListString = input.assets.map(a => 
-      `- ${a.name} (${a.symbol}): ${a.amount} units, Unit Price: ${a.price || 'N/A'}, Valuation: NT$${a.valueInTWD.toLocaleString()}`
-    ).join('\n');
-
-    const {output} = await prompt({
-      ...input,
-      languageName,
-      assetListString,
-    });
-    return output!;
-  }
-);
+export const FinancialTipOutputSchema = z.object({
+  answer: z.string(),
+  analysis: z.string(),
+  riskLevel: z.string(),
+  diversificationScore: z.number().min(0).max(100),
+  recommendations: z.array(z.string()),
+});
