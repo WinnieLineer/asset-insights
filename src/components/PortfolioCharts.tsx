@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Sector,
-  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend, Scatter
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend
 } from 'recharts';
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,13 +17,13 @@ const t = {
     allocation: 'Portfolio Allocation', 
     trend: 'Asset Evolution Matrix', 
     total: 'Total Portfolio', 
-    categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other Assets', 'Savings': 'Deposits' }
+    categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit' }
   },
   zh: { 
     allocation: '當前資產配置比例', 
     trend: '歷史資產演變走勢', 
     total: '投資組合總計', 
-    categories: { 'Stock': '股票資產', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款 (Deposits)' }
+    categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款' }
   }
 };
 
@@ -58,7 +58,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
       <div className="lg:col-span-4 modern-card p-6 sm:p-10 flex flex-col items-center min-h-[450px] border-slate-100 bg-white relative shadow-xl">
         <div className="w-full mb-8 text-left">
           <h3 className="text-sm font-black text-black uppercase tracking-widest">{lang.allocation}</h3>
-          <p className="text-xs text-slate-400 font-black uppercase tracking-widest mt-1.5">Real-time Weight distribution</p>
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1.5">Real-time Weight distribution</p>
         </div>
         
         <div className="h-[300px] w-full relative">
@@ -123,7 +123,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
       <div className="lg:col-span-8 modern-card p-6 sm:p-10 flex flex-col min-h-[450px] border-slate-100 bg-white relative shadow-xl">
         <div className="w-full mb-8 text-left">
           <h3 className="text-sm font-black text-black uppercase tracking-widest">{lang.trend}</h3>
-          <p className="text-xs text-slate-400 font-black uppercase tracking-widest mt-1.5">Integrated Market & Snapshot Evolution</p>
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1.5">Integrated Market & Snapshot Evolution</p>
         </div>
 
         <div className="h-[300px] w-full mt-auto">

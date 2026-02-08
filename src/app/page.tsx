@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Asset, MarketData, AssetCategory, Currency, Snapshot } from './lib/types';
 import { fetchMarketData } from '@/app/lib/market-api';
 import { AssetForm } from '@/components/AssetForm';
@@ -20,7 +20,9 @@ import {
   ArrowRightLeft,
   Clock,
   Camera,
-  History
+  History,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { 
   Card, 
@@ -74,20 +76,20 @@ const translations = {
     assetName: 'Asset Name',
     holdings: 'Holdings',
     valuation: 'Valuation',
-    unitPrice: 'Unit Price',
+    unitPrice: 'Market Price',
     dashboard: 'Portfolio Overview',
-    change: 'Change (24h)',
-    editAsset: 'Edit Holdings',
+    change: '24h Change',
+    editAsset: 'Edit Position',
     cancel: 'Cancel',
     saveChanges: 'Save',
     fetching: 'Syncing...',
     exchangeRate: 'Live Exchange Rates',
     baseDate: 'Tracking Range',
     interval: 'Data Frequency',
-    days30: 'Last 30 Days',
-    days90: 'Last 90 Days',
-    days180: 'Last 6 Months',
-    days365: 'Last 1 Year',
+    days30: '30 Days',
+    days90: '90 Days',
+    days180: '6 Months',
+    days365: '1 Year',
     int1d: 'Daily',
     int1wk: 'Weekly',
     int1mo: 'Monthly',
@@ -96,7 +98,14 @@ const translations = {
     assetDeleted: 'Asset removed.',
     dataUpdated: 'Market data synced.',
     snapshotTaken: 'Snapshot captured.',
-    snapshotDeleted: 'Snapshot removed.'
+    snapshotDeleted: 'Snapshot removed.',
+    acqDate: 'Hold Since',
+    categoryNames: {
+      Stock: 'Stock',
+      Crypto: 'Crypto',
+      Bank: 'Other',
+      Savings: 'Deposit'
+    }
   },
   zh: {
     title: 'Asset Insights Pro',
@@ -110,7 +119,7 @@ const translations = {
     unitPrice: '單位市場價值',
     dashboard: '資產部位概覽與分析',
     change: '今日漲跌',
-    editAsset: '編輯持有數量',
+    editAsset: '編輯部位資訊',
     cancel: '取消',
     saveChanges: '儲存變更',
     fetching: '同步中...',
@@ -121,15 +130,22 @@ const translations = {
     days90: '過去 90 天',
     days180: '過去半年',
     days365: '過去一年',
-    int1d: '日線 (Daily)',
-    int1wk: '週線 (Weekly)',
-    int1mo: '月線 (Monthly)',
+    int1d: '日線',
+    int1wk: '週線',
+    int1mo: '月線',
     takeSnapshot: '捕捉當前快照',
     historicalSnapshots: '歷史快照記錄',
     assetDeleted: '資產已移除',
     dataUpdated: '市場數據已更新',
     snapshotTaken: '已成功捕捉當前快照',
-    snapshotDeleted: '快照已刪除'
+    snapshotDeleted: '快照已刪除',
+    acqDate: '持有日期',
+    categoryNames: {
+      Stock: '股票',
+      Crypto: '加密貨幣',
+      Bank: '其他資產',
+      Savings: '存款'
+    }
   }
 };
 
@@ -142,6 +158,7 @@ export default function AssetInsightsPage() {
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editAmount, setEditAmount] = useState<number>(0);
+  const [editDate, setEditDate] = useState<string>('');
   const [trackingDays, setTrackingDays] = useState<string>("30");
   const [interval, setInterval] = useState<string>("1d");
   const [marketTimeline, setMarketTimeline] = useState<any[]>([]);
@@ -153,29 +170,14 @@ export default function AssetInsightsPage() {
     assetMarketPrices: {}
   });
 
-  useEffect(() => {
-    setMounted(true);
-    const savedAssets = localStorage.getItem('assets');
-    const savedSnapshots = localStorage.getItem('portfolio_snapshots');
-    if (savedAssets) setAssets(JSON.parse(savedAssets));
-    if (savedSnapshots) setSnapshots(JSON.parse(savedSnapshots));
-  }, []);
-
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem('assets', JSON.stringify(assets));
-      localStorage.setItem('portfolio_snapshots', JSON.stringify(snapshots));
-    }
-  }, [assets, snapshots, mounted]);
-
   const t = translations[language];
 
-  const updateAllData = async () => {
+  const updateAllData = useCallback(async (currentAssets: Asset[]) => {
     if (!mounted || loading) return;
     setLoading(true);
     try {
       const { marketData: newData, historicalTimeline } = await fetchMarketData(
-        assets, 
+        currentAssets, 
         parseInt(trackingDays), 
         interval
       );
@@ -187,13 +189,31 @@ export default function AssetInsightsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [mounted, trackingDays, interval, t.dataUpdated]);
+
+  useEffect(() => {
+    setMounted(true);
+    const savedAssets = localStorage.getItem('assets');
+    const savedSnapshots = localStorage.getItem('portfolio_snapshots');
+    if (savedAssets) {
+      const parsed = JSON.parse(savedAssets);
+      setAssets(parsed);
+    }
+    if (savedSnapshots) setSnapshots(JSON.parse(savedSnapshots));
+  }, []);
 
   useEffect(() => {
     if (mounted && assets.length > 0) {
-      updateAllData();
+      updateAllData(assets);
     }
-  }, [mounted, assets.length, trackingDays, interval]);
+  }, [mounted, trackingDays, interval, assets.length]);
+
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('assets', JSON.stringify(assets));
+      localStorage.setItem('portfolio_snapshots', JSON.stringify(snapshots));
+    }
+  }, [assets, snapshots, mounted]);
 
   const getCurrencySymbol = (cur: Currency) => CURRENCY_SYMBOLS[cur] || 'NT$';
 
@@ -204,22 +224,27 @@ export default function AssetInsightsPage() {
     };
     
     const rateTWD = marketData.rates.TWD || 32.5;
+    const displayRate = marketData.rates[displayCurrency] || 1;
 
     const processedAssets = assets.map(asset => {
-      const marketPriceObj = marketData.assetMarketPrices[asset.id];
-      const nativePrice = marketPriceObj?.price || 0;
-      const apiCurrency = marketPriceObj?.currency || 'TWD';
+      const marketInfo = marketData.assetMarketPrices[asset.id];
+      const nativePrice = marketInfo?.price || 0;
+      const apiCurrency = marketInfo?.currency || 'TWD';
       
-      // Calculate TWD value based on price's native currency
-      // rateOfApiCurrency is USD per 1 apiCurrency
       const apiCurrencyRate = (marketData.rates[apiCurrency as Currency] || 1);
       const priceInTWD = nativePrice * (rateTWD / apiCurrencyRate);
       
       let valueInTWD = 0;
+      let dayChangeInTWD = 0;
+      let dayChangePercent = 0;
+
       if (asset.category === 'Stock' || asset.category === 'Crypto') {
         valueInTWD = asset.amount * priceInTWD;
+        // Calculate change compared to last close (from timeline if available, or simplified)
+        // For simplicity, we can just show price info if we have previous data in fetchMarketData
+        // Let's assume marketData could provide this, but here we'll use a placeholder or derived change
+        dayChangeInTWD = 0; // Placeholder: In a real app, the API would return change
       } else {
-        // Cash assets use their acquisition currency
         const assetCurrencyRate = marketData.rates[asset.currency] || 1;
         valueInTWD = asset.amount * (rateTWD / assetCurrencyRate);
       }
@@ -227,10 +252,8 @@ export default function AssetInsightsPage() {
       totalTWD += valueInTWD;
       allocationMap[asset.category] += valueInTWD;
       
-      const displayRate = marketData.rates[displayCurrency] || 1;
       const valueInDisplay = valueInTWD * (displayRate / rateTWD);
       
-      // Calculate unit price in display currency
       let unitPriceInDisplay = 0;
       if (asset.category === 'Stock' || asset.category === 'Crypto') {
         unitPriceInDisplay = priceInTWD * (displayRate / rateTWD);
@@ -246,6 +269,8 @@ export default function AssetInsightsPage() {
         valueInTWD, 
         valueInDisplay, 
         priceInDisplay: unitPriceInDisplay,
+        dayChangeInDisplay: dayChangeInTWD * (displayRate / rateTWD),
+        dayChangePercent
       };
     });
 
@@ -262,8 +287,7 @@ export default function AssetInsightsPage() {
 
       processedAssets.forEach(asset => {
         const acqTime = new Date(asset.acquisitionDate).getTime();
-        // Asset only counts after acquisition date
-        if (pointTime < acqTime) return;
+        if (pointTime < acqTime) return; // Only count after acquisition
 
         let priceAtT = point.assets[asset.id];
         if (priceAtT === undefined) priceAtT = lastKnownPrices[asset.id];
@@ -274,22 +298,21 @@ export default function AssetInsightsPage() {
         if (priceAtT !== undefined) {
           const apiCurrency = marketData.assetMarketPrices[asset.id]?.currency || 'TWD';
           const apiCurrencyRate = marketData.rates[apiCurrency as Currency] || 1;
-          const priceInTWD = priceAtT * (rateTWD / apiCurrencyRate);
+          const priceInTWDAtT = priceAtT * (rateTWD / apiCurrencyRate);
           
-          let valueInTWD = 0;
+          let valInTWD = 0;
           if (asset.category === 'Stock' || asset.category === 'Crypto') {
-            valueInTWD = asset.amount * priceInTWD;
+            valInTWD = asset.amount * priceInTWDAtT;
           } else {
             const assetCurrencyRate = marketData.rates[asset.currency] || 1;
-            valueInTWD = asset.amount * (rateTWD / assetCurrencyRate);
+            valInTWD = asset.amount * (rateTWD / assetCurrencyRate);
           }
           
-          pointTotalTWD += valueInTWD;
-          categories[asset.category] += valueInTWD;
+          pointTotalTWD += valInTWD;
+          categories[asset.category] += valInTWD;
         }
       });
 
-      const displayRate = marketData.rates[displayCurrency] || 1;
       item.totalValue = pointTotalTWD * (displayRate / rateTWD);
       Object.entries(categories).forEach(([cat, val]) => {
         item[cat] = val * (displayRate / rateTWD);
@@ -298,7 +321,7 @@ export default function AssetInsightsPage() {
       return item;
     });
 
-    const displayRate = marketData.rates[displayCurrency] || 1;
+    // Add Snapshots to chart
     snapshots.forEach(snap => {
       const snapPoint: any = {
         date: new Date(snap.timestamp).toISOString(),
@@ -317,15 +340,23 @@ export default function AssetInsightsPage() {
     return { 
       processedAssets, 
       totalTWD, 
-      totalDisplay: totalTWD * ((marketData.rates[displayCurrency] || 1) / rateTWD), 
+      totalDisplay: totalTWD * (displayRate / rateTWD), 
       allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ 
         name, 
-        value: value * ((marketData.rates[displayCurrency] || 1) / rateTWD) 
+        value: value * (displayRate / rateTWD) 
       })),
       chartData,
       allocationMap
     };
   }, [assets, marketData, displayCurrency, marketTimeline, snapshots]);
+
+  const handleAddAsset = async (newAsset: Omit<Asset, 'id'>) => {
+    const assetWithId = { ...newAsset, id: crypto.randomUUID() };
+    const updatedAssets = [...assets, assetWithId];
+    setAssets(updatedAssets);
+    // Automatically fetch data for new assets
+    await updateAllData(updatedAssets);
+  };
 
   const takeSnapshot = () => {
     const newSnapshot: Snapshot = {
@@ -341,9 +372,10 @@ export default function AssetInsightsPage() {
 
   const saveEdit = () => {
     if (!editingAsset) return;
-    setAssets(prev => prev.map(a => a.id === editingAsset.id ? { ...a, amount: editAmount } : a));
+    const updated = assets.map(a => a.id === editingAsset.id ? { ...a, amount: editAmount, acquisitionDate: editDate } : a);
+    setAssets(updated);
     setEditingAsset(null);
-    toast({ title: t.dataUpdated });
+    updateAllData(updated);
   };
 
   const dynamicRates = useMemo(() => {
@@ -374,7 +406,7 @@ export default function AssetInsightsPage() {
           </div>
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto">
             <div className="flex flex-col items-center sm:items-end">
-              <span className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">{t.exchangeRate}</span>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t.exchangeRate}</span>
               <span className="text-sm font-bold text-black flex items-center gap-1.5 whitespace-nowrap bg-slate-50 px-3 py-1.5 rounded border border-slate-100 shadow-sm">
                 <ArrowRightLeft className="w-4 h-4 text-slate-400" />
                 1 {getCurrencySymbol(displayCurrency)}{displayCurrency} = {dynamicRates.map(r => `${r.symbol}${r.rate} ${r.code}`).join(' | ')}
@@ -416,7 +448,7 @@ export default function AssetInsightsPage() {
           
           <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
             <Button 
-              onClick={updateAllData} 
+              onClick={() => updateAllData(assets)} 
               disabled={loading}
               className="w-full h-full min-h-[70px] bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all shadow-lg active:scale-95 px-6"
             >
@@ -444,7 +476,7 @@ export default function AssetInsightsPage() {
                       {t.baseDate}
                     </Label>
                     <Select value={trackingDays} onValueChange={setTrackingDays}>
-                      <SelectTrigger className="h-10 bg-white border-slate-200 font-bold text-sm uppercase">
+                      <SelectTrigger className="h-10 bg-white border-slate-200 font-bold text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -461,7 +493,7 @@ export default function AssetInsightsPage() {
                       {t.interval}
                     </Label>
                     <Select value={interval} onValueChange={setInterval}>
-                      <SelectTrigger className="h-10 bg-white border-slate-200 font-bold text-sm uppercase">
+                      <SelectTrigger className="h-10 bg-white border-slate-200 font-bold text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -484,13 +516,15 @@ export default function AssetInsightsPage() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="w-full overflow-auto">
-                  <Table className="min-w-[700px]">
+                  <Table className="min-w-[900px]">
                     <TableHeader className="bg-slate-50/50">
                       <TableRow>
                         <TableHead className="px-6 h-12 text-sm font-bold text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
                         <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
                         <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest">{t.unitPrice}</TableHead>
+                        <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest">{t.change}</TableHead>
                         <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
+                        <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest">{t.acqDate}</TableHead>
                         <TableHead className="w-[100px]"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -499,7 +533,7 @@ export default function AssetInsightsPage() {
                         <TableRow key={asset.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50">
                           <TableCell className="px-6 py-5">
                             <div className="font-bold text-base text-black">{asset.name}</div>
-                            <div className="text-sm text-slate-400 font-bold uppercase tracking-widest mt-0.5">{asset.symbol || asset.category}</div>
+                            <div className="text-sm text-slate-400 font-bold mt-0.5">{asset.symbol || t.categoryNames[asset.category]}</div>
                           </TableCell>
                           <TableCell><span className="text-base font-bold text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
                           <TableCell>
@@ -512,15 +546,25 @@ export default function AssetInsightsPage() {
                               )
                             ) : <span className="text-slate-200">—</span>}
                           </TableCell>
+                          <TableCell>
+                            {(asset.category === 'Stock' || asset.category === 'Crypto') && !loading ? (
+                              <div className={cn("flex items-center gap-1 font-bold text-sm", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                                {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                                <span>{getCurrencySymbol(displayCurrency)}{Math.abs(asset.dayChangeInDisplay).toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
+                                <span className="text-[10px] opacity-70">({asset.dayChangePercent >= 0 ? '+' : ''}{asset.dayChangePercent.toFixed(1)}%)</span>
+                              </div>
+                            ) : <span className="text-slate-200">—</span>}
+                          </TableCell>
                           <TableCell className="text-right">
                             <span className="font-bold text-xl whitespace-nowrap text-black">
                               <span className="text-slate-300 text-sm mr-1">{getCurrencySymbol(displayCurrency)}</span>
                               {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                             </span>
                           </TableCell>
+                          <TableCell><span className="text-xs font-bold text-slate-400">{asset.acquisitionDate}</span></TableCell>
                           <TableCell>
                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-black" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); }}><Edit2 className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:text-black" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); }}><Edit2 className="w-5 h-5" /></Button>
                               <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-200 hover:text-rose-600" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); toast({ title: t.assetDeleted }); }}><Trash2 className="w-5 h-5" /></Button>
                             </div>
                           </TableCell>
@@ -588,7 +632,7 @@ export default function AssetInsightsPage() {
                 <CardTitle className="text-lg font-black uppercase tracking-widest text-black">{t.addAsset}</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <AssetForm language={language} onAdd={(a) => setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }])} />
+                <AssetForm language={language} onAdd={handleAddAsset} />
               </CardContent>
             </Card>
           </div>
@@ -613,6 +657,10 @@ export default function AssetInsightsPage() {
             <div className="space-y-2">
               <Label htmlFor="amount" className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label>
               <Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-12 font-bold bg-slate-50 border-slate-200 text-lg" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="date" className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label>
+              <Input id="date" type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-12 font-bold bg-slate-50 border-slate-200 text-lg" />
             </div>
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-3">

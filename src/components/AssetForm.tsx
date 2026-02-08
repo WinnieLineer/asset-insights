@@ -35,10 +35,10 @@ const t = {
     date: 'Acquisition Date',
     submit: 'Add to Portfolio',
     categories: {
-      Stock: 'Equity (Stock)',
+      Stock: 'Equity',
       Crypto: 'Crypto',
-      Savings: 'Deposits',
-      Bank: 'Other Assets'
+      Savings: 'Deposit',
+      Bank: 'Other'
     },
     errors: {
       nameTooShort: 'Min 2 characters',
@@ -49,8 +49,8 @@ const t = {
   },
   zh: {
     name: '資產名稱',
-    namePlaceholder: '例如：台積電、DBS 定存',
-    symbol: '資產代碼 (Ticker)',
+    namePlaceholder: '例如：台積電、DBS 存款',
+    symbol: '資產代碼',
     symbolPlaceholder: 'BTC, AAPL, 2330, D05.SI',
     category: '資產類別',
     currency: '持有幣別',
@@ -58,9 +58,9 @@ const t = {
     date: '持有日期',
     submit: '新增部位',
     categories: {
-      Stock: '股票資產 (Stock)',
-      Crypto: '加密貨幣 (Crypto)',
-      Savings: '存款 (Deposits)',
+      Stock: '股票',
+      Crypto: '加密貨幣',
+      Savings: '存款',
       Bank: '其他資產'
     },
     errors: {
