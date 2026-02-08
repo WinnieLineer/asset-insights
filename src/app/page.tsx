@@ -403,7 +403,9 @@ export default function AssetInsightsPage() {
       target.closest('select') || 
       target.closest('input') || 
       target.closest('[role="combobox"]') ||
-      target.closest('.radix-select-trigger')
+      target.closest('[role="tab"]') ||
+      target.closest('.radix-select-trigger') ||
+      target.closest('.radix-tabs-trigger')
     ) {
       return;
     }
