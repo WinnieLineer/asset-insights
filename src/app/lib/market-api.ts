@@ -12,80 +12,78 @@ function formatSymbol(s: string, category: string) {
   return upper;
 }
 
-export async function fetchMarketData(symbols: { cryptos: string[]; stocks: string[] }): Promise<MarketData> {
+export async function fetchMarketData(
+  assets: any[], 
+  days: number = 30, 
+  interval: string = '1d'
+): Promise<{ marketData: MarketData; historicalTimeline: any[] }> {
   let rates = { TWD: 32.5, CNY: 7.2, USD: 1, SGD: 1.35 };
   const cryptoPrices: Record<string, number> = {};
   const stockPrices: Record<string, number> = {};
+  const historicalTimeline: any[] = [];
 
+  // 1. Fetch Exchange Rates
   try {
     const erResponse = await fetch(EXCHANGE_RATE_API);
     if (erResponse.ok) {
       const data = await erResponse.json();
       rates = { TWD: data.rates.TWD, CNY: data.rates.CNY, USD: 1, SGD: data.rates.SGD };
     }
-  } catch (e) { console.error(e); }
+  } catch (e) { console.error('Rates fetch error:', e); }
 
-  const formattedStocks = symbols.stocks.map(s => formatSymbol(s, 'Stock'));
-  const formattedCryptos = symbols.cryptos.map(c => formatSymbol(c, 'Crypto'));
-  const allSymbols = [...formattedStocks, ...formattedCryptos];
-
-  if (allSymbols.length > 0) {
-    try {
-      const url = `${BATCH_STOCK_PROXY_URL}?symbols=${encodeURIComponent(allSymbols.join(','))}`;
-      const response = await fetch(url);
-      if (response.ok) {
-        const dataArray = await response.json();
-        symbols.stocks.forEach((s, i) => {
-          stockPrices[s.toUpperCase()] = dataArray[i]?.chart?.result?.[0]?.meta?.regularMarketPrice || 0;
-        });
-        symbols.cryptos.forEach((c, i) => {
-          const idx = symbols.stocks.length + i;
-          cryptoPrices[c.toUpperCase()] = dataArray[idx]?.chart?.result?.[0]?.meta?.regularMarketPrice || 0;
-        });
-      }
-    } catch (e) { console.error(e); }
-  }
-
-  return { exchangeRate: rates.TWD, rates, cryptoPrices, stockPrices };
-}
-
-export async function fetchHistoricalData(assets: any[], days: number, interval: string = '1d') {
   const stocksAndCryptos = assets.filter(a => a.category === 'Stock' || a.category === 'Crypto');
-  if (stocksAndCryptos.length === 0) return [];
+  if (stocksAndCryptos.length === 0) {
+    return { 
+      marketData: { exchangeRate: rates.TWD, rates, cryptoPrices, stockPrices },
+      historicalTimeline: [] 
+    };
+  }
 
   const symbols = stocksAndCryptos.map(a => formatSymbol(a.symbol, a.category));
   const period2 = Math.floor(Date.now() / 1000);
   const period1 = period2 - (days * 24 * 60 * 60);
 
+  // 2. Fetch Combined Market Data (Current + Historical) in ONE request
   try {
-    const proxyUrl = `${BATCH_STOCK_PROXY_URL}?symbols=${encodeURIComponent(symbols.join(','))}&period1=${period1}&period2=${period2}&interval=${interval}`;
-    
-    const response = await fetch(proxyUrl);
-    if (!response.ok) return [];
-    
-    const dataArray = await response.json();
-    const timelineMap: Record<number, any> = {};
-    
-    dataArray.forEach((result: any, assetIdx: number) => {
-      const chart = result?.chart?.result?.[0];
-      if (!chart) return;
-      
-      const timestamps = chart.timestamp || [];
-      const prices = chart.indicators?.adjclose?.[0]?.adjclose || chart.indicators?.quote?.[0]?.close || [];
-      const asset = stocksAndCryptos[assetIdx];
+    const url = `${BATCH_STOCK_PROXY_URL}?symbols=${encodeURIComponent(symbols.join(','))}&period1=${period1}&period2=${period2}&interval=${interval}`;
+    const response = await fetch(url);
+    if (response.ok) {
+      const dataArray = await response.json();
+      const timelineMap: Record<number, any> = {};
 
-      timestamps.forEach((ts: number, i: number) => {
-        const price = prices[i];
-        if (price === null || price === undefined) return;
-        
-        if (!timelineMap[ts]) timelineMap[ts] = { timestamp: ts, assets: {} };
-        timelineMap[ts].assets[asset.id] = price;
+      dataArray.forEach((result: any, idx: number) => {
+        const chart = result?.chart?.result?.[0];
+        if (!chart) return;
+
+        const asset = stocksAndCryptos[idx];
+        const sym = asset.symbol.toUpperCase();
+
+        // Extract Current Price
+        const currentPrice = chart.meta?.regularMarketPrice || 0;
+        if (asset.category === 'Crypto') cryptoPrices[sym] = currentPrice;
+        else stockPrices[sym] = currentPrice;
+
+        // Parse Historical Points
+        const timestamps = chart.timestamp || [];
+        const prices = chart.indicators?.adjclose?.[0]?.adjclose || chart.indicators?.quote?.[0]?.close || [];
+
+        timestamps.forEach((ts: number, i: number) => {
+          const price = prices[i];
+          if (price === null || price === undefined) return;
+          if (!timelineMap[ts]) timelineMap[ts] = { timestamp: ts, assets: {} };
+          timelineMap[ts].assets[asset.id] = price;
+        });
       });
-    });
 
-    return Object.values(timelineMap).sort((a: any, b: any) => a.timestamp - b.timestamp);
+      const sortedTimeline = Object.values(timelineMap).sort((a: any, b: any) => a.timestamp - b.timestamp);
+      historicalTimeline.push(...sortedTimeline);
+    }
   } catch (e) {
-    console.error('Fetch historical data error:', e);
-    return [];
+    console.error('Combined market fetch error:', e);
   }
+
+  return { 
+    marketData: { exchangeRate: rates.TWD, rates, cryptoPrices, stockPrices },
+    historicalTimeline 
+  };
 }

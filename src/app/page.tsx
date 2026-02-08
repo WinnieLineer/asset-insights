@@ -1,9 +1,8 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Asset, MarketData, AssetCategory, Currency, Snapshot } from './lib/types';
-import { fetchMarketData, fetchHistoricalData } from '@/app/lib/market-api';
+import { fetchMarketData } from '@/app/lib/market-api';
 import { AssetForm } from '@/components/AssetForm';
 import { PortfolioCharts } from '@/components/PortfolioCharts';
 import { AITipCard } from '@/components/AITipCard';
@@ -12,7 +11,6 @@ import {
   Activity, 
   RefreshCw, 
   Trash2, 
-  TrendingUp, 
   Globe, 
   Wallet, 
   BarChart3,
@@ -148,7 +146,6 @@ export default function MonochromeAssetPage() {
   const [interval, setInterval] = useState<string>("1d");
   const [marketTimeline, setMarketTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [historyLoading, setHistoryLoading] = useState(false);
   
   const [marketData, setMarketData] = useState<MarketData>({
     exchangeRate: 32.5,
@@ -174,16 +171,18 @@ export default function MonochromeAssetPage() {
 
   const t = translations[language];
 
-  const updateMarketData = async () => {
+  const updateAllData = async () => {
     if (!mounted || loading) return;
     setLoading(true);
-    const cryptos = assets.filter(a => a.category === 'Crypto').map(a => a.symbol);
-    const stocks = assets.filter(a => a.category === 'Stock').map(a => a.symbol);
     try {
-      const data = await fetchMarketData({ cryptos, stocks });
-      setMarketData(data);
+      const { marketData: newData, historicalTimeline } = await fetchMarketData(
+        assets, 
+        parseInt(trackingDays), 
+        interval
+      );
+      setMarketData(newData);
+      setMarketTimeline(historicalTimeline);
       toast({ title: t.dataUpdated });
-      fetchHistory();
     } catch (error) {
       toast({ variant: 'destructive', title: 'Sync Error' });
     } finally {
@@ -191,30 +190,11 @@ export default function MonochromeAssetPage() {
     }
   };
 
-  const fetchHistory = async () => {
-    if (assets.length === 0) return;
-    setHistoryLoading(true);
-    try {
-      const history = await fetchHistoricalData(assets, parseInt(trackingDays), interval);
-      setMarketTimeline(history);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (mounted && assets.length > 0) {
-      updateMarketData();
+      updateAllData();
     }
-  }, [mounted, assets.length]);
-
-  useEffect(() => {
-    if (mounted && assets.length > 0) {
-      fetchHistory();
-    }
-  }, [trackingDays, interval]);
+  }, [mounted, assets.length, trackingDays, interval]);
 
   const getCurrencySymbol = (cur: Currency) => CURRENCY_SYMBOLS[cur] || 'NT$';
 
@@ -419,7 +399,7 @@ export default function MonochromeAssetPage() {
           
           <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
             <Button 
-              onClick={updateMarketData} 
+              onClick={updateAllData} 
               disabled={loading}
               className="w-full h-full min-h-[70px] bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all shadow-lg active:scale-95 px-6"
             >
@@ -541,7 +521,7 @@ export default function MonochromeAssetPage() {
               historicalData={assetCalculations.chartData} 
               displayCurrency={displayCurrency} 
               rates={marketData.rates} 
-              loading={historyLoading}
+              loading={loading}
             />
 
             {snapshots.length > 0 && (
