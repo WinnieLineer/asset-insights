@@ -1,4 +1,3 @@
-
 export type Currency = 'TWD' | 'USD' | 'CNY' | 'SGD';
 
 export type AssetCategory = 'Stock' | 'Crypto' | 'Bank' | 'Savings';
@@ -10,9 +9,9 @@ export interface Asset {
   category: AssetCategory;
   amount: number;
   currency: Currency;
-  acquisitionDate: string; // 持有日期 (YYYY-MM-DD)
-  price?: number; // 當前單價 (持有幣別)
-  valueInTWD?: number; // 換算後的台幣價值
+  acquisitionDate: string; // YYYY-MM-DD
+  price?: number; 
+  valueInTWD?: number;
 }
 
 export interface Snapshot {
@@ -31,8 +30,7 @@ export interface MarketData {
     USD: number;
     SGD: number;
   };
-  cryptoPrices: Record<string, number>; // symbol to USD price
-  stockPrices: Record<string, number>; // symbol to USD price
+  assetMarketPrices: Record<string, { price: number; currency: string }>;
 }
 
 export interface HistoricalPoint {

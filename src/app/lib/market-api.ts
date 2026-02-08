@@ -12,14 +12,18 @@ function formatSymbol(s: string, category: string) {
   return upper;
 }
 
+export interface PriceInfo {
+  price: number;
+  currency: string;
+}
+
 export async function fetchMarketData(
   assets: any[], 
   days: number = 30, 
   interval: string = '1d'
 ): Promise<{ marketData: MarketData; historicalTimeline: any[] }> {
   let rates = { TWD: 32.5, CNY: 7.2, USD: 1, SGD: 1.35 };
-  const cryptoPrices: Record<string, number> = {};
-  const stockPrices: Record<string, number> = {};
+  const assetMarketPrices: Record<string, PriceInfo> = {};
   const historicalTimeline: any[] = [];
 
   // 1. Fetch Exchange Rates
@@ -27,14 +31,19 @@ export async function fetchMarketData(
     const erResponse = await fetch(EXCHANGE_RATE_API);
     if (erResponse.ok) {
       const data = await erResponse.json();
-      rates = { TWD: data.rates.TWD, CNY: data.rates.CNY, USD: 1, SGD: data.rates.SGD };
+      rates = { 
+        TWD: data.rates.TWD, 
+        CNY: data.rates.CNY, 
+        USD: 1, 
+        SGD: data.rates.SGD 
+      };
     }
   } catch (e) { console.error('Rates fetch error:', e); }
 
   const stocksAndCryptos = assets.filter(a => a.category === 'Stock' || a.category === 'Crypto');
   if (stocksAndCryptos.length === 0) {
     return { 
-      marketData: { exchangeRate: rates.TWD, rates, cryptoPrices, stockPrices },
+      marketData: { exchangeRate: rates.TWD, rates, assetMarketPrices },
       historicalTimeline: [] 
     };
   }
@@ -56,12 +65,14 @@ export async function fetchMarketData(
         if (!chart) return;
 
         const asset = stocksAndCryptos[idx];
-        const sym = asset.symbol.toUpperCase();
-
-        // Extract Current Price
+        const apiCurrency = chart.meta?.currency || (asset.category === 'Crypto' ? 'USD' : 'TWD');
         const currentPrice = chart.meta?.regularMarketPrice || 0;
-        if (asset.category === 'Crypto') cryptoPrices[sym] = currentPrice;
-        else stockPrices[sym] = currentPrice;
+        
+        // Store current price and its native currency
+        assetMarketPrices[asset.id] = {
+          price: currentPrice,
+          currency: apiCurrency
+        };
 
         // Parse Historical Points
         const timestamps = chart.timestamp || [];
@@ -83,7 +94,7 @@ export async function fetchMarketData(
   }
 
   return { 
-    marketData: { exchangeRate: rates.TWD, rates, cryptoPrices, stockPrices },
+    marketData: { exchangeRate: rates.TWD, rates, assetMarketPrices },
     historicalTimeline 
   };
 }
