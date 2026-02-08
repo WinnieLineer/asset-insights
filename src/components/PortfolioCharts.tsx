@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Sector,
-  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend, Brush
 } from 'recharts';
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -47,8 +47,8 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
   if (loading && historicalData.length === 0) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10">
-        <div className="lg:col-span-4 h-[400px]"><Skeleton className="w-full h-full rounded-xl" /></div>
-        <div className="lg:col-span-8 h-[400px]"><Skeleton className="w-full h-full rounded-xl" /></div>
+        <div className="lg:col-span-4 h-[450px]"><Skeleton className="w-full h-full rounded-xl" /></div>
+        <div className="lg:col-span-8 h-[450px]"><Skeleton className="w-full h-full rounded-xl" /></div>
       </div>
     );
   }
@@ -120,15 +120,15 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
         </div>
       </div>
 
-      <div className="lg:col-span-8 modern-card p-6 sm:p-10 flex flex-col min-h-[450px] border-slate-100 bg-white relative shadow-xl">
+      <div className="lg:col-span-8 modern-card p-6 sm:p-10 flex flex-col min-h-[500px] border-slate-100 bg-white relative shadow-xl">
         <div className="w-full mb-8 text-left">
           <h3 className="text-sm font-black text-black uppercase tracking-widest">{lang.trend}</h3>
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1.5">Integrated Market & Snapshot Evolution</p>
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1.5">Interactive Market-Based Tracking Matrix</p>
         </div>
 
-        <div className="h-[300px] w-full mt-auto">
+        <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 0, left: -25 }}>
+            <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 20, left: -25 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 800 }} dy={12} />
               <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#cbd5e1', fontWeight: 700 }} tickFormatter={(v) => `${symbol}${(v/1000).toFixed(0)}k`} />
@@ -137,12 +137,10 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 cursor={{ fill: '#f8fafc', opacity: 0.5 }}
                 content={({ active, payload, label }) => {
                   if (active && payload?.length) {
-                    const isSnapshot = payload[0].payload.isSnapshot;
                     return (
                       <div className="bg-white border-2 border-slate-100 p-4 sm:p-5 rounded-lg shadow-[0_20px_50px_rgba(0,0,0,0.2)] z-[100000] min-w-[200px] pointer-events-none opacity-100 ring-4 ring-black/5">
                         <div className="flex justify-between items-center mb-3 pb-2 border-b border-slate-100">
                           <p className="text-sm font-black text-slate-400 uppercase tracking-widest">{label}</p>
-                          {isSnapshot && <span className="text-xs bg-black text-white px-2 py-0.5 rounded-full font-black uppercase">Snapshot</span>}
                         </div>
                         <div className="space-y-2.5">
                           {payload.map((p: any, i: number) => {
@@ -187,6 +185,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                 <Bar key={cat} dataKey={cat} stackId="a" fill={COLORS[i % COLORS.length]} barSize={14} radius={i === 0 ? [0, 0, 3, 3] : [0, 0, 0, 0]} />
               ))}
               <Line type="monotone" dataKey="totalValue" stroke="#000000" strokeWidth={3} dot={{ r: 4, fill: '#000000', strokeWidth: 0 }} activeDot={{ r: 6, fill: '#000000' }} animationDuration={1000} />
+              <Brush dataKey="displayDate" height={30} stroke="#000000" fill="#f8fafc" travellerWidth={10} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>

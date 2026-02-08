@@ -20,8 +20,7 @@ import {
   ArrowRightLeft,
   Clock,
   TrendingUp,
-  TrendingDown,
-  Plus
+  TrendingDown
 } from 'lucide-react';
 import { 
   Card, 
@@ -75,8 +74,8 @@ const translations = {
     holdings: 'Quantity',
     valuation: 'Market Value',
     unitPrice: 'Unit Price',
-    dashboard: 'Portfolio Analysis',
-    change: 'Today Change',
+    dashboard: 'Portfolio Overview',
+    change: 'Daily Change',
     editAsset: 'Edit Position',
     cancel: 'Cancel',
     saveChanges: 'Save',
@@ -94,8 +93,6 @@ const translations = {
     assetDeleted: 'Asset removed.',
     dataUpdated: 'Market data synced.',
     acqDate: 'Hold Since',
-    captureSnapshot: 'Capture Snapshot',
-    snapshotSaved: 'Snapshot recorded.',
     categoryNames: {
       Stock: 'Equity',
       Crypto: 'Crypto',
@@ -132,8 +129,6 @@ const translations = {
     assetDeleted: '資產已移除',
     dataUpdated: '市場數據已更新',
     acqDate: '持有日期',
-    captureSnapshot: '捕捉當前快照',
-    snapshotSaved: '歷史快照已記錄',
     categoryNames: {
       Stock: '股票',
       Crypto: '加密貨幣',
@@ -148,7 +143,6 @@ export default function AssetInsightsPage() {
   const [mounted, setMounted] = useState(false);
   const [language, setLanguage] = useState<'en' | 'zh'>('zh');
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [snapshots, setSnapshots] = useState<any[]>([]);
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editAmount, setEditAmount] = useState<number>(0);
@@ -183,14 +177,12 @@ export default function AssetInsightsPage() {
     } finally {
       setLoading(false);
     }
-  }, [mounted, trackingDays, interval, t.dataUpdated]);
+  }, [mounted, trackingDays, interval, t.dataUpdated, loading]);
 
   useEffect(() => {
     setMounted(true);
     const savedAssets = localStorage.getItem('assets');
-    const savedSnapshots = localStorage.getItem('snapshots');
     if (savedAssets) setAssets(JSON.parse(savedAssets));
-    if (savedSnapshots) setSnapshots(JSON.parse(savedSnapshots));
   }, []);
 
   useEffect(() => {
@@ -202,9 +194,8 @@ export default function AssetInsightsPage() {
   useEffect(() => {
     if (mounted) {
       localStorage.setItem('assets', JSON.stringify(assets));
-      localStorage.setItem('snapshots', JSON.stringify(snapshots));
     }
-  }, [assets, snapshots, mounted]);
+  }, [assets, mounted]);
 
   const getCurrencySymbol = (cur: Currency) => CURRENCY_SYMBOLS[cur] || 'NT$';
 
@@ -315,20 +306,6 @@ export default function AssetInsightsPage() {
       return item;
     });
 
-    // 安全地處理快照解析
-    snapshots.forEach(s => {
-      const sDate = new Date(s.date);
-      const displayD = sDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-      const allocationSafe = s.allocation || {};
-      chartData.push({
-        date: s.date,
-        displayDate: displayD,
-        totalValue: s.totalTWD * (displayRate / rateTWD),
-        isSnapshot: true,
-        ...Object.fromEntries(Object.entries(allocationSafe).map(([k, v]: [any, any]) => [k, v * (displayRate / rateTWD)]))
-      });
-    });
-
     chartData.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return { 
@@ -342,24 +319,14 @@ export default function AssetInsightsPage() {
       chartData,
       allocationMap
     };
-  }, [assets, marketData, displayCurrency, marketTimeline, snapshots]);
+  }, [assets, marketData, displayCurrency, marketTimeline]);
 
   const handleAddAsset = async (newAsset: Omit<Asset, 'id'>) => {
     const assetWithId = { ...newAsset, id: crypto.randomUUID() };
     const updatedAssets = [...assets, assetWithId];
     setAssets(updatedAssets);
+    // 自動刷新
     await updateAllData(updatedAssets);
-  };
-
-  const handleCaptureSnapshot = () => {
-    const newSnapshot = {
-      id: crypto.randomUUID(),
-      date: new Date().toISOString(),
-      totalTWD: assetCalculations.totalTWD,
-      allocation: assetCalculations.allocationMap
-    };
-    setSnapshots([...snapshots, newSnapshot]);
-    toast({ title: t.snapshotSaved });
   };
 
   const saveEdit = () => {
@@ -427,7 +394,7 @@ export default function AssetInsightsPage() {
                 <Globe className="w-5 h-5" />
                 {t.totalValue}
               </div>
-              <div className="text-4xl sm:text-6xl font-bold tracking-tighter flex items-baseline flex-wrap gap-2">
+              <div className="text-5xl sm:text-7xl font-bold tracking-tighter flex items-baseline flex-wrap gap-2">
                 <span className="text-slate-300">{getCurrencySymbol(displayCurrency)}</span>
                 <span className="break-all">{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                 {loading && <Loader2 className="w-8 h-8 animate-spin text-slate-200 ml-3" />}
@@ -445,15 +412,7 @@ export default function AssetInsightsPage() {
               className="w-full h-full bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all shadow-lg active:scale-95"
             >
               <RefreshCw className={cn("w-6 h-6", loading && "animate-spin")} />
-              <span className="text-xs tracking-widest uppercase">{loading ? t.fetching : t.syncMarket}</span>
-            </Button>
-            <Button 
-              onClick={handleCaptureSnapshot}
-              variant="outline"
-              className="w-full py-6 border-2 border-black font-bold flex items-center justify-center gap-2 rounded hover:bg-slate-50 active:scale-95"
-            >
-              <Plus className="w-5 h-5" />
-              <span className="text-xs tracking-widest uppercase">{t.captureSnapshot}</span>
+              <span className="text-sm tracking-widest uppercase">{loading ? t.fetching : t.syncMarket}</span>
             </Button>
           </div>
         </div>
