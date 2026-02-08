@@ -143,7 +143,7 @@ const translations = {
     days90: '90 天',
     days180: '180 天',
     days365: '365 天',
-    customRange: '自定義',
+    customRange: '自定義範圍',
     startDate: '起始日期',
     endDate: '結束日期',
     int1d: '日線',
@@ -375,7 +375,7 @@ export default function AssetInsightsPage() {
       });
 
       return item;
-    });
+    }).filter(point => point.totalValue > 0); // 核心修正：排除無價格數據（休市日）的點
 
     return { 
       processedAssets, 
@@ -430,6 +430,7 @@ export default function AssetInsightsPage() {
       if (!el) return false;
       const tagName = el.tagName.toLowerCase();
       const role = el.getAttribute('role');
+      const dataState = el.getAttribute('data-state');
       const isRadix = el.getAttribute('data-radix-collection-item') !== null || 
                        el.className?.toString().includes('radix') ||
                        el.hasAttribute('aria-haspopup');
@@ -760,21 +761,21 @@ export default function AssetInsightsPage() {
       onTouchStart={handleMouseDown}
       onTouchEnd={handleMouseUp}
     >
-      <header className="fixed top-0 left-0 right-0 py-3 xl:py-6 border-b border-slate-100 z-[100] bg-white/80 backdrop-blur-xl">
-        <div className="max-w-[1600px] mx-auto px-4 xl:px-6 flex flex-col xl:flex-row items-center justify-between gap-2 xl:gap-6">
-          <div className="flex items-center gap-3 xl:gap-4 w-full xl:w-auto">
-            <div className="w-8 h-8 xl:w-12 xl:h-12 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg">
-              <Activity className="w-4 h-4 xl:w-6 xl:h-6 text-white" />
+      <header className="fixed top-0 left-0 right-0 py-2 xl:py-6 border-b border-slate-100 z-[100] bg-white/80 backdrop-blur-xl">
+        <div className="max-w-[1600px] mx-auto px-4 xl:px-6 flex flex-col xl:flex-row items-center justify-between gap-1 xl:gap-6">
+          <div className="flex items-center gap-2 xl:gap-4 w-full xl:w-auto">
+            <div className="w-6 h-6 xl:w-12 xl:h-12 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg">
+              <Activity className="w-3 h-3 xl:w-6 xl:h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-lg xl:text-2xl font-black tracking-tighter uppercase leading-none">{t.title}</h1>
-              <p className="text-[8px] xl:text-xs font-black text-slate-400 tracking-[0.2em] xl:tracking-[0.3em] uppercase mt-1 xl:mt-2">{t.subtitle}</p>
+              <h1 className="text-sm xl:text-2xl font-black tracking-tighter uppercase leading-none">{t.title}</h1>
+              <p className="hidden xl:block text-[8px] xl:text-xs font-black text-slate-400 tracking-[0.2em] xl:tracking-[0.3em] uppercase mt-1 xl:mt-2">{t.subtitle}</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-center xl:justify-end gap-3 xl:gap-6 w-full xl:w-auto scale-90 xl:scale-100 origin-center xl:origin-right">
+          <div className="flex flex-wrap items-center justify-center xl:justify-end gap-2 xl:gap-6 w-full xl:w-auto scale-90 xl:scale-100 origin-center xl:origin-right">
             {isReordering && (
-              <Button onClick={() => setIsReordering(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black gap-1.5 xl:gap-2 px-4 xl:px-8 h-8 xl:h-12 rounded-full shadow-2xl animate-bounce text-[10px] xl:text-xs">
-                <Check className="w-3.5 h-3.5 xl:w-5 xl:h-5" /> {t.exitReorder}
+              <Button onClick={() => setIsReordering(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black gap-1.5 xl:gap-2 px-3 xl:px-8 h-7 xl:h-12 rounded-full shadow-2xl animate-bounce text-[9px] xl:text-xs">
+                <Check className="w-3 h-3 xl:w-5 xl:h-5" /> {t.exitReorder}
               </Button>
             )}
             <div className="hidden md:flex flex-col items-end">
@@ -785,13 +786,13 @@ export default function AssetInsightsPage() {
               </span>
             </div>
             <div className="flex bg-slate-100 p-0.5 xl:p-1 rounded-lg xl:rounded-xl">
-              <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-7 xl:h-9 px-3 xl:px-5 font-bold text-[10px] xl:text-xs">繁中</Button>
-              <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-7 xl:h-9 px-3 xl:px-5 font-bold text-[10px] xl:text-xs">EN</Button>
+              <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-6 xl:h-9 px-2 xl:px-5 font-bold text-[9px] xl:text-xs">繁中</Button>
+              <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-6 xl:h-9 px-2 xl:px-5 font-bold text-[9px] xl:text-xs">EN</Button>
             </div>
             <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
-              <TabsList className="h-8 xl:h-10 bg-slate-100 p-0.5 xl:p-1 rounded-lg xl:rounded-xl">
+              <TabsList className="h-7 xl:h-10 bg-slate-100 p-0.5 xl:p-1 rounded-lg xl:rounded-xl">
                 {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (
-                  <TabsTrigger key={cur} value={cur} className="text-[10px] xl:text-xs font-black uppercase px-2 xl:px-4 h-7 xl:h-8">{cur}</TabsTrigger>
+                  <TabsTrigger key={cur} value={cur} className="text-[9px] xl:text-xs font-black uppercase px-1.5 xl:px-4 h-6 xl:h-8">{cur}</TabsTrigger>
                 ))}
               </TabsList>
             </Tabs>
@@ -799,7 +800,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1600px] mx-auto px-4 xl:px-6 pt-28 xl:pt-40 pb-10">
+      <main className="max-w-[1600px] mx-auto px-4 xl:px-6 pt-24 xl:pt-40 pb-10">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-8 items-stretch">
           {layout.map(item => renderSection(item))}
         </div>
