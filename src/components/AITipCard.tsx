@@ -1,12 +1,15 @@
+
 'use client';
 
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Brain, RefreshCw, ShieldCheck, TrendingUp, Sparkles } from 'lucide-react';
+import { Brain, RefreshCw, ShieldCheck, TrendingUp, Sparkles, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { getFinancialTip, FinancialTipOutput } from '@/ai/flows/financial-tooltip';
 
 interface AssetDetail {
   name: string;
@@ -28,7 +31,7 @@ interface AITipCardProps {
 const t = {
   en: {
     title: 'Gemini Portfolio Insights',
-    desc: 'Advanced risk analysis and strategic recommendations.',
+    desc: 'Advanced risk analysis and strategic recommendations powered by Gemini.',
     analysis: 'Strategic Analysis',
     risk: 'Portfolio Risk',
     diversification: 'Diversity Score',
@@ -36,10 +39,12 @@ const t = {
     ctaButton: 'Run Gemini AI Analysis',
     loading: 'Gemini is thinking...',
     answer: 'AI Recommendation',
+    instructionLabel: 'Custom Instructions / Questions',
+    instructionPlaceholder: 'e.g., How can I reduce my crypto exposure risk?'
   },
   zh: {
     title: 'Gemini 專業投資分析',
-    desc: '基於當前配置的深度風險評估與優化建議。',
+    desc: '基於當前配置的深度風險評估與優化建議，由 Gemini 提供動力。',
     analysis: '戰略分析報告',
     risk: '組合風險等級',
     diversification: '分散投資指數',
@@ -47,46 +52,38 @@ const t = {
     ctaButton: '執行 Gemini AI 分析',
     loading: 'Gemini 分析中...',
     answer: 'AI 專業建議',
+    instructionLabel: '自定義指令 / 提問',
+    instructionPlaceholder: '例如：我該如何降低加密貨幣的曝險風險？'
   }
 };
 
 export function AITipCard({ assets, totalTWD, language, marketConditions = "Stable" }: AITipCardProps) {
-  const [insight, setInsight] = useState<any | null>(null);
+  const [insight, setInsight] = useState<FinancialTipOutput | null>(null);
   const [loading, setLoading] = useState(false);
+  const [userQuestion, setUserQuestion] = useState('');
   const lang = t[language];
 
-  const fetchTip = () => {
+  const fetchTip = async () => {
     if (assets.length === 0) return;
     setLoading(true);
     
-    setTimeout(() => {
-      const cryptoVal = assets.filter(a => a.category === 'Crypto').reduce((sum, a) => sum + a.valueInTWD, 0);
-      const cryptoRatio = cryptoVal / (totalTWD || 1);
-      const score = Math.min(assets.length * 15 + 20, 100);
-
-      const report = language === 'zh' ? {
-        answer: '資產掃描完成。目前部位顯示出明確的成長動能。',
-        analysis: `配置以 ${cryptoRatio > 0.3 ? '進攻型' : '平衡型'} 資產為主。市場環境：${marketConditions}。在當前匯率環境下，您的部位對 ${cryptoRatio > 0.3 ? '市場波動' : '資產增幅'} 具有高度敏感性。`,
-        riskLevel: cryptoRatio > 0.4 ? "高風險 / 積極成長" : cryptoRatio > 0.15 ? "中等風險 / 平衡成長" : "低風險 / 保守穩健",
-        recommendations: [
-          cryptoRatio > 0.3 ? "考慮在高點適度獲利了結，轉入低波動債券" : "可適度增加全球指數基金（如 VTI/VT）提升長期報酬",
-          "定期建立快照以追蹤不同市場週期下的資產表現",
-          "確保持有現金部位足以支撐 6-12 個月的緊急支出"
-        ]
-      } : {
-        answer: 'Portfolio scan complete. Current allocation shows clear growth momentum.',
-        analysis: `Your strategy is ${cryptoRatio > 0.3 ? 'Aggressive' : 'Balanced'}. Market: ${marketConditions}. Given current FX rates, your portfolio is highly sensitive to ${cryptoRatio > 0.3 ? 'market volatility' : 'asset appreciation'}.`,
-        riskLevel: cryptoRatio > 0.4 ? "High Risk / Aggressive" : cryptoRatio > 0.15 ? "Moderate / Balanced" : "Low Risk / Conservative",
-        recommendations: [
-          cryptoRatio > 0.3 ? "Consider rebalancing high-volatility profits into stable assets" : "Opportunity to increase global index exposure for better growth",
-          "Use snapshots periodically to monitor performance across market cycles",
-          "Maintain a liquid cash reserve equivalent to 6-12 months of expenses"
-        ]
-      };
-
-      setInsight({ ...report, diversificationScore: score });
+    try {
+      const result = await getFinancialTip({
+        assets: assets.map(a => ({
+          ...a,
+          category: a.category
+        })),
+        totalTWD,
+        marketConditions,
+        userQuestion,
+        language
+      });
+      setInsight(result);
+    } catch (error) {
+      console.error('AI Analysis error:', error);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const getRiskColor = (level: string) => {
@@ -99,7 +96,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
   return (
     <Card className="modern-card border-slate-200 bg-white overflow-hidden">
       <CardHeader className="px-8 py-6 border-b border-slate-50 bg-slate-50/50">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2 text-xl font-bold text-black">
               <Sparkles className="w-5 h-5" />
@@ -107,14 +104,28 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
             </CardTitle>
             <CardDescription className="text-xs font-bold text-slate-400 uppercase tracking-widest">{lang.desc}</CardDescription>
           </div>
-          <Button 
-            className="bg-black hover:bg-slate-800 text-white font-bold rounded px-8 h-12 shadow-sm transition-all"
-            onClick={fetchTip}
-            disabled={loading || assets.length === 0}
-          >
-            {loading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Brain className="w-4 h-4 mr-2" />}
-            <span className="text-[10px] tracking-widest uppercase">{loading ? lang.loading : lang.ctaButton}</span>
-          </Button>
+          <div className="flex flex-col gap-3 w-full md:w-80">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                <MessageSquare className="w-3 h-3" />
+                {lang.instructionLabel}
+              </label>
+              <Textarea 
+                placeholder={lang.instructionPlaceholder}
+                className="text-[11px] min-h-[60px] bg-white border-slate-200"
+                value={userQuestion}
+                onChange={(e) => setUserQuestion(e.target.value)}
+              />
+            </div>
+            <Button 
+              className="bg-black hover:bg-slate-800 text-white font-bold rounded px-8 h-10 shadow-sm transition-all"
+              onClick={fetchTip}
+              disabled={loading || assets.length === 0}
+            >
+              {loading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Brain className="w-4 h-4 mr-2" />}
+              <span className="text-[10px] tracking-widest uppercase">{loading ? lang.loading : lang.ctaButton}</span>
+            </Button>
+          </div>
         </div>
       </CardHeader>
       

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -18,7 +19,8 @@ import {
   Globe, 
   Wallet, 
   BarChart3,
-  Edit2
+  Edit2,
+  DollarSign
 } from 'lucide-react';
 import { 
   Card, 
@@ -63,6 +65,7 @@ const translations = {
     marketPrice: 'Price',
     holdings: 'Holdings',
     valuation: 'Valuation',
+    unitPrice: 'Unit Price',
     dataUpdated: 'Market data updated.',
     snapshotSaved: 'Snapshot saved.',
     dashboard: 'Portfolio Overview',
@@ -86,6 +89,7 @@ const translations = {
     marketPrice: '當前市價',
     holdings: '持有數量',
     valuation: '帳面價值',
+    unitPrice: '每單位市價',
     dataUpdated: '市場數據已更新',
     snapshotSaved: '快照已存入紀錄',
     dashboard: '投資組合概覽',
@@ -197,6 +201,7 @@ export default function MonochromeAssetPage() {
         calculatedPrice: currentPrice, 
         valueInTWD, 
         valueInDisplay: convertTWDToDisplay(valueInTWD), 
+        priceInDisplay: convertTWDToDisplay(asset.currency === 'USD' ? (currentPrice * rate) : (asset.category === 'Stock' || asset.category === 'Crypto' ? currentPrice * (asset.currency === 'CNY' ? (rate / marketData.rates.CNY) : 1) : 1)),
         diffTWD, 
         diffPercent, 
         hasHistory: !!previousAsset 
@@ -305,6 +310,7 @@ export default function MonochromeAssetPage() {
                     <TableRow>
                       <TableHead className="px-8 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
                       <TableHead className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
+                      <TableHead className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.unitPrice}</TableHead>
                       <TableHead className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.change}</TableHead>
                       <TableHead className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
                       <TableHead className="w-[100px] text-center"></TableHead>
@@ -318,6 +324,12 @@ export default function MonochromeAssetPage() {
                           <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{asset.symbol}</div>
                         </TableCell>
                         <TableCell><span className="text-sm font-bold">{asset.amount.toLocaleString()}</span></TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-medium text-slate-500">{getCurrencySymbol(displayCurrency)}</span>
+                            <span className="text-sm font-bold">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           {asset.hasHistory ? (
                             <div className={cn("text-[11px] font-bold", asset.diffTWD >= 0 ? "text-emerald-600" : "text-rose-600")}>

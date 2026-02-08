@@ -1,3 +1,4 @@
+
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import {Toaster} from '@/components/ui/toaster';
@@ -6,7 +7,7 @@ export const metadata: Metadata = {
   title: 'Asset Insights Pro | 專業資產追蹤系統',
   description: '全方位的個人資產管理與 AI 財務決策系統。',
   icons: {
-    icon: '/favicon.ico?favicon.7ed73651.ico',
+    icon: './favicon.ico',
   },
   appleWebApp: {
     capable: true,
