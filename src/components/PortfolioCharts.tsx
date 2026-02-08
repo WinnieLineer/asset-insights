@@ -58,7 +58,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
       <div className="lg:col-span-4 modern-card p-8 flex flex-col items-center min-h-[500px] border-slate-100 bg-white relative shadow-xl">
         <div className="w-full mb-6">
           <h3 className="text-sm font-bold text-black uppercase tracking-widest">{lang.allocation}</h3>
-          <p className="text-xs text-slate-400 font-medium uppercase tracking-widest mt-1">即時權重分佈</p>
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">即時權重分佈</p>
         </div>
         
         <div className="h-[320px] w-full relative">
@@ -86,7 +86,7 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
                   if (active && payload?.length) {
                     const val = Number(payload[0].value);
                     return (
-                      <div className="bg-white/95 backdrop-blur-sm border-2 border-slate-100 p-4 rounded-lg shadow-2xl z-[1000] min-w-[160px] pointer-events-none ring-1 ring-black/5">
+                      <div className="bg-white border-2 border-slate-100 p-4 rounded-lg shadow-2xl z-[1000] min-w-[160px] pointer-events-none ring-1 ring-black/5 opacity-100">
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-50 pb-2">
                           {lang.categories[payload[0].name as keyof typeof lang.categories] || payload[0].name}
                         </p>
@@ -103,17 +103,17 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none w-full max-w-[150px]">
             {activeIndex !== null && allocationData[activeIndex] ? (
               <div className="animate-fade-in">
-                <p className="text-xs font-bold text-black uppercase tracking-widest truncate px-4">
+                <p className="text-sm font-bold text-black uppercase tracking-widest truncate px-4">
                   {lang.categories[allocationData[activeIndex].name as keyof typeof lang.categories] || allocationData[activeIndex].name}
                 </p>
-                <p className="text-2xl font-bold text-black tracking-tighter mt-1">
+                <p className="text-xl font-bold text-black tracking-tighter mt-1">
                   {((allocationData[activeIndex].value / (totalAllocationValue || 1)) * 100).toFixed(1)}%
                 </p>
               </div>
             ) : (
               <div className="animate-fade-in">
-                <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">{lang.total}</p>
-                <p className="text-2xl font-bold text-slate-200 tracking-tighter mt-1">100%</p>
+                <p className="text-sm font-bold text-slate-300 uppercase tracking-widest">{lang.total}</p>
+                <p className="text-xl font-bold text-slate-200 tracking-tighter mt-1">100%</p>
               </div>
             )}
           </div>
@@ -123,22 +123,22 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
       <div className="lg:col-span-8 modern-card p-8 flex flex-col min-h-[500px] border-slate-100 bg-white relative shadow-xl">
         <div className="w-full mb-6">
           <h3 className="text-sm font-bold text-black uppercase tracking-widest">{lang.trend}</h3>
-          <p className="text-xs text-slate-400 font-medium uppercase tracking-widest mt-1">互動式市場追蹤矩陣</p>
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">互動式市場追蹤矩陣</p>
         </div>
 
         <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 20, left: -25 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#cbd5e1', fontWeight: 500 }} tickFormatter={(v) => `${symbol}${(v/1000).toFixed(0)}k`} />
+              <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#cbd5e1', fontWeight: 500 }} tickFormatter={(v) => `${symbol}${(v/1000).toFixed(0)}k`} />
               <RechartsTooltip 
                 wrapperStyle={{ zIndex: 1000 }}
                 cursor={{ fill: '#f8fafc', opacity: 0.5 }}
                 content={({ active, payload, label }) => {
                   if (active && payload?.length) {
                     return (
-                      <div className="bg-white/95 backdrop-blur-sm border-2 border-slate-100 p-5 rounded-lg shadow-2xl z-[1000] min-w-[220px] pointer-events-none ring-1 ring-black/5">
+                      <div className="bg-white border-2 border-slate-100 p-5 rounded-lg shadow-2xl z-[1000] min-w-[220px] pointer-events-none ring-1 ring-black/5 opacity-100">
                         <div className="flex justify-between items-center mb-3 pb-2 border-b border-slate-100">
                           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{label}</p>
                         </div>
