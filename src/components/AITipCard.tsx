@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -167,31 +166,31 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
               <div className="p-2 bg-black rounded shrink-0">
                 <Brain className="w-5 h-5 text-white" />
               </div>
-              <CardTitle className="text-base sm:text-lg lg:text-xl font-black tracking-tight break-words uppercase">{lang.title}</CardTitle>
+              <CardTitle className="text-lg sm:text-xl font-bold tracking-tight uppercase">{lang.title}</CardTitle>
             </div>
-            <CardDescription className="text-[10px] lg:text-[11px] font-black text-slate-400 uppercase tracking-widest break-words">{lang.desc}</CardDescription>
+            <CardDescription className="text-xs font-bold text-slate-400 uppercase tracking-widest">{lang.desc}</CardDescription>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 sm:gap-4 flex-1 max-w-2xl w-full">
             <div className="w-full space-y-2">
-              <label className="text-[10px] lg:text-[11px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2 ml-1">
                 <MessageSquare className="w-3.5 h-3.5" />
                 {lang.instructionLabel}
               </label>
               <Textarea 
                 placeholder={lang.instructionPlaceholder}
-                className="text-xs lg:text-sm min-h-[50px] sm:min-h-[60px] bg-white border-zinc-200 focus:ring-black focus:border-black rounded-sm p-3 font-bold shadow-sm"
+                className="text-sm min-h-[60px] bg-white border-zinc-200 focus:ring-black focus:border-black rounded-md p-3 font-bold shadow-sm"
                 value={userQuestion}
                 onChange={(e) => setUserQuestion(e.target.value)}
               />
             </div>
             <Button 
-              className="bg-black hover:bg-zinc-800 text-white font-black h-[50px] sm:h-[60px] px-8 rounded-sm shrink-0 w-full sm:w-auto transition-all active:scale-95 shadow-md"
+              className="bg-black hover:bg-zinc-800 text-white font-bold h-[60px] px-8 rounded-md shrink-0 w-full sm:w-auto transition-all active:scale-95 shadow-md"
               onClick={callGeminiAPI}
               disabled={loading || assets.length === 0}
             >
               {loading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-              <span className="text-[10px] lg:text-xs tracking-widest uppercase">{loading ? lang.loading : lang.ctaButton}</span>
+              <span className="text-xs tracking-widest uppercase">{loading ? lang.loading : lang.ctaButton}</span>
             </Button>
           </div>
         </div>
@@ -199,29 +198,29 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
       
       <CardContent className="p-6 sm:p-10">
         {insight ? (
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 sm:gap-14 animate-fade-in">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 animate-fade-in">
             <div className="xl:col-span-5 space-y-8">
               <div className="space-y-4">
-                <h4 className="text-[10px] lg:text-[11px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                   <Target className="w-4 h-4" />
                   {lang.answer}
                 </h4>
-                <div className="text-sm lg:text-base font-black text-zinc-900 leading-relaxed border-l-4 border-black pl-5 py-2 break-words">
+                <div className="text-sm sm:text-base font-bold text-zinc-900 leading-relaxed border-l-4 border-black pl-5 py-2">
                   {insight.answer}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="bg-zinc-50 p-5 lg:p-7 rounded-sm border border-zinc-100 shadow-inner">
-                  <h4 className="text-[10px] lg:text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3">{lang.risk}</h4>
-                  <Badge className={cn("text-[10px] lg:text-[11px] font-black py-1.5 px-4 border-none uppercase tracking-widest", getRiskColor(insight.riskLevel))}>
+                <div className="bg-zinc-50 p-6 rounded-md border border-zinc-100 shadow-inner">
+                  <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">{lang.risk}</h4>
+                  <Badge className={cn("text-xs font-bold py-1.5 px-4 border-none uppercase tracking-widest", getRiskColor(insight.riskLevel))}>
                     {insight.riskLevel}
                   </Badge>
                 </div>
-                <div className="bg-zinc-50 p-5 lg:p-7 rounded-sm border border-zinc-100 shadow-inner">
+                <div className="bg-zinc-50 p-6 rounded-md border border-zinc-100 shadow-inner">
                   <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-[10px] lg:text-[11px] font-black text-zinc-400 uppercase tracking-widest">{lang.diversification}</h4>
-                    <span className="text-[11px] font-black text-black">{insight.diversificationScore}%</span>
+                    <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{lang.diversification}</h4>
+                    <span className="text-xs font-bold text-black">{insight.diversificationScore}%</span>
                   </div>
                   <Progress value={insight.diversificationScore} className="h-2 bg-zinc-200 [&>div]:bg-black" />
                 </div>
@@ -230,27 +229,27 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
 
             <div className="xl:col-span-7 space-y-10">
               <div className="space-y-4">
-                <h4 className="text-[10px] lg:text-[11px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4" />
                   {lang.analysis}
                 </h4>
-                <p className="text-xs sm:text-sm lg:text-base font-bold text-zinc-600 leading-loose break-words">
+                <p className="text-sm sm:text-base font-medium text-zinc-600 leading-loose">
                   {insight.analysis}
                 </p>
               </div>
 
               <div className="space-y-5">
-                <h4 className="text-[10px] lg:text-[11px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
                   <TrendingUp className="w-4 h-4" />
                   {lang.recommendations}
                 </h4>
-                <div className="grid gap-3 lg:gap-4">
+                <div className="grid gap-3">
                   {insight.recommendations.map((rec: string, i: number) => (
-                    <div key={i} className="flex items-start sm:items-center gap-4 p-4 lg:p-5 bg-zinc-50 border border-zinc-100 rounded-sm hover:border-black transition-all group shadow-sm">
-                      <div className="w-6 h-6 lg:w-7 lg:h-7 rounded-sm bg-black text-white flex items-center justify-center shrink-0 font-black text-[10px] lg:text-xs mt-0.5 sm:mt-0 group-hover:scale-110 transition-transform">
+                    <div key={i} className="flex items-center gap-4 p-4 bg-zinc-50 border border-zinc-100 rounded-md hover:border-black transition-all group shadow-sm">
+                      <div className="w-6 h-6 rounded bg-black text-white flex items-center justify-center shrink-0 font-bold text-xs group-hover:scale-110 transition-transform">
                         {i + 1}
                       </div>
-                      <span className="text-xs lg:text-sm font-black text-zinc-700 break-words leading-tight sm:leading-normal">{rec}</span>
+                      <span className="text-sm font-bold text-zinc-700">{rec}</span>
                     </div>
                   ))}
                 </div>
@@ -258,9 +257,9 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
             </div>
           </div>
         ) : (
-          <div className="py-16 sm:py-28 lg:py-40 text-center flex flex-col items-center gap-6 opacity-30">
-            <Brain className="w-12 h-12 lg:w-20 lg:h-20" />
-            <p className="text-[11px] lg:text-sm font-black uppercase tracking-widest px-4">Initialize Gemini Intelligence Audit</p>
+          <div className="py-20 text-center flex flex-col items-center gap-6 opacity-30">
+            <Brain className="w-16 h-16" />
+            <p className="text-sm font-bold uppercase tracking-widest">點擊按鈕開始資產配置分析</p>
           </div>
         )}
       </CardContent>
