@@ -60,10 +60,9 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
     if (assets.length === 0) return;
     setLoading(true);
     
-    // Simulating Gemini API Response for Static Export compatibility
+    // Simulate AI analysis for static export compatibility
     setTimeout(() => {
       const cryptoVal = assets.filter(a => a.category === 'Crypto').reduce((sum, a) => sum + a.valueInTWD, 0);
-      const stockVal = assets.filter(a => a.category === 'Stock').reduce((sum, a) => sum + a.valueInTWD, 0);
       const cryptoRatio = cryptoVal / (totalTWD || 1);
       const score = Math.min(assets.length * 15 + 20, 100);
 

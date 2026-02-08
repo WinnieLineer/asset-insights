@@ -328,7 +328,7 @@ export default function MonochromeAssetPage() {
                         </TableCell>
                         <TableCell className="text-right"><span className="font-bold text-lg">{getCurrencySymbol(displayCurrency)}{asset.valueInDisplay.toLocaleString()}</span></TableCell>
                         <TableCell>
-                          <div className="flex items-center justify-center gap-2 transition-opacity">
+                          <div className="flex items-center justify-center gap-2">
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-black" onClick={() => startEditing(asset)}><Edit2 className="w-3.5 h-3.5" /></Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-rose-600" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); toast({ title: t.assetDeleted }); }}><Trash2 className="w-3.5 h-3.5" /></Button>
                           </div>
@@ -345,7 +345,12 @@ export default function MonochromeAssetPage() {
             <Card className="modern-card"><CardHeader className="px-8 py-5 border-b border-slate-50"><CardTitle className="text-sm font-bold flex items-center gap-2"><Plus className="w-4 h-4" />{t.addAsset}</CardTitle></CardHeader><CardContent className="p-8"><AssetForm language={language} onAdd={(a) => setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }])} /></CardContent></Card>
           </div>
         </div>
-        <AITipCard language={language} assets={assetCalculations.processedAssets} totalTWD={assetCalculations.totalTWD} />
+        <AITipCard 
+          language={language} 
+          assets={assetCalculations.processedAssets} 
+          totalTWD={assetCalculations.totalTWD} 
+          marketConditions="Stable"
+        />
       </main>
 
       <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
