@@ -22,8 +22,8 @@ import {
   Loader2,
   DollarSign,
   History,
-  ChevronRight,
-  Eye
+  Eye,
+  Tag
 } from 'lucide-react';
 import { 
   Card, 
@@ -86,7 +86,8 @@ const translations = {
     noHistory: 'No historical snapshots found.',
     snapshotDetail: 'Snapshot Details',
     snapshotDate: 'Snapshot Date',
-    details: 'Holdings at that time'
+    details: 'Holdings at that time',
+    historicalPrice: 'Snapshot Price'
   },
   zh: {
     title: 'Asset Insights Pro',
@@ -117,7 +118,8 @@ const translations = {
     noHistory: '尚無歷史快照紀錄',
     snapshotDetail: '快照詳細資訊',
     snapshotDate: '建立日期',
-    details: '當時持有部位'
+    details: '當時持有部位',
+    historicalPrice: '快照當時市價'
   }
 };
 
@@ -181,10 +183,10 @@ export default function MonochromeAssetPage() {
   const lastSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
   const getCurrencySymbol = (cur: Currency) => cur === 'USD' ? '$' : cur === 'CNY' ? '¥' : 'NT$';
 
-  const convertTWDToDisplay = (twdVal: number) => {
-    const rate = marketData.rates.TWD || 32.5;
+  const convertTWDToDisplay = (twdVal: number, ratesObj = marketData.rates) => {
+    const rate = ratesObj.TWD || 32.5;
     if (displayCurrency === 'USD') return twdVal / rate;
-    if (displayCurrency === 'CNY') return twdVal * (marketData.rates.CNY / rate);
+    if (displayCurrency === 'CNY') return twdVal * (ratesObj.CNY / rate);
     return twdVal;
   };
 
@@ -259,7 +261,11 @@ export default function MonochromeAssetPage() {
       date: new Date().toISOString(),
       totalTWD: assetCalculations.totalTWD,
       allocations: assetCalculations.processedAssets.map(a => ({ category: a.category, value: a.valueInTWD })),
-      assets: assetCalculations.processedAssets.map(a => ({ ...a, price: a.calculatedPrice, valueInTWD: a.valueInTWD }))
+      assets: assetCalculations.processedAssets.map(a => ({ 
+        ...a, 
+        price: a.priceInDisplay, // 儲存當時顯示貨幣下的單價
+        valueInTWD: a.valueInTWD 
+      }))
     };
     setSnapshots(prev => [...prev, newSnapshot]);
     toast({ title: t.snapshotSaved });
@@ -505,9 +511,21 @@ export default function MonochromeAssetPage() {
                           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{asset.symbol}</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm font-bold">{getCurrencySymbol(displayCurrency)}{convertTWDToDisplay(asset.valueInTWD || 0).toLocaleString()}</div>
-                        <div className="text-[10px] font-bold text-slate-400">{asset.amount} units</div>
+                      <div className="flex items-center gap-10">
+                        <div className="text-right">
+                          <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                            <Tag className="w-2.5 h-2.5" />
+                            {t.historicalPrice}
+                          </div>
+                          <div className="text-xs font-bold">
+                            {getCurrencySymbol(displayCurrency)}
+                            {asset.price?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                          </div>
+                        </div>
+                        <div className="text-right min-w-[100px]">
+                          <div className="text-sm font-bold">{getCurrencySymbol(displayCurrency)}{convertTWDToDisplay(asset.valueInTWD || 0).toLocaleString()}</div>
+                          <div className="text-[10px] font-bold text-slate-400">{asset.amount} units</div>
+                        </div>
                       </div>
                     </div>
                   ))}

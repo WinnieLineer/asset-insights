@@ -23,7 +23,7 @@ export interface Snapshot {
     category: AssetCategory;
     value: number;
   }[];
-  assets?: Asset[]; // 儲存當時的詳細資產清單
+  assets: Asset[]; // 確保每個快照都存有一份當時的詳細資產清單
 }
 
 export interface MarketData {
