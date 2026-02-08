@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -5,7 +6,7 @@ import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Sector,
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend,
 } from 'recharts';
-import { AssetCategory } from '@/app/lib/types';
+import { AssetCategory, Currency } from '@/app/lib/types';
 
 // Monochrome colors for the charts - Professional Greyscale
 const COLORS = [
@@ -69,12 +70,21 @@ const renderActiveShape = (props: any) => {
 export function PortfolioCharts({ allocationData, historicalData, displayCurrency, rates, language }: any) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const lang = t[language as keyof typeof t] || t.zh;
-  const symbol = displayCurrency === 'USD' ? '$' : displayCurrency === 'CNY' ? '¥' : 'NT$';
+  
+  const symbol = useMemo(() => {
+    switch(displayCurrency) {
+      case 'USD': return '$';
+      case 'CNY': return '¥';
+      case 'SGD': return 'S$';
+      default: return 'NT$';
+    }
+  }, [displayCurrency]);
   
   const convert = (val: number) => {
     const rate = rates.TWD || 32.5;
     if (displayCurrency === 'USD') return val / rate;
     if (displayCurrency === 'CNY') return val * (rates.CNY / rate);
+    if (displayCurrency === 'SGD') return val * (rates.SGD / rate);
     return val;
   };
 

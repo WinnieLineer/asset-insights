@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -138,7 +139,7 @@ export default function MonochromeAssetPage() {
   
   const [marketData, setMarketData] = useState<MarketData>({
     exchangeRate: 32.5,
-    rates: { TWD: 32.5, CNY: 7.2, USD: 1 },
+    rates: { TWD: 32.5, CNY: 7.2, USD: 1, SGD: 1.35 },
     cryptoPrices: {},
     stockPrices: {}
   });
@@ -182,12 +183,21 @@ export default function MonochromeAssetPage() {
   }, [mounted, assets.length]);
 
   const lastSnapshot = snapshots.length > 0 ? snapshots[snapshots.length - 1] : null;
-  const getCurrencySymbol = (cur: Currency) => cur === 'USD' ? '$' : cur === 'CNY' ? '¥' : 'NT$';
+  
+  const getCurrencySymbol = (cur: Currency) => {
+    switch(cur) {
+      case 'USD': return '$';
+      case 'CNY': return '¥';
+      case 'SGD': return 'S$';
+      default: return 'NT$';
+    }
+  };
 
   const convertTWDToDisplay = (twdVal: number, ratesObj = marketData.rates) => {
     const rate = ratesObj.TWD || 32.5;
     if (displayCurrency === 'USD') return twdVal / rate;
     if (displayCurrency === 'CNY') return twdVal * (ratesObj.CNY / rate);
+    if (displayCurrency === 'SGD') return twdVal * (ratesObj.SGD / rate);
     return twdVal;
   };
 
@@ -198,19 +208,22 @@ export default function MonochromeAssetPage() {
     };
     const processedAssets = assets.map(asset => {
       let currentPrice = 0; 
-      if (asset.category === 'Crypto') currentPrice = marketData.cryptoPrices[asset.symbol.toUpperCase()] || 0;
-      else if (asset.category === 'Stock') currentPrice = marketData.stockPrices[asset.symbol.toUpperCase()] || 0;
+      const sym = asset.symbol.toUpperCase();
+      if (asset.category === 'Crypto') currentPrice = marketData.cryptoPrices[sym] || 0;
+      else if (asset.category === 'Stock') currentPrice = marketData.stockPrices[sym] || 0;
       
       let valueInTWD = 0;
-      const rate = marketData.rates.TWD || 32.5;
+      const rateTWD = marketData.rates.TWD || 32.5;
       
       if (asset.currency === 'USD') {
-        const usdValue = (asset.category === 'Stock' || asset.category === 'Crypto') ? asset.amount * (currentPrice || 0) : asset.amount;
-        valueInTWD = usdValue * rate;
+        const usdValue = (asset.category === 'Stock' || asset.category === 'Crypto') ? asset.amount * currentPrice : asset.amount;
+        valueInTWD = usdValue * rateTWD;
       } else if (asset.currency === 'CNY') {
-        valueInTWD = asset.amount * (rate / (marketData.rates.CNY || 7.2));
+        valueInTWD = asset.amount * (rateTWD / (marketData.rates.CNY || 7.2));
+      } else if (asset.currency === 'SGD') {
+        valueInTWD = asset.amount * (rateTWD / (marketData.rates.SGD || 1.35));
       } else {
-        const multiplier = (asset.category === 'Stock' || asset.category === 'Crypto' ? (currentPrice || 0) : 1);
+        const multiplier = (asset.category === 'Stock' || asset.category === 'Crypto' ? currentPrice : 1);
         valueInTWD = asset.amount * (multiplier || 1);
       }
       
@@ -223,10 +236,18 @@ export default function MonochromeAssetPage() {
       
       let unitPriceInDisplay = 0;
       if (asset.category === 'Stock' || asset.category === 'Crypto') {
-        const unitValTWD = currentPrice * (asset.category === 'Crypto' || asset.currency === 'USD' ? rate : 1);
+        // unit price is in asset's native currency (USD for crypto/US stocks, TWD for TW stocks, SGD for SI stocks)
+        let unitValTWD = 0;
+        if (asset.category === 'Crypto' || asset.currency === 'USD') unitValTWD = currentPrice * rateTWD;
+        else if (asset.currency === 'SGD') unitValTWD = currentPrice * (rateTWD / (marketData.rates.SGD || 1.35));
+        else unitValTWD = currentPrice;
+
         unitPriceInDisplay = convertTWDToDisplay(unitValTWD);
       } else {
-        const unitValTWD = asset.currency === 'USD' ? rate : (asset.currency === 'CNY' ? (rate/marketData.rates.CNY) : 1);
+        let unitValTWD = 1;
+        if (asset.currency === 'USD') unitValTWD = rateTWD;
+        else if (asset.currency === 'CNY') unitValTWD = (rateTWD / marketData.rates.CNY);
+        else if (asset.currency === 'SGD') unitValTWD = (rateTWD / marketData.rates.SGD);
         unitPriceInDisplay = convertTWDToDisplay(unitValTWD);
       }
 
@@ -319,6 +340,7 @@ export default function MonochromeAssetPage() {
               <TabsList className="h-8 sm:h-9 lg:h-10 bg-slate-100">
                 <TabsTrigger value="TWD" className="text-[10px] sm:text-[11px] lg:text-xs px-2 sm:px-3 font-bold uppercase">TWD</TabsTrigger>
                 <TabsTrigger value="USD" className="text-[10px] sm:text-[11px] lg:text-xs px-2 sm:px-3 font-bold uppercase">USD</TabsTrigger>
+                <TabsTrigger value="SGD" className="text-[10px] sm:text-[11px] lg:text-xs px-2 sm:px-3 font-bold uppercase">SGD</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -333,7 +355,7 @@ export default function MonochromeAssetPage() {
                 <Globe className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                 {t.totalValue}
               </div>
-              <div className="text-3xl sm:text-5xl lg:text-5xl xl:text-6xl font-black tracking-tighter flex items-baseline flex-wrap gap-2">
+              <div className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter flex items-baseline flex-wrap gap-2">
                 <span className="shrink-0">{getCurrencySymbol(displayCurrency)}</span>
                 <span className="break-all">{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                 {loading && <Loader2 className="w-5 h-5 lg:w-8 lg:h-8 animate-spin text-slate-300 ml-2" />}

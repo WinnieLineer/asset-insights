@@ -1,5 +1,5 @@
 
-export type Currency = 'TWD' | 'USD' | 'CNY';
+export type Currency = 'TWD' | 'USD' | 'CNY' | 'SGD';
 
 export type AssetCategory = 'Stock' | 'Crypto' | 'Bank' | 'Fixed Deposit' | 'Savings';
 
@@ -32,6 +32,7 @@ export interface MarketData {
     TWD: number;
     CNY: number;
     USD: number;
+    SGD: number;
   };
   cryptoPrices: Record<string, number>; // symbol to USD price
   stockPrices: Record<string, number>; // symbol to USD price

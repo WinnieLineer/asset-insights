@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useMemo } from 'react';
@@ -28,7 +29,7 @@ const t = {
     name: 'Asset Name',
     namePlaceholder: 'e.g., My Stocks Account',
     symbol: 'Symbol',
-    symbolPlaceholder: 'BTC, AAPL, 2330',
+    symbolPlaceholder: 'BTC, AAPL, 2330, D05.SI',
     category: 'Category',
     currency: 'Currency',
     amount: 'Amount',
@@ -49,8 +50,8 @@ const t = {
   zh: {
     name: '資產名稱',
     namePlaceholder: '例如：台股證券帳戶',
-    symbol: '代號 (如: BTC, 2330)',
-    symbolPlaceholder: 'BTC, AAPL, 2330',
+    symbol: '代號 (如: BTC, 2330, D05.SI)',
+    symbolPlaceholder: 'BTC, AAPL, 2330, D05.SI',
     category: '資產類別',
     currency: '持有幣別',
     amount: '持有數量',
@@ -83,7 +84,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     symbol: z.string().optional(),
     category: z.enum(['Stock', 'Crypto', 'Bank', 'Fixed Deposit', 'Savings']),
     amount: z.number({ invalid_type_error: lang.errors.invalidAmount }).min(0, { message: lang.errors.invalidAmount }),
-    currency: z.enum(['TWD', 'USD', 'CNY']),
+    currency: z.enum(['TWD', 'USD', 'CNY', 'SGD']),
   }), [lang]);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -96,9 +97,13 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   
   useEffect(() => {
     if (category === 'Stock') {
-      if (/^\d+$/.test(symbol || '')) form.setValue('currency', 'TWD');
-      else if (symbol) form.setValue('currency', 'USD');
-    } else if (category === 'Crypto') form.setValue('currency', 'USD');
+      const sym = (symbol || '').toUpperCase();
+      if (/^\d+$/.test(sym)) form.setValue('currency', 'TWD');
+      else if (sym.endsWith('.SI')) form.setValue('currency', 'SGD');
+      else if (sym) form.setValue('currency', 'USD');
+    } else if (category === 'Crypto') {
+      form.setValue('currency', 'USD');
+    }
   }, [category, symbol, form]);
 
   return (
@@ -160,6 +165,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                   <SelectItem value="TWD" className="text-xs">TWD</SelectItem>
                   <SelectItem value="USD" className="text-xs">USD</SelectItem>
                   <SelectItem value="CNY" className="text-xs">CNY</SelectItem>
+                  <SelectItem value="SGD" className="text-xs">SGD</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
