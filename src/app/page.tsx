@@ -105,7 +105,8 @@ const translations = {
     endDate: 'Closed',
     reorderMode: 'Layout Mode',
     exitReorder: 'Save Layout',
-    longPressTip: 'Long press space to adjust layout',
+    movedToClosed: 'Asset moved to historical records.',
+    movedToClosedDesc: 'The end date is active. Position moved to history.',
     categoryNames: {
       Stock: 'Equity',
       Crypto: 'Crypto',
@@ -147,7 +148,8 @@ const translations = {
     endDate: '結清日期',
     reorderMode: '佈局自由調整模式',
     exitReorder: '儲存目前佈局',
-    longPressTip: '長按背景區域以解除鎖定並自由調整位置與寬度',
+    movedToClosed: '資產已移至歷史結清',
+    movedToClosedDesc: '該部位結清日期已生效，已移動至歷史分頁。',
     categoryNames: {
       Stock: '股票',
       Crypto: '加密貨幣',
@@ -256,6 +258,7 @@ export default function AssetInsightsPage() {
     const rateTWD = marketData.rates.TWD || 32.5;
     const displayRate = marketData.rates[displayCurrency] || 1;
     const today = new Date().getTime();
+    const todayStr = new Date().toISOString().split('T')[0];
 
     const processedAssets = assets.map(asset => {
       const marketInfo = marketData.assetMarketPrices[asset.id];
@@ -269,7 +272,7 @@ export default function AssetInsightsPage() {
       let dayChangePercent = 0;
 
       // Check if the position is currently active
-      const isClosed = asset.endDate ? new Date(asset.endDate).getTime() <= today : false;
+      const isClosed = asset.endDate ? asset.endDate <= todayStr : false;
 
       if (!isClosed) {
         if (asset.category === 'Stock' || asset.category === 'Crypto') {
@@ -314,6 +317,7 @@ export default function AssetInsightsPage() {
     const lastKnownPrices: Record<string, number> = {};
     const chartData = marketTimeline.map((point: any) => {
       const pointTime = point.timestamp * 1000;
+      const pointDateStr = new Date(pointTime).toISOString().split('T')[0];
       const item: any = {
         date: new Date(pointTime).toISOString(),
         displayDate: new Date(pointTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
@@ -324,10 +328,10 @@ export default function AssetInsightsPage() {
 
       processedAssets.forEach(asset => {
         const acqTime = new Date(asset.acquisitionDate).getTime();
-        const endTime = asset.endDate ? new Date(asset.endDate).getTime() : Infinity;
+        const endTimeStr = asset.endDate || '9999-12-31';
         
         // Asset only exists in the timeline during its held period
-        if (pointTime < acqTime || pointTime > endTime) return; 
+        if (pointTime < acqTime || pointDateStr > endTimeStr) return; 
 
         let priceAtT = point.assets[asset.id];
         if (priceAtT === undefined) priceAtT = lastKnownPrices[asset.id];
@@ -384,15 +388,27 @@ export default function AssetInsightsPage() {
 
   const saveEdit = () => {
     if (!editingAsset) return;
+    
+    const todayStr = new Date().toISOString().split('T')[0];
+    const isNowClosed = editEndDate && editEndDate <= todayStr;
+
     const updated = assets.map(a => a.id === editingAsset.id ? { 
       ...a, 
       amount: editAmount || 0, 
       acquisitionDate: editDate || a.acquisitionDate,
       endDate: editEndDate || undefined
     } : a);
+    
     setAssets(updated);
     setEditingAsset(null);
     updateAllData(updated);
+
+    if (isNowClosed && (!editingAsset.endDate || editingAsset.endDate > todayStr)) {
+      toast({
+        title: t.movedToClosed,
+        description: t.movedToClosedDesc,
+      });
+    }
   };
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
@@ -529,7 +545,7 @@ export default function AssetInsightsPage() {
         return wrapper(
           <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl h-full flex flex-col overflow-hidden">
             <Tabs defaultValue="active" className="w-full">
-              <CardHeader className="px-6 py-5 border-b border-slate-50 flex flex-col gap-4 sticky top-0 bg-white z-40">
+              <CardHeader className="px-6 py-5 border-b border-slate-50 flex flex-col gap-4 sticky top-[88px] xl:top-[88px] bg-white z-40 transition-all duration-300">
                 <div className="flex flex-row items-center justify-between">
                   <CardTitle className="text-xl font-black flex items-center gap-3">
                     <BarChart3 className="w-6 h-6 text-primary" />
@@ -621,7 +637,7 @@ export default function AssetInsightsPage() {
             <TableCell className="px-6 py-4">
               <div className="font-bold text-sm text-black truncate max-w-[150px]">{asset.name}</div>
               <div className="text-xs font-black text-slate-300 tracking-widest uppercase mt-1">
-                {asset.symbol || t.categoryNames[asset.category]}
+                {asset.symbol || t.categoryNames[asset.category as AssetCategory]}
               </div>
             </TableCell>
             <TableCell><span className="text-sm font-bold text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
