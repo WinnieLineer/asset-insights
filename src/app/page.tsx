@@ -193,11 +193,9 @@ export default function MonochromeAssetPage() {
       // Calculate individual unit price for display
       let unitPriceInDisplay = 0;
       if (asset.category === 'Stock' || asset.category === 'Crypto') {
-        // For stocks and crypto, we display the per-share/coin value in the selected currency
         const unitValTWD = currentPrice * (asset.category === 'Crypto' || asset.currency === 'USD' ? rate : 1);
         unitPriceInDisplay = convertTWDToDisplay(unitValTWD);
       } else {
-        // For bank/savings, unit value is essentially the exchange rate for 1 unit
         const unitValTWD = asset.currency === 'USD' ? rate : (asset.currency === 'CNY' ? (rate/marketData.rates.CNY) : 1);
         unitPriceInDisplay = convertTWDToDisplay(unitValTWD);
       }

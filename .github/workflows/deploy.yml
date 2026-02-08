@@ -3,18 +3,15 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: ["main"] # 當程式碼推送到 main 分支時觸發
+    branches: ["main"]
 
-  # 允許手動從 Actions 頁籤執行
   workflow_dispatch:
 
-# 設定權限以允許部署到 GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# 確保只有一個部署任務在執行
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -58,6 +55,8 @@ jobs:
 
       - name: Build with Next.js
         run: ${{ steps.detect-package-manager.outputs.runner }} next build
+        env:
+          NEXT_PUBLIC_GEMINI_API_KEY: ${{ secrets.NEXT_PUBLIC_GEMINI_API_KEY }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

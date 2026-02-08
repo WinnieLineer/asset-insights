@@ -18,12 +18,11 @@ export async function fetchMarketData(symbols: { cryptos: string[]; stocks: stri
   } catch (e) {}
 
   // 2. Prepare symbols for batch request
-  // Cryptos standardized to SYMBOL-USD format for professional market data
   const formattedStocks = symbols.stocks.map(s => /^\d+$/.test(s) ? `${s}.TW` : s.toUpperCase());
   const formattedCryptos = symbols.cryptos.map(c => `${c.toUpperCase()}-USD`);
   const allSymbols = [...formattedStocks, ...formattedCryptos];
 
-  // 3. Single Batch Request for all prices
+  // 3. Single Batch Request
   if (allSymbols.length > 0) {
     try {
       const finalUrl = `${BATCH_STOCK_PROXY_URL}${encodeURIComponent(allSymbols.join(','))}`;
@@ -31,13 +30,11 @@ export async function fetchMarketData(symbols: { cryptos: string[]; stocks: stri
       if (response.ok) {
         const dataArray = await response.json();
         
-        // Parse stock prices
         symbols.stocks.forEach((s, i) => {
           const result = dataArray[i]?.chart?.result?.[0]?.meta;
           stockPrices[s.toUpperCase()] = result?.regularMarketPrice || 0;
         });
 
-        // Parse crypto prices (starting after stock symbols in the array)
         symbols.cryptos.forEach((c, i) => {
           const cryptoIndex = symbols.stocks.length + i;
           const result = dataArray[cryptoIndex]?.chart?.result?.[0]?.meta;
