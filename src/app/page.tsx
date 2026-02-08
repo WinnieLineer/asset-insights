@@ -51,7 +51,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -264,7 +264,7 @@ export default function MonochromeAssetPage() {
       allocations: assetCalculations.processedAssets.map(a => ({ category: a.category, value: a.valueInTWD })),
       assets: assetCalculations.processedAssets.map(a => ({ 
         ...a, 
-        price: a.priceInDisplay, 
+        price: (a.category === 'Stock' || a.category === 'Crypto') ? a.priceInDisplay : undefined, 
         valueInTWD: a.valueInTWD 
       }))
     };
@@ -295,8 +295,8 @@ export default function MonochromeAssetPage() {
       <header className="glass-nav h-auto min-h-20 py-4 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-full flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="w-10 h-10 lg:w-12 lg:h-12 bg-black rounded flex items-center justify-center shrink-0">
-              <Activity className="w-5 h-5 lg:w-6 lg:h-6 text-white" />
+            <div className="w-10 h-10 lg:w-12 bg-black rounded flex items-center justify-center shrink-0">
+              <Activity className="w-5 h-5 lg:w-6 text-white" />
             </div>
             <div className="min-w-0">
               <h1 className="text-base sm:text-lg lg:text-xl font-bold tracking-tight truncate">{t.title}</h1>
@@ -325,15 +325,15 @@ export default function MonochromeAssetPage() {
         </div>
       </header>
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 lg:py-16 space-y-6 sm:space-y-10 lg:space-y-14">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 lg:py-12 space-y-6 sm:space-y-10 lg:space-y-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-          <Card className="lg:col-span-8 modern-card p-6 sm:p-10 lg:p-14 relative overflow-hidden">
-            <div className="space-y-3 sm:space-y-4 lg:space-y-6 z-20 relative">
+          <Card className="lg:col-span-8 modern-card p-6 sm:p-10 lg:p-12 relative overflow-hidden">
+            <div className="space-y-3 sm:space-y-4 lg:space-y-5 z-20 relative">
               <div className="flex items-center gap-2 text-slate-400 text-[9px] sm:text-[10px] lg:text-xs font-bold uppercase tracking-widest">
                 <Globe className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                 {t.totalValue}
               </div>
-              <div className="text-3xl sm:text-5xl lg:text-7xl xl:text-8xl font-black tracking-tighter flex items-baseline flex-wrap gap-2">
+              <div className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tighter flex items-baseline flex-wrap gap-2">
                 <span className="shrink-0">{getCurrencySymbol(displayCurrency)}</span>
                 <span className="break-all">{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                 {loading && <Loader2 className="w-5 h-5 lg:w-8 lg:h-8 animate-spin text-slate-300 ml-2" />}
@@ -347,7 +347,7 @@ export default function MonochromeAssetPage() {
               )}
             </div>
             <div className="absolute -bottom-10 -right-10 opacity-[0.03] pointer-events-none z-10">
-              <Wallet className="w-48 h-48 sm:w-64 sm:h-64 lg:w-80 lg:h-80 text-black" />
+              <Wallet className="w-48 h-48 sm:w-64 sm:h-64 lg:w-72 lg:h-72 text-black" />
             </div>
           </Card>
           
@@ -355,17 +355,17 @@ export default function MonochromeAssetPage() {
             <Button 
               onClick={updateMarketData} 
               disabled={loading}
-              className="w-full min-h-[60px] lg:min-h-[80px] lg:h-full bg-slate-100 text-black hover:bg-slate-200 font-bold flex flex-row sm:flex-col items-center justify-center gap-3 rounded transition-all border border-slate-200 shadow-sm px-4"
+              className="w-full min-h-[60px] lg:min-h-[70px] lg:h-full bg-slate-100 text-black hover:bg-slate-200 font-bold flex flex-row sm:flex-col items-center justify-center gap-3 rounded transition-all border border-slate-200 shadow-sm px-4"
             >
               <RefreshCw className={cn("w-5 h-5 lg:w-6 lg:h-6", loading && "animate-spin")} />
               <span className="text-[10px] sm:text-xs lg:text-sm tracking-widest uppercase">{loading ? t.fetching : t.updateData}</span>
             </Button>
             <div className="grid grid-cols-2 gap-4 h-full">
-              <Button onClick={takeSnapshot} className="h-full bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all min-h-[60px] lg:min-h-[80px]">
+              <Button onClick={takeSnapshot} className="h-full bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all min-h-[60px] lg:min-h-[70px]">
                 <Clock className="w-5 h-5 lg:w-6 lg:h-6" />
                 <span className="text-[9px] sm:text-[10px] lg:text-xs tracking-widest uppercase">{t.takeSnapshot}</span>
               </Button>
-              <Button variant="outline" onClick={() => setShowHistory(true)} className="h-full font-bold flex flex-col items-center justify-center gap-2 rounded transition-all border-slate-200 min-h-[60px] lg:min-h-[80px]">
+              <Button variant="outline" onClick={() => setShowHistory(true)} className="h-full font-bold flex flex-col items-center justify-center gap-2 rounded transition-all border-slate-200 min-h-[60px] lg:min-h-[70px]">
                 <History className="w-5 h-5 lg:w-6 lg:h-6" />
                 <span className="text-[9px] sm:text-[10px] lg:text-xs tracking-widest uppercase">{t.history}</span>
               </Button>
@@ -373,8 +373,8 @@ export default function MonochromeAssetPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-8 lg:gap-12">
-          <div className="xl:col-span-8 space-y-6 sm:space-y-8 lg:space-y-12">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-8 lg:gap-10">
+          <div className="xl:col-span-8 space-y-6 sm:space-y-8 lg:space-y-10">
             <Card className="modern-card overflow-hidden">
               <CardHeader className="px-4 sm:px-8 lg:px-10 py-4 sm:py-5 lg:py-6 border-b border-slate-50 bg-white">
                 <CardTitle className="text-sm lg:text-base font-bold flex items-center gap-2">
@@ -428,7 +428,7 @@ export default function MonochromeAssetPage() {
                             {loading && (asset.category === 'Stock' || asset.category === 'Crypto') ? (
                               <Skeleton className="ml-auto h-5 sm:h-7 lg:h-8 w-24 sm:w-32 lg:w-40" />
                             ) : (
-                              <span className="font-bold text-sm sm:text-lg lg:text-xl xl:text-2xl whitespace-nowrap">{getCurrencySymbol(displayCurrency)}{asset.valueInDisplay.toLocaleString()}</span>
+                              <span className="font-bold text-sm sm:text-base lg:text-lg xl:text-xl whitespace-nowrap">{getCurrencySymbol(displayCurrency)}{asset.valueInDisplay.toLocaleString()}</span>
                             )}
                           </TableCell>
                           <TableCell>
@@ -446,7 +446,7 @@ export default function MonochromeAssetPage() {
             </Card>
             <PortfolioCharts language={language} allocationData={assetCalculations.allocationData} historicalData={snapshots} displayCurrency={displayCurrency} rates={marketData.rates} />
           </div>
-          <div className="xl:col-span-4 space-y-6 sm:space-y-8 lg:space-y-12">
+          <div className="xl:col-span-4 space-y-6 sm:space-y-8 lg:space-y-10">
             <Card className="modern-card">
               <CardHeader className="px-6 sm:px-8 lg:px-10 py-4 sm:py-5 lg:py-6 border-b border-slate-50">
                 <CardTitle className="text-sm lg:text-base font-bold flex items-center gap-2">
@@ -550,7 +550,7 @@ export default function MonochromeAssetPage() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-6 sm:gap-10 lg:gap-14 w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0">
-                        {(asset.category === 'Stock' || asset.category === 'Crypto') && (
+                        {asset.price !== undefined && (
                           <div className="text-left sm:text-right">
                             <div className="text-[8px] sm:text-[9px] lg:text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
                               <Tag className="w-2.5 h-2.5 lg:w-3 lg:h-3" />
