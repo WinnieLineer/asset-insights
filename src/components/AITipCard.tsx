@@ -60,7 +60,6 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
     if (assets.length === 0) return;
     setLoading(true);
     
-    // Simulate AI analysis for static export compatibility
     setTimeout(() => {
       const cryptoVal = assets.filter(a => a.category === 'Crypto').reduce((sum, a) => sum + a.valueInTWD, 0);
       const cryptoRatio = cryptoVal / (totalTWD || 1);
