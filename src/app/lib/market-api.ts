@@ -18,7 +18,7 @@ export async function fetchMarketData(symbols: { cryptos: string[]; stocks: stri
   } catch (e) {}
 
   // 2. Prepare symbols for batch request
-  // Cryptos use <SYMBOL>-USD, Stocks use <SYMBOL>.TW if numeric
+  // Cryptos standardized to SYMBOL-USD format
   const formattedStocks = symbols.stocks.map(s => /^\d+$/.test(s) ? `${s}.TW` : s.toUpperCase());
   const formattedCryptos = symbols.cryptos.map(c => `${c.toUpperCase()}-USD`);
   const allSymbols = [...formattedStocks, ...formattedCryptos];

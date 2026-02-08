@@ -11,11 +11,6 @@ export const metadata: Metadata = {
       { url: 'favicon.ico', rel: 'shortcut icon' }
     ],
   },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Asset Insights',
-  },
 };
 
 export const viewport: Viewport = {
