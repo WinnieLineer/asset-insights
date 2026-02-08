@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Asset, MarketData, AssetCategory, Currency, Snapshot } from './lib/types';
+import { Asset, MarketData, AssetCategory, Currency } from './lib/types';
 import { fetchMarketData } from '@/app/lib/market-api';
 import { AssetForm } from '@/components/AssetForm';
 import { PortfolioCharts } from '@/components/PortfolioCharts';
@@ -19,8 +19,6 @@ import {
   Calendar,
   ArrowRightLeft,
   Clock,
-  Camera,
-  History,
   TrendingUp,
   TrendingDown
 } from 'lucide-react';
@@ -93,12 +91,8 @@ const translations = {
     int1d: 'Daily',
     int1wk: 'Weekly',
     int1mo: 'Monthly',
-    takeSnapshot: 'Capture Snapshot',
-    historicalSnapshots: 'Snapshot Records',
     assetDeleted: 'Asset removed.',
     dataUpdated: 'Market data synced.',
-    snapshotTaken: 'Snapshot captured.',
-    snapshotDeleted: 'Snapshot removed.',
     acqDate: 'Hold Since',
     categoryNames: {
       Stock: 'Stock',
@@ -133,12 +127,8 @@ const translations = {
     int1d: '日線',
     int1wk: '週線',
     int1mo: '月線',
-    takeSnapshot: '捕捉當前快照',
-    historicalSnapshots: '歷史快照記錄',
     assetDeleted: '資產已移除',
     dataUpdated: '市場數據已更新',
-    snapshotTaken: '已成功捕捉當前快照',
-    snapshotDeleted: '快照已刪除',
     acqDate: '持有日期',
     categoryNames: {
       Stock: '股票',
@@ -154,7 +144,6 @@ export default function AssetInsightsPage() {
   const [mounted, setMounted] = useState(false);
   const [language, setLanguage] = useState<'en' | 'zh'>('zh');
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editAmount, setEditAmount] = useState<number>(0);
@@ -194,12 +183,10 @@ export default function AssetInsightsPage() {
   useEffect(() => {
     setMounted(true);
     const savedAssets = localStorage.getItem('assets');
-    const savedSnapshots = localStorage.getItem('portfolio_snapshots');
     if (savedAssets) {
       const parsed = JSON.parse(savedAssets);
       setAssets(parsed);
     }
-    if (savedSnapshots) setSnapshots(JSON.parse(savedSnapshots));
   }, []);
 
   useEffect(() => {
@@ -211,9 +198,8 @@ export default function AssetInsightsPage() {
   useEffect(() => {
     if (mounted) {
       localStorage.setItem('assets', JSON.stringify(assets));
-      localStorage.setItem('portfolio_snapshots', JSON.stringify(snapshots));
     }
-  }, [assets, snapshots, mounted]);
+  }, [assets, mounted]);
 
   const getCurrencySymbol = (cur: Currency) => CURRENCY_SYMBOLS[cur] || 'NT$';
 
@@ -240,10 +226,7 @@ export default function AssetInsightsPage() {
 
       if (asset.category === 'Stock' || asset.category === 'Crypto') {
         valueInTWD = asset.amount * priceInTWD;
-        // Calculate change compared to last close (from timeline if available, or simplified)
-        // For simplicity, we can just show price info if we have previous data in fetchMarketData
-        // Let's assume marketData could provide this, but here we'll use a placeholder or derived change
-        dayChangeInTWD = 0; // Placeholder: In a real app, the API would return change
+        dayChangeInTWD = 0; // Placeholder
       } else {
         const assetCurrencyRate = marketData.rates[asset.currency] || 1;
         valueInTWD = asset.amount * (rateTWD / assetCurrencyRate);
@@ -287,7 +270,7 @@ export default function AssetInsightsPage() {
 
       processedAssets.forEach(asset => {
         const acqTime = new Date(asset.acquisitionDate).getTime();
-        if (pointTime < acqTime) return; // Only count after acquisition
+        if (pointTime < acqTime) return; 
 
         let priceAtT = point.assets[asset.id];
         if (priceAtT === undefined) priceAtT = lastKnownPrices[asset.id];
@@ -321,20 +304,6 @@ export default function AssetInsightsPage() {
       return item;
     });
 
-    // Add Snapshots to chart
-    snapshots.forEach(snap => {
-      const snapPoint: any = {
-        date: new Date(snap.timestamp).toISOString(),
-        displayDate: new Date(snap.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-        totalValue: snap.totalTWD * (displayRate / rateTWD),
-        isSnapshot: true
-      };
-      Object.entries(snap.categoryValues).forEach(([cat, val]) => {
-        snapPoint[cat] = val * (displayRate / rateTWD);
-      });
-      chartData.push(snapPoint);
-    });
-
     chartData.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return { 
@@ -348,26 +317,13 @@ export default function AssetInsightsPage() {
       chartData,
       allocationMap
     };
-  }, [assets, marketData, displayCurrency, marketTimeline, snapshots]);
+  }, [assets, marketData, displayCurrency, marketTimeline]);
 
   const handleAddAsset = async (newAsset: Omit<Asset, 'id'>) => {
     const assetWithId = { ...newAsset, id: crypto.randomUUID() };
     const updatedAssets = [...assets, assetWithId];
     setAssets(updatedAssets);
-    // Automatically fetch data for new assets
     await updateAllData(updatedAssets);
-  };
-
-  const takeSnapshot = () => {
-    const newSnapshot: Snapshot = {
-      id: crypto.randomUUID(),
-      timestamp: Date.now(),
-      totalTWD: assetCalculations.totalTWD,
-      displayDate: new Date().toLocaleDateString(),
-      categoryValues: { ...assetCalculations.allocationMap }
-    };
-    setSnapshots(prev => [newSnapshot, ...prev]);
-    toast({ title: t.snapshotTaken });
   };
 
   const saveEdit = () => {
@@ -446,21 +402,14 @@ export default function AssetInsightsPage() {
             </div>
           </Card>
           
-          <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+          <div className="lg:col-span-3">
             <Button 
               onClick={() => updateAllData(assets)} 
               disabled={loading}
-              className="w-full h-full min-h-[70px] bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all shadow-lg active:scale-95 px-6"
+              className="w-full h-full min-h-[120px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-3 rounded transition-all shadow-lg active:scale-95 px-6"
             >
-              <RefreshCw className={cn("w-6 h-6", loading && "animate-spin")} />
+              <RefreshCw className={cn("w-8 h-8", loading && "animate-spin")} />
               <span className="text-sm tracking-widest uppercase">{loading ? t.fetching : t.syncMarket}</span>
-            </Button>
-            <Button 
-              onClick={takeSnapshot}
-              className="w-full h-full min-h-[70px] bg-white text-black border-2 border-slate-100 hover:bg-slate-50 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all shadow-sm active:scale-95 px-6"
-            >
-              <Camera className="w-6 h-6" />
-              <span className="text-sm tracking-widest uppercase">{t.takeSnapshot}</span>
             </Button>
           </div>
         </div>
@@ -584,46 +533,6 @@ export default function AssetInsightsPage() {
               rates={marketData.rates} 
               loading={loading}
             />
-
-            {snapshots.length > 0 && (
-              <Card className="modern-card overflow-hidden bg-white shadow-lg border-slate-100 mt-10">
-                <CardHeader className="px-6 py-5 border-b border-slate-50 flex flex-row items-center justify-between">
-                  <CardTitle className="text-xl font-black flex items-center gap-3">
-                    <History className="w-6 h-6" />
-                    {t.historicalSnapshots}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="w-full overflow-auto">
-                    <Table>
-                      <TableHeader className="bg-slate-50/50">
-                        <TableRow>
-                          <TableHead className="px-6 h-12 text-sm font-bold text-slate-400 uppercase tracking-widest">{t.baseDate}</TableHead>
-                          <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest text-right">{t.totalValue}</TableHead>
-                          <TableHead className="w-[80px]"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {snapshots.map(snap => (
-                          <TableRow key={snap.id} className="group border-slate-50">
-                            <TableCell className="px-6 py-4 font-bold text-base">{snap.displayDate}</TableCell>
-                            <TableCell className="text-right font-bold text-lg text-black">
-                              <span className="text-slate-300 text-sm mr-1">{getCurrencySymbol(displayCurrency)}</span>
-                              {(snap.totalTWD * (marketData.rates[displayCurrency] / marketData.rates.TWD)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                            </TableCell>
-                            <TableCell>
-                              <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-200 hover:text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => { setSnapshots(prev => prev.filter(s => s.id !== snap.id)); toast({ title: t.snapshotDeleted }); }}>
-                                <Trash2 className="w-5 h-5" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
           
           <div className="xl:col-span-3">

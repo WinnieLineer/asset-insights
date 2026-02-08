@@ -14,14 +14,6 @@ export interface Asset {
   valueInTWD?: number;
 }
 
-export interface Snapshot {
-  id: string;
-  timestamp: number;
-  totalTWD: number;
-  displayDate: string;
-  categoryValues: Record<AssetCategory, number>;
-}
-
 export interface MarketData {
   exchangeRate: number; // 1 USD to TWD
   rates: {
