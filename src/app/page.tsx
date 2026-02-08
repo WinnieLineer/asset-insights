@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -331,14 +330,13 @@ export default function AssetInsightsPage() {
       };
     });
 
-    const chartData = marketTimeline.map((point: any) => {
+    // --- 歷史數據去重與優化：確保日線一天畫一次，且排除 0 價值點 ---
+    const historyMap = new Map();
+    marketTimeline.forEach((point: any) => {
       const pointTime = point.timestamp * 1000;
-      const pointDateStr = new Date(pointTime).toISOString().split('T')[0];
-      const item: any = {
-        date: new Date(pointTime).toISOString(),
-        displayDate: new Date(pointTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-      };
-      
+      const dateKey = new Date(pointTime).toISOString().split('T')[0];
+      const pointDateStr = dateKey;
+
       let pointTotalTWD = 0;
       const categories: Record<AssetCategory, number> = { 'Stock': 0, 'Crypto': 0, 'Bank': 0, 'Savings': 0 };
 
@@ -369,13 +367,23 @@ export default function AssetInsightsPage() {
         categories[asset.category] += valInTWD;
       });
 
-      item.totalValue = pointTotalTWD * (displayRate / rateTWD);
-      Object.entries(categories).forEach(([cat, val]) => {
-        item[cat] = val * (displayRate / rateTWD);
-      });
+      if (pointTotalTWD > 0) {
+        const item = {
+          date: new Date(pointTime).toISOString(),
+          displayDate: new Date(pointTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+          totalValue: pointTotalTWD * (displayRate / rateTWD),
+          timestamp: point.timestamp
+        };
+        Object.entries(categories).forEach(([cat, val]) => {
+          item[cat as keyof typeof item] = (val * (displayRate / rateTWD)) as any;
+        });
+        
+        // 如果是日線或更長，相同日期只保留最新的一個數據點
+        historyMap.set(dateKey, item);
+      }
+    });
 
-      return item;
-    }).filter(point => point.totalValue > 0); // 核心修正：排除無價格數據（休市日）的點
+    const chartData = Array.from(historyMap.values()).sort((a, b) => a.timestamp - b.timestamp);
 
     return { 
       processedAssets, 
@@ -531,7 +539,7 @@ export default function AssetInsightsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
             <Card className="lg:col-span-9 modern-card p-6 xl:p-8 relative overflow-hidden bg-white shadow-xl border-slate-100 h-full">
               <div className="space-y-4 z-20 relative">
-                <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest">
+                <div className="flex items-center gap-2 text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest">
                   <Globe className="w-4 h-4 xl:w-5 xl:h-5" />
                   {t.totalValue}
                 </div>
@@ -607,7 +615,7 @@ export default function AssetInsightsPage() {
             <Tabs defaultValue="active" className="w-full flex flex-col">
               <CardHeader className="px-4 xl:px-6 py-3 xl:py-4 border-b border-slate-50">
                 <div className="flex flex-row items-center justify-between mb-3 xl:mb-4">
-                  <CardTitle className="text-base xl:text-lg font-black flex items-center gap-2 xl:gap-3">
+                  <CardTitle className="text-base xl:text-lg font-black tracking-tighter uppercase flex items-center gap-2 xl:gap-3">
                     <BarChart3 className="w-4 h-4 xl:w-5 xl:h-5 text-primary" />
                     {t.dashboard}
                   </CardTitle>

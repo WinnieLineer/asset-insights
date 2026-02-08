@@ -56,7 +56,7 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, 
   const sy = cy + (outerRadius + 8) * sin;
   const mx = cx + labelRadius * cos;
   const my = cy + labelRadius * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 35; // 拉長一點避免吃字
+  const ex = mx + (cos >= 0 ? 1 : -1) * 35; 
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
@@ -111,8 +111,8 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full items-stretch">
       <div className="lg:col-span-4 modern-card p-10 flex flex-col items-center border-slate-100 bg-white relative shadow-xl rounded-2xl overflow-hidden h-full">
         <div className="w-full mb-6">
-          <h3 className="text-xs font-black text-black uppercase tracking-[0.2em]">{lang.allocation}</h3>
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em] mt-2">資產權重外部標註導引</p>
+          <h3 className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest">{lang.allocation}</h3>
+          <p className="text-[10px] xl:text-xs text-slate-200 font-bold uppercase tracking-widest mt-1">資產權重分佈導引</p>
         </div>
         
         <div className="h-[380px] w-full relative">
@@ -178,8 +178,8 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
 
       <div className="lg:col-span-8 modern-card p-10 flex flex-col border-slate-100 bg-white relative shadow-xl rounded-2xl h-full">
         <div className="w-full mb-6">
-          <h3 className="text-xs font-black text-black uppercase tracking-[0.2em]">{lang.trend}</h3>
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-[0.2em] mt-2">歷史累積價值演變軸</p>
+          <h3 className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest">{lang.trend}</h3>
+          <p className="text-[10px] xl:text-xs text-slate-200 font-bold uppercase tracking-widest mt-1">每日累積價值演變軸</p>
         </div>
 
         <div className="h-[400px] w-full">
