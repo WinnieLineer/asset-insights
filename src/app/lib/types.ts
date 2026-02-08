@@ -10,6 +10,7 @@ export interface Asset {
   category: AssetCategory;
   amount: number;
   currency: Currency;
+  acquisitionDate: string; // 持有日期 (YYYY-MM-DD)
   price?: number; // 當前單價 (持有幣別)
   valueInTWD?: number; // 換算後的台幣價值
 }

@@ -33,6 +33,7 @@ const t = {
     category: 'Category',
     currency: 'Base Currency',
     amount: 'Quantity / Balance',
+    date: 'Acquisition Date',
     submit: 'Add to Portfolio',
     categories: {
       Stock: 'Equity (Stock)',
@@ -55,6 +56,7 @@ const t = {
     category: '資產類別',
     currency: '持有幣別',
     amount: '持有數量 / 金額',
+    date: '持有日期',
     submit: '新增部位',
     categories: {
       Stock: '股票資產 (Stock)',
@@ -85,6 +87,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     category: z.enum(['Stock', 'Crypto', 'Bank', 'Savings']),
     amount: z.number({ invalid_type_error: lang.errors.invalidAmount }).min(0, { message: lang.errors.invalidAmount }),
     currency: z.enum(['TWD', 'USD', 'CNY', 'SGD']),
+    acquisitionDate: z.string().min(1, { message: lang.errors.required }),
   }).refine((data) => {
     if ((data.category === 'Stock' || data.category === 'Crypto') && (!data.symbol || data.symbol.trim() === '')) {
       return false;
@@ -95,9 +98,18 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     path: ['symbol'],
   }), [lang]);
 
+  const today = new Date().toISOString().split('T')[0];
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: '', symbol: '', category: 'Stock', amount: 0, currency: 'TWD' },
+    defaultValues: { 
+      name: '', 
+      symbol: '', 
+      category: 'Stock', 
+      amount: 0, 
+      currency: 'TWD',
+      acquisitionDate: today
+    },
   });
 
   const category = form.watch('category');
@@ -117,44 +129,44 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit((v) => { onAdd(v as Omit<Asset, 'id'>); form.reset(); })} className="space-y-5">
+      <form onSubmit={form.handleSubmit((v) => { onAdd(v as Omit<Asset, 'id'>); form.reset({ ...form.getValues(), name: '', symbol: '', amount: 0 }); })} className="space-y-4">
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">{lang.name}</FormLabel>
+            <FormLabel className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{lang.name}</FormLabel>
             <FormControl>
-              <Input placeholder={lang.namePlaceholder} {...field} className="bg-slate-50 border-slate-200 rounded-md h-12 text-sm lg:text-base font-bold px-4" />
+              <Input placeholder={lang.namePlaceholder} {...field} className="bg-slate-50 border-slate-200 h-10 text-sm font-medium" />
             </FormControl>
-            <FormMessage className="text-[10px] text-rose-500 font-bold" />
+            <FormMessage className="text-xs" />
           </FormItem>
         )} />
         
         {hasTicker && (
           <FormField control={form.control} name="symbol" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">{lang.symbol}</FormLabel>
+              <FormLabel className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{lang.symbol}</FormLabel>
               <FormControl>
-                <Input placeholder={lang.symbolPlaceholder} {...field} className="bg-slate-50 border-slate-200 rounded-md h-12 text-sm lg:text-base font-black uppercase px-4 tracking-wider" />
+                <Input placeholder={lang.symbolPlaceholder} {...field} className="bg-slate-50 border-slate-200 h-10 text-sm font-bold uppercase tracking-wider" />
               </FormControl>
-              <FormMessage className="text-[10px] text-rose-500 font-bold" />
+              <FormMessage className="text-xs" />
             </FormItem>
           )} />
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <FormField control={form.control} name="category" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">{lang.category}</FormLabel>
+              <FormLabel className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{lang.category}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger className="h-11 bg-slate-50 border-slate-200 rounded-md text-xs lg:text-sm font-bold">
+                  <SelectTrigger className="h-10 bg-slate-50 border-slate-200 text-sm font-medium">
                     <SelectValue />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="rounded-lg shadow-xl">
-                  <SelectItem value="Stock" className="text-xs lg:text-sm font-bold">{lang.categories.Stock}</SelectItem>
-                  <SelectItem value="Crypto" className="text-xs lg:text-sm font-bold">{lang.categories.Crypto}</SelectItem>
-                  <SelectItem value="Savings" className="text-xs lg:text-sm font-bold">{lang.categories.Savings}</SelectItem>
-                  <SelectItem value="Bank" className="text-xs lg:text-sm font-bold">{lang.categories.Bank}</SelectItem>
+                <SelectContent>
+                  <SelectItem value="Stock" className="text-sm">{lang.categories.Stock}</SelectItem>
+                  <SelectItem value="Crypto" className="text-sm">{lang.categories.Crypto}</SelectItem>
+                  <SelectItem value="Savings" className="text-sm">{lang.categories.Savings}</SelectItem>
+                  <SelectItem value="Bank" className="text-sm">{lang.categories.Bank}</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
@@ -162,35 +174,47 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
           
           <FormField control={form.control} name="currency" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">{lang.currency}</FormLabel>
+              <FormLabel className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{lang.currency}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value} disabled={category === 'Crypto'}>
                 <FormControl>
-                  <SelectTrigger className="h-11 bg-slate-50 border-slate-200 rounded-md text-xs lg:text-sm font-bold">
+                  <SelectTrigger className="h-10 bg-slate-50 border-slate-200 text-sm font-medium">
                     <SelectValue />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="rounded-lg shadow-xl">
-                  <SelectItem value="TWD" className="text-xs lg:text-sm font-bold">TWD</SelectItem>
-                  <SelectItem value="USD" className="text-xs lg:text-sm font-bold">USD</SelectItem>
-                  <SelectItem value="CNY" className="text-xs lg:text-sm font-bold">CNY</SelectItem>
-                  <SelectItem value="SGD" className="text-xs lg:text-sm font-bold">SGD</SelectItem>
+                <SelectContent>
+                  <SelectItem value="TWD" className="text-sm">TWD</SelectItem>
+                  <SelectItem value="USD" className="text-sm">USD</SelectItem>
+                  <SelectItem value="CNY" className="text-sm">CNY</SelectItem>
+                  <SelectItem value="SGD" className="text-sm">SGD</SelectItem>
                 </SelectContent>
               </Select>
             </FormItem>
           )} />
         </div>
 
-        <FormField control={form.control} name="amount" render={({ field }) => (
-          <FormItem>
-            <FormLabel className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">{lang.amount}</FormLabel>
-            <FormControl>
-              <Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-12 font-black bg-slate-50 border-slate-200 rounded-md text-base lg:text-lg px-4" />
-            </FormControl>
-            <FormMessage className="text-[10px] text-rose-500 font-bold" />
-          </FormItem>
-        )} />
+        <div className="grid grid-cols-2 gap-3">
+          <FormField control={form.control} name="amount" render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{lang.amount}</FormLabel>
+              <FormControl>
+                <Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-10 font-bold bg-slate-50 border-slate-200 text-sm" />
+              </FormControl>
+              <FormMessage className="text-xs" />
+            </FormItem>
+          )} />
+
+          <FormField control={form.control} name="acquisitionDate" render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-sm font-semibold text-slate-500 uppercase tracking-wider">{lang.date}</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} className="h-10 font-medium bg-slate-50 border-slate-200 text-sm" />
+              </FormControl>
+              <FormMessage className="text-xs" />
+            </FormItem>
+          )} />
+        </div>
         
-        <Button type="submit" className="w-full h-12 bg-black hover:bg-slate-800 text-white font-black rounded-md text-[13px] uppercase tracking-[0.1em] shadow-lg transition-all active:scale-[0.97] mt-2">
+        <Button type="submit" className="w-full h-11 bg-black hover:bg-slate-800 text-white font-bold rounded-md text-sm uppercase tracking-wider shadow-md transition-all active:scale-[0.98] mt-2">
           {lang.submit}
         </Button>
       </form>

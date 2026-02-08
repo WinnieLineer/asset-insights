@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -93,7 +94,7 @@ const translations = {
     int1wk: 'Weekly',
     int1mo: 'Monthly',
     takeSnapshot: 'Capture Snapshot',
-    historicalSnapshots: 'Manual Snapshots',
+    historicalSnapshots: 'Snapshot Records',
     assetDeleted: 'Asset removed.',
     dataUpdated: 'Market data synced.',
     snapshotTaken: 'Snapshot captured.',
@@ -262,15 +263,20 @@ export default function MonochromeAssetPage() {
 
     const lastKnownPrices: Record<string, number> = {};
     const chartData = marketTimeline.map((point: any) => {
+      const pointTime = point.timestamp * 1000;
       const item: any = {
-        date: new Date(point.timestamp * 1000).toISOString(),
-        displayDate: new Date(point.timestamp * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        date: new Date(pointTime).toISOString(),
+        displayDate: new Date(pointTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
       };
       
       let pointTotalTWD = 0;
       const categories: Record<AssetCategory, number> = { 'Stock': 0, 'Crypto': 0, 'Bank': 0, 'Savings': 0 };
 
       processedAssets.forEach(asset => {
+        // 核心邏輯：如果該時間點小於持有日期，則不計算該資產價值
+        const acqTime = new Date(asset.acquisitionDate).getTime();
+        if (pointTime < acqTime) return;
+
         let priceAtT = point.assets[asset.id];
         if (priceAtT === undefined) priceAtT = lastKnownPrices[asset.id];
         else lastKnownPrices[asset.id] = priceAtT;
@@ -294,7 +300,7 @@ export default function MonochromeAssetPage() {
       return item;
     });
 
-    // 合併手動快照到圖表
+    // 合併手動快照
     const displayRate = marketData.rates[displayCurrency] || 1;
     snapshots.forEach(snap => {
       const snapPoint: any = {
@@ -361,30 +367,30 @@ export default function MonochromeAssetPage() {
       <header className="glass-nav h-auto min-h-20 py-4 border-b border-slate-100">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="w-10 h-10 lg:w-12 bg-black rounded flex items-center justify-center shrink-0">
-              <Activity className="w-5 h-5 lg:w-6 text-white" />
+            <div className="w-10 h-10 bg-black rounded flex items-center justify-center shrink-0">
+              <Activity className="w-5 h-5 text-white" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight uppercase leading-none">{t.title}</h1>
-              <p className="text-[10px] lg:text-[11px] font-black text-slate-400 tracking-widest uppercase mt-1">{t.subtitle}</p>
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight uppercase leading-none">{t.title}</h1>
+              <p className="text-xs font-bold text-slate-400 tracking-widest uppercase mt-1">{t.subtitle}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto">
             <div className="flex flex-col items-center sm:items-end">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{t.exchangeRate}</span>
-              <span className="text-[10px] lg:text-xs font-bold text-black flex items-center gap-1.5 whitespace-nowrap bg-slate-50 px-2.5 py-1.5 rounded border border-slate-100 shadow-sm">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{t.exchangeRate}</span>
+              <span className="text-sm font-bold text-black flex items-center gap-1.5 whitespace-nowrap bg-slate-50 px-3 py-1.5 rounded border border-slate-100 shadow-sm">
                 <ArrowRightLeft className="w-3.5 h-3.5 text-slate-400" />
                 1 {getCurrencySymbol(displayCurrency)}{displayCurrency} = {dynamicRates.map(r => `${r.symbol}${r.rate} ${r.code}`).join(' | ')}
               </span>
             </div>
             <div className="flex bg-slate-100 p-0.5 rounded">
-              <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-7 px-2 font-black text-[11px]">繁中</Button>
-              <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-7 px-2 font-black text-[11px]">EN</Button>
+              <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-7 px-2 font-bold text-sm">繁中</Button>
+              <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-7 px-2 font-bold text-sm">EN</Button>
             </div>
             <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
               <TabsList className="h-9 bg-slate-100">
                 {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (
-                  <TabsTrigger key={cur} value={cur} className="text-[10px] font-black uppercase">{cur}</TabsTrigger>
+                  <TabsTrigger key={cur} value={cur} className="text-xs font-bold uppercase">{cur}</TabsTrigger>
                 ))}
               </TabsList>
             </Tabs>
@@ -393,21 +399,21 @@ export default function MonochromeAssetPage() {
       </header>
       
       <main className="max-w-[1440px] mx-auto px-4 sm:px-5 py-6 sm:py-10 space-y-6 sm:space-y-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-          <Card className="lg:col-span-9 modern-card p-6 sm:p-10 relative overflow-hidden bg-white shadow-xl">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <Card className="lg:col-span-9 modern-card p-8 sm:p-10 relative overflow-hidden bg-white shadow-xl">
             <div className="space-y-4 z-20 relative">
-              <div className="flex items-center gap-2 text-slate-400 text-[11px] lg:text-xs font-black uppercase tracking-widest">
-                <Globe className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-2 text-slate-400 text-sm font-bold uppercase tracking-widest">
+                <Globe className="w-4 h-4" />
                 {t.totalValue}
               </div>
-              <div className="text-4xl sm:text-6xl lg:text-6xl xl:text-7xl font-black tracking-tighter flex items-baseline flex-wrap gap-2">
-                <span className="text-slate-200 text-3xl sm:text-5xl">{getCurrencySymbol(displayCurrency)}</span>
+              <div className="text-4xl sm:text-6xl font-black tracking-tighter flex items-baseline flex-wrap gap-2">
+                <span className="text-slate-300 text-3xl sm:text-5xl">{getCurrencySymbol(displayCurrency)}</span>
                 <span className="break-all">{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                {loading && <Loader2 className="w-6 h-6 lg:w-8 animate-spin text-slate-200 ml-3" />}
+                {loading && <Loader2 className="w-6 h-6 animate-spin text-slate-200 ml-3" />}
               </div>
             </div>
             <div className="absolute -bottom-10 -right-10 opacity-[0.03] pointer-events-none">
-              <Wallet className="w-48 h-48 lg:w-72 lg:h-72 text-black" />
+              <Wallet className="w-48 h-48 sm:w-64 sm:h-64 text-black" />
             </div>
           </Card>
           
@@ -415,33 +421,33 @@ export default function MonochromeAssetPage() {
             <Button 
               onClick={updateMarketData} 
               disabled={loading}
-              className="w-full h-full min-h-[70px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-2 rounded transition-all shadow-lg active:scale-95 px-6"
+              className="w-full h-full min-h-[70px] bg-black text-white hover:bg-slate-800 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all shadow-lg active:scale-95 px-6"
             >
               <RefreshCw className={cn("w-5 h-5", loading && "animate-spin")} />
-              <span className="text-[11px] lg:text-sm tracking-widest uppercase">{loading ? t.fetching : t.syncMarket}</span>
+              <span className="text-sm tracking-widest uppercase">{loading ? t.fetching : t.syncMarket}</span>
             </Button>
             <Button 
               onClick={takeSnapshot}
-              className="w-full h-full min-h-[70px] bg-white text-black border-2 border-slate-100 hover:bg-slate-50 font-black flex flex-col items-center justify-center gap-2 rounded transition-all shadow-sm active:scale-95 px-6"
+              className="w-full h-full min-h-[70px] bg-white text-black border-2 border-slate-100 hover:bg-slate-50 font-bold flex flex-col items-center justify-center gap-2 rounded transition-all shadow-sm active:scale-95 px-6"
             >
               <Camera className="w-5 h-5" />
-              <span className="text-[11px] lg:text-sm tracking-widest uppercase">{t.takeSnapshot}</span>
+              <span className="text-sm tracking-widest uppercase">{t.takeSnapshot}</span>
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-10">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
           <div className="xl:col-span-9 space-y-8">
-            <div className="flex flex-col sm:flex-row gap-4 mb-4">
-              <div className="flex-1 bg-slate-50 p-4 border border-slate-100 rounded-lg flex items-center justify-between gap-6">
-                <div className="flex items-center gap-4 flex-1">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 bg-slate-50 p-4 border border-slate-100 rounded-lg flex items-center gap-6">
+                <div className="flex items-center gap-6 flex-1">
                   <div className="space-y-1.5 flex-1 max-w-[200px]">
-                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+                    <Label className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                       <Calendar className="w-3.5 h-3.5" />
                       {t.baseDate}
                     </Label>
                     <Select value={trackingDays} onValueChange={setTrackingDays}>
-                      <SelectTrigger className="h-10 bg-white border-slate-200 font-black text-[11px] uppercase tracking-wider">
+                      <SelectTrigger className="h-10 bg-white border-slate-200 font-bold text-sm uppercase">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -453,12 +459,12 @@ export default function MonochromeAssetPage() {
                     </Select>
                   </div>
                   <div className="space-y-1.5 flex-1 max-w-[200px]">
-                    <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+                    <Label className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
                       <Clock className="w-3.5 h-3.5" />
                       {t.interval}
                     </Label>
                     <Select value={interval} onValueChange={setInterval}>
-                      <SelectTrigger className="h-10 bg-white border-slate-200 font-black text-[11px] uppercase tracking-wider">
+                      <SelectTrigger className="h-10 bg-white border-slate-200 font-bold text-sm uppercase">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -474,8 +480,8 @@ export default function MonochromeAssetPage() {
 
             <Card className="modern-card overflow-hidden bg-white shadow-lg border-slate-100">
               <CardHeader className="px-6 py-5 border-b border-slate-50 flex flex-row items-center justify-between">
-                <CardTitle className="text-base lg:text-xl font-black flex items-center gap-3">
-                  <BarChart3 className="w-5 h-5 lg:w-6" />
+                <CardTitle className="text-lg font-black flex items-center gap-3">
+                  <BarChart3 className="w-5 h-5" />
                   {t.dashboard}
                 </CardTitle>
               </CardHeader>
@@ -484,10 +490,10 @@ export default function MonochromeAssetPage() {
                   <Table className="min-w-[700px]">
                     <TableHeader className="bg-slate-50/50">
                       <TableRow>
-                        <TableHead className="px-6 h-12 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
-                        <TableHead className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
-                        <TableHead className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.unitPrice}</TableHead>
-                        <TableHead className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
+                        <TableHead className="px-6 h-12 text-sm font-bold text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
+                        <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
+                        <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest">{t.unitPrice}</TableHead>
+                        <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
                         <TableHead className="w-[100px]"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -495,23 +501,23 @@ export default function MonochromeAssetPage() {
                       {assetCalculations.processedAssets.map(asset => (
                         <TableRow key={asset.id} className="group hover:bg-slate-50/50 transition-colors border-slate-50">
                           <TableCell className="px-6 py-5">
-                            <div className="font-black text-sm lg:text-lg text-black">{asset.name}</div>
-                            <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-0.5">{asset.symbol || asset.category}</div>
+                            <div className="font-bold text-sm text-black">{asset.name}</div>
+                            <div className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">{asset.symbol || asset.category}</div>
                           </TableCell>
-                          <TableCell><span className="text-xs lg:text-sm font-black text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
+                          <TableCell><span className="text-sm font-bold text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
                           <TableCell>
                             {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
                               loading ? <Skeleton className="h-4 w-20" /> : (
                                 <div className="flex items-center gap-1">
-                                  <span className="text-[10px] font-black text-slate-300">{getCurrencySymbol(displayCurrency)}</span>
-                                  <span className="text-xs lg:text-sm font-black">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                                  <span className="text-xs font-bold text-slate-300">{getCurrencySymbol(displayCurrency)}</span>
+                                  <span className="text-sm font-bold">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                                 </div>
                               )
                             ) : <span className="text-slate-200">—</span>}
                           </TableCell>
                           <TableCell className="text-right">
-                            <span className="font-black text-sm lg:text-xl whitespace-nowrap text-black">
-                              <span className="text-slate-200 text-xs mr-1 font-medium">{getCurrencySymbol(displayCurrency)}</span>
+                            <span className="font-bold text-lg whitespace-nowrap text-black">
+                              <span className="text-slate-200 text-sm mr-1 font-medium">{getCurrencySymbol(displayCurrency)}</span>
                               {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                             </span>
                           </TableCell>
@@ -541,8 +547,8 @@ export default function MonochromeAssetPage() {
             {snapshots.length > 0 && (
               <Card className="modern-card overflow-hidden bg-white shadow-lg border-slate-100 mt-10">
                 <CardHeader className="px-6 py-5 border-b border-slate-50 flex flex-row items-center justify-between">
-                  <CardTitle className="text-base lg:text-xl font-black flex items-center gap-3">
-                    <History className="w-5 h-5 lg:w-6" />
+                  <CardTitle className="text-lg font-black flex items-center gap-3">
+                    <History className="w-5 h-5" />
                     {t.historicalSnapshots}
                   </CardTitle>
                 </CardHeader>
@@ -551,17 +557,17 @@ export default function MonochromeAssetPage() {
                     <Table>
                       <TableHeader className="bg-slate-50/50">
                         <TableRow>
-                          <TableHead className="px-6 h-12 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.baseDate}</TableHead>
-                          <TableHead className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{t.totalValue}</TableHead>
+                          <TableHead className="px-6 h-12 text-sm font-bold text-slate-400 uppercase tracking-widest">{t.baseDate}</TableHead>
+                          <TableHead className="text-sm font-bold text-slate-400 uppercase tracking-widest text-right">{t.totalValue}</TableHead>
                           <TableHead className="w-[80px]"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {snapshots.map(snap => (
                           <TableRow key={snap.id} className="group border-slate-50">
-                            <TableCell className="px-6 py-4 font-black text-xs lg:text-sm">{snap.displayDate}</TableCell>
-                            <TableCell className="text-right font-black text-xs lg:text-lg">
-                              <span className="text-slate-200 text-xs mr-1">{getCurrencySymbol(displayCurrency)}</span>
+                            <TableCell className="px-6 py-4 font-bold text-sm">{snap.displayDate}</TableCell>
+                            <TableCell className="text-right font-bold text-base">
+                              <span className="text-slate-200 text-sm mr-1">{getCurrencySymbol(displayCurrency)}</span>
                               {(snap.totalTWD * (marketData.rates[displayCurrency] / marketData.rates.TWD)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                             </TableCell>
                             <TableCell>
@@ -582,7 +588,7 @@ export default function MonochromeAssetPage() {
           <div className="xl:col-span-3">
             <Card className="modern-card bg-white shadow-lg border-slate-100 sticky top-24">
               <CardHeader className="px-6 py-5 border-b border-slate-50">
-                <CardTitle className="text-xs lg:text-sm font-black uppercase tracking-widest text-black">{t.addAsset}</CardTitle>
+                <CardTitle className="text-sm font-black uppercase tracking-widest text-black">{t.addAsset}</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
                 <AssetForm language={language} onAdd={(a) => setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }])} />
@@ -601,20 +607,20 @@ export default function MonochromeAssetPage() {
 
       <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
         <DialogContent className="max-w-[95vw] sm:max-w-[425px] bg-white rounded-lg p-6">
-          <DialogHeader><DialogTitle className="text-xl font-black uppercase tracking-tight">{t.editAsset}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-lg font-black uppercase tracking-tight">{t.editAsset}</DialogTitle></DialogHeader>
           <div className="grid gap-6 py-6">
             <div className="space-y-2">
-              <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label>
-              <div className="p-4 bg-slate-50 rounded font-black text-sm lg:text-base border border-slate-100">{editingAsset?.name} ({editingAsset?.symbol || '—'})</div>
+              <Label className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label>
+              <div className="p-4 bg-slate-50 rounded font-bold text-sm border border-slate-100">{editingAsset?.name} ({editingAsset?.symbol || '—'})</div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="amount" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label>
-              <Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-12 font-black bg-slate-50 border-slate-200 text-lg" />
+              <Label htmlFor="amount" className="text-sm font-bold text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label>
+              <Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-12 font-bold bg-slate-50 border-slate-200 text-lg" />
             </div>
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-3">
-            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-black text-[12px] uppercase tracking-widest h-12 flex-1">{t.cancel}</Button>
-            <Button onClick={saveEdit} className="bg-black text-white hover:bg-slate-800 font-black text-[12px] uppercase tracking-widest h-12 flex-1 shadow-md active:scale-95">{t.saveChanges}</Button>
+            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-bold text-sm uppercase tracking-widest h-12 flex-1">{t.cancel}</Button>
+            <Button onClick={saveEdit} className="bg-black text-white hover:bg-slate-800 font-bold text-sm uppercase tracking-widest h-12 flex-1 shadow-md active:scale-95">{t.saveChanges}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
