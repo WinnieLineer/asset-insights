@@ -461,7 +461,7 @@ export default function AssetInsightsPage() {
       config.width === 12 && "xl:col-span-12"
     );
 
-    const wrapperStyle = { minHeight: `${config.height}px` };
+    const wrapperStyle = { height: `${config.height}px` };
 
     switch (id) {
       case 'summary':
@@ -493,7 +493,7 @@ export default function AssetInsightsPage() {
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <section className="bg-slate-50/80 backdrop-blur-sm p-4 border border-slate-100 rounded-xl grid grid-cols-1 md:grid-cols-12 gap-4 shadow-inner h-full content-center">
+            <section className="bg-slate-50/80 backdrop-blur-sm p-4 border border-slate-100 rounded-xl grid grid-cols-1 md:grid-cols-12 gap-4 shadow-inner h-full content-center overflow-auto">
               <div className="md:col-span-3 space-y-1">
                 <Label className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Calendar className="w-3 h-3" /> {t.baseRange}</Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
