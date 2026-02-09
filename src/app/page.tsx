@@ -186,15 +186,15 @@ type SectionId = 'summary' | 'controls' | 'table' | 'charts' | 'ai' | 'form';
 interface LayoutItem {
   id: SectionId;
   w: number; 
-  h: number; // New: Height in pixels
+  h: number; 
   order: number;
 }
 
 const DEFAULT_LAYOUT: LayoutItem[] = [
-  { id: 'summary', w: 12, h: 120, order: 0 },
-  { id: 'controls', w: 12, h: 120, order: 1 },
-  { id: 'table', w: 12, h: 600, order: 2 },
-  { id: 'charts', w: 12, h: 600, order: 3 },
+  { id: 'summary', w: 12, h: 100, order: 0 },
+  { id: 'controls', w: 12, h: 100, order: 1 },
+  { id: 'table', w: 12, h: 500, order: 2 },
+  { id: 'charts', w: 12, h: 500, order: 3 },
   { id: 'ai', w: 12, h: 500, order: 4 },
   { id: 'form', w: 12, h: 550, order: 5 },
 ];
@@ -263,7 +263,7 @@ export default function AssetInsightsPage() {
     const savedAssets = localStorage.getItem('assets');
     if (savedAssets) setAssets(JSON.parse(savedAssets));
     
-    const savedLayout = localStorage.getItem('assetInsightsLayoutV3');
+    const savedLayout = localStorage.getItem('assetInsightsLayoutV4');
     if (savedLayout) setLayout(JSON.parse(savedLayout));
   }, []);
 
@@ -281,7 +281,7 @@ export default function AssetInsightsPage() {
 
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem('assetInsightsLayoutV3', JSON.stringify(layout));
+      localStorage.setItem('assetInsightsLayoutV4', JSON.stringify(layout));
     }
   }, [layout, mounted]);
 
@@ -383,7 +383,7 @@ export default function AssetInsightsPage() {
         categories[asset.category] += valInTWD;
       });
 
-      // Filter out invalid/zero points (weekends/holidays)
+      // 日線去重與 0 值過濾 (Deduplication & Filtering 0)
       if (pointTotalTWD > 0) {
         const item = {
           date: new Date(pointTime).toISOString(),
@@ -395,7 +395,6 @@ export default function AssetInsightsPage() {
           item[cat as keyof typeof item] = (val * (displayRate / rateTWD)) as any;
         });
         
-        // Use dateKey to ensure only one point per day (Deduplication)
         historyMap.set(dateKey, item);
       }
     });
@@ -493,7 +492,10 @@ export default function AssetInsightsPage() {
       const isRechartsBrush = el.closest('.recharts-brush') !== null || el.classList.contains('recharts-brush');
       const isRadix = el.getAttribute('data-radix-collection-item') !== null || 
                        el.className?.toString().includes('radix') ||
-                       el.hasAttribute('aria-haspopup');
+                       el.hasAttribute('aria-haspopup') ||
+                       el.closest('[data-radix-popper-content-wrapper]') !== null ||
+                       el.closest('[role="combobox"]') !== null ||
+                       el.closest('[role="tab"]') !== null;
       
       return (
         tagName === 'button' ||
@@ -506,11 +508,6 @@ export default function AssetInsightsPage() {
         role === 'tab' ||
         role === 'menuitem' ||
         isRechartsBrush ||
-        el.closest('button') !== null ||
-        el.closest('[role="combobox"]') !== null ||
-        el.closest('[role="tab"]') !== null ||
-        el.closest('.radix-select-trigger') !== null ||
-        el.closest('[data-radix-popper-content-wrapper]') !== null ||
         isRadix
       );
     };
@@ -565,7 +562,7 @@ export default function AssetInsightsPage() {
         return { ...item, w: newW };
       } else {
         let newH = direction === 'increase' ? item.h + 50 : item.h - 50;
-        newH = Math.max(100, Math.min(1200, newH));
+        newH = Math.max(100, Math.min(1500, newH));
         return { ...item, h: newH };
       }
     }));
@@ -839,37 +836,37 @@ export default function AssetInsightsPage() {
       onTouchEnd={handleMouseUp}
     >
       <header className="fixed top-0 left-0 right-0 py-2 xl:py-4 border-b border-slate-100 z-[100] bg-white/80 backdrop-blur-xl">
-        <div className="max-w-[1600px] mx-auto px-4 flex flex-col xl:flex-row items-center justify-between gap-1 xl:gap-4">
-          <div className="flex items-center gap-2 xl:gap-4 w-full xl:w-auto">
+        <div className="max-w-[1600px] mx-auto px-4 flex flex-row items-center justify-between gap-2 xl:gap-4">
+          <div className="flex items-center gap-2 xl:gap-4 shrink-0">
             <div className="w-6 h-6 xl:w-10 xl:h-10 bg-black rounded flex items-center justify-center shrink-0 shadow-lg">
               <Activity className="w-3.5 h-3.5 xl:w-6 xl:h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xs xl:text-xl font-black tracking-tighter uppercase leading-none">{t.title}</h1>
+              <h1 className="text-[10px] xl:text-xl font-black tracking-tighter uppercase leading-none">{t.title}</h1>
               <p className="hidden xl:block text-[8px] font-black text-slate-400 tracking-[0.2em] uppercase mt-1">{t.subtitle}</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-center xl:justify-end gap-2 xl:gap-4 w-full xl:w-auto scale-90 xl:scale-100">
+          <div className="flex items-center justify-end gap-1.5 xl:gap-4 scale-90 xl:scale-100 shrink-0">
             {isReordering && (
-              <Button onClick={() => setIsReordering(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black gap-1.5 px-3 xl:px-6 h-7 xl:h-10 rounded-full shadow-2xl animate-bounce text-[9px]">
+              <Button onClick={() => setIsReordering(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black gap-1.5 px-3 h-7 xl:h-10 rounded-full shadow-2xl animate-bounce text-[8px] xl:text-[9px]">
                 <Check className="w-3 h-3" /> {t.exitReorder}
               </Button>
             )}
-            <div className="hidden md:flex flex-col items-end">
+            <div className="hidden xl:flex flex-col items-end">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.exchangeRate}</span>
               <span className="text-[9px] font-bold text-black flex items-center gap-2 bg-slate-50/80 px-3 py-1 rounded-lg border border-slate-100">
                 <ArrowRightLeft className="w-3 h-3 text-primary" />
                 1 {displayCurrency} = {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).filter(c => c !== displayCurrency).slice(0, 2).map(c => `${CURRENCY_SYMBOLS[c]}${(marketData.rates[c] / marketData.rates[displayCurrency]).toFixed(2)}`).join(' | ')}
               </span>
             </div>
-            <div className="flex bg-slate-100 p-0.5 rounded-lg">
-              <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-6 xl:h-8 px-2 xl:px-4 font-bold text-[9px]">繁中</Button>
-              <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-6 xl:h-8 px-2 xl:px-4 font-bold text-[9px]">EN</Button>
+            <div className="flex bg-slate-100 p-0.5 rounded-lg shrink-0">
+              <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-6 px-2 font-bold text-[8px] xl:text-[9px]">繁中</Button>
+              <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-6 px-2 font-bold text-[8px] xl:text-[9px]">EN</Button>
             </div>
-            <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
+            <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)} className="shrink-0">
               <TabsList className="h-7 xl:h-9 bg-slate-100 p-0.5 rounded-lg">
                 {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (
-                  <TabsTrigger key={cur} value={cur} className="text-[9px] font-black uppercase px-1.5 xl:px-3 h-6 xl:h-7">{cur}</TabsTrigger>
+                  <TabsTrigger key={cur} value={cur} className="text-[8px] xl:text-[9px] font-black uppercase px-1.5 xl:px-3 h-6 xl:h-7">{cur}</TabsTrigger>
                 ))}
               </TabsList>
             </Tabs>
@@ -877,7 +874,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1600px] mx-auto px-4 pt-24 xl:pt-32 pb-10">
+      <main className="max-w-[1600px] mx-auto px-4 pt-20 xl:pt-32 pb-10">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-8 items-stretch">
           {layout.map(item => renderSection(item))}
         </div>
