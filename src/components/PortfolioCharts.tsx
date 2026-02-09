@@ -8,8 +8,14 @@ import {
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const COLORS = ['#000000', '#27272a', '#52525b', '#a1a1aa'];
-const CATEGORIES: AssetCategory[] = ['Stock', 'Crypto', 'Bank', 'Savings'];
+// 定義更具辨識度的專業金融配色
+const ASSET_COLORS: Record<string, string> = {
+  'Stock': '#000000',   // 股票 - 黑色
+  'Crypto': '#4f46e5',  // 加密貨幣 - 靛藍
+  'Bank': '#10b981',    // 其他資產 - 翡翠綠
+  'Savings': '#f59e0b'  // 存款 - 琥珀色
+};
+
 const SYMBOLS: Record<Currency, string> = { TWD: 'NT$', USD: '$', CNY: '¥', SGD: 'S$' };
 
 const t = {
@@ -64,10 +70,16 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
 };
 
 export function HistoricalTrendChart({ historicalData, displayCurrency, language, loading, height }: any) {
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const lang = t[language as keyof typeof t] || t.zh;
   const symbol = SYMBOLS[displayCurrency as Currency] || '$';
   
   if (loading && historicalData.length === 0) return <Skeleton className="w-full h-full rounded-2xl" />;
+
+  // 只獲取數據中存在的類別
+  const activeCategoriesInHistory = Array.from(new Set(
+    historicalData.flatMap((d: any) => Object.keys(d).filter(k => ASSET_COLORS[k]))
+  )) as AssetCategory[];
 
   return (
     <div className="modern-card p-10 border-slate-100 bg-white relative shadow-3xl rounded-2xl h-full flex flex-col overflow-hidden">
@@ -88,10 +100,11 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                     <div className="space-y-3">
                       {payload.map((p: any, i: number) => {
                         if (p.dataKey === 'totalValue' || !p.value) return null;
+                        const isActive = !activeCategory || activeCategory === p.dataKey;
                         return (
-                          <div key={i} className="flex justify-between items-center gap-8">
+                          <div key={i} className={`flex justify-between items-center gap-8 transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-20'}`}>
                             <div className="flex items-center gap-3">
-                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color }} />
+                              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ASSET_COLORS[p.name] || '#ccc' }} />
                               <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{lang.categories[p.name] || p.name}</span>
                             </div>
                             <span className="text-xs font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
@@ -108,18 +121,50 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               }
               return null;
             }} />
-            <Legend verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ paddingTop: '0px', paddingBottom: '30px' }} content={({ payload }) => (
-              <div className="flex flex-wrap justify-end gap-x-6 gap-y-2">
-                {payload?.map((entry: any, index: number) => (
-                  <div key={index} className="flex items-center gap-2 cursor-pointer group hover:opacity-100 opacity-60 transition-opacity">
-                    <div className="w-2.5 h-2.5 rounded-full transition-transform group-hover:scale-110" style={{ backgroundColor: entry.color }} />
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] group-hover:text-black">{lang.categories[entry.value] || entry.value}</span>
-                  </div>
-                ))}
-              </div>
-            )} />
-            {CATEGORIES.map((cat, i) => (<Bar key={cat} dataKey={cat} stackId="a" fill={COLORS[i % COLORS.length]} barSize={20} radius={i === 0 ? [0, 0, 4, 4] : [0, 0, 0, 0]} />))}
-            <Line type="monotone" dataKey="totalValue" stroke="#000000" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#000000', stroke: '#fff', strokeWidth: 2 }} />
+            <Legend 
+              verticalAlign="top" 
+              align="right" 
+              iconType="circle" 
+              wrapperStyle={{ paddingTop: '0px', paddingBottom: '30px' }} 
+              onMouseEnter={(e: any) => setActiveCategory(e.dataKey || e.value)}
+              onMouseLeave={() => setActiveCategory(null)}
+              content={({ payload }) => (
+                <div className="flex flex-wrap justify-end gap-x-6 gap-y-2">
+                  {payload?.map((entry: any, index: number) => (
+                    <div 
+                      key={index} 
+                      className={`flex items-center gap-2 cursor-pointer transition-all duration-200 ${(!activeCategory || activeCategory === entry.value) ? 'opacity-100' : 'opacity-20'}`}
+                      onMouseEnter={() => setActiveCategory(entry.value)}
+                      onMouseLeave={() => setActiveCategory(null)}
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full transition-transform" style={{ backgroundColor: ASSET_COLORS[entry.value] || entry.color }} />
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">{lang.categories[entry.value] || entry.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )} 
+            />
+            {activeCategoriesInHistory.map((cat) => (
+              <Bar 
+                key={cat} 
+                dataKey={cat} 
+                stackId="a" 
+                fill={ASSET_COLORS[cat]} 
+                barSize={20} 
+                opacity={(!activeCategory || activeCategory === cat) ? 1 : 0.15}
+                className="transition-opacity duration-300"
+              />
+            ))}
+            <Line 
+              type="monotone" 
+              dataKey="totalValue" 
+              stroke="#000000" 
+              strokeWidth={3} 
+              dot={false} 
+              activeDot={{ r: 6, fill: '#000000', stroke: '#fff', strokeWidth: 2 }} 
+              opacity={!activeCategory ? 1 : 0.1}
+              className="transition-opacity duration-300"
+            />
             <Brush dataKey="displayDate" height={24} stroke="#f1f5f9" fill="#fafafa" travellerWidth={10} className="font-black text-[9px]" />
           </ComposedChart>
         </ResponsiveContainer>
@@ -135,6 +180,9 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
 
   if (loading && (!allocationData || allocationData.length === 0)) return <Skeleton className="w-full h-full rounded-2xl" />;
 
+  // 只顯示有數值的類別
+  const filteredData = allocationData.filter((d: any) => d.value > 0);
+
   return (
     <div className="modern-card p-10 flex flex-col items-center border-slate-100 bg-white relative shadow-3xl rounded-2xl h-full overflow-hidden">
       <div className="w-full mb-8 text-left shrink-0">
@@ -146,7 +194,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
             <Pie 
               activeIndex={activeIndex ?? undefined} 
               activeShape={renderActiveShape} 
-              data={allocationData} 
+              data={filteredData} 
               cx="50%" 
               cy="50%" 
               innerRadius={Math.min(90, (height||400)/5)} 
@@ -159,7 +207,14 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
               label={(props) => renderCustomLabel({ ...props, symbol, langCategories: lang.categories })} 
               labelLine={true}
             >
-              {allocationData.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+              {filteredData.map((entry: any, i: number) => (
+                <Cell 
+                  key={i} 
+                  fill={ASSET_COLORS[entry.name] || '#ccc'} 
+                  opacity={activeIndex === null || activeIndex === i ? 1 : 0.2}
+                  className="transition-opacity duration-300 outline-none"
+                />
+              ))}
             </Pie>
             <RechartsTooltip content={({ active, payload }) => {
               if (active && payload?.length) {
@@ -174,7 +229,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
             }} />
           </PieChart>
         </ResponsiveContainer>
-        {!activeIndex && (
+        {activeIndex === null && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none mt-2">
             <p className="text-[9px] font-black text-slate-200 uppercase tracking-[0.4em]">{lang.total}</p>
             <p className="text-2xl xl:text-3xl font-black text-slate-100 tracking-tighter">100%</p>
