@@ -166,7 +166,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
               <div className="p-5 bg-black rounded-xl shrink-0 shadow-lg">
                 <Brain className="w-8 h-8 text-white" />
               </div>
-              <CardTitle className="text-3xl xl:text-5xl font-black tracking-tighter uppercase leading-none">{lang.title}</CardTitle>
+              <CardTitle className="text-4xl xl:text-6xl font-black tracking-tighter uppercase leading-none">{lang.title}</CardTitle>
             </div>
             <CardDescription className="text-[12px] font-black text-slate-400 uppercase tracking-[0.4em]">{lang.desc}</CardDescription>
           </div>

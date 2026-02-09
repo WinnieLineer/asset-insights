@@ -112,7 +112,7 @@ const translations = {
     importData: 'Import',
     importSuccess: 'Data imported successfully.',
     exitReorder: 'DONE',
-    reorderHint: 'REORDER MODE ACTIVE: Adjust X/Y scaling for each block.',
+    reorderHint: 'REORDER MODE ACTIVE: Use W for Width and H for Height.',
     liveRates: 'LIVE RATES (1 USD)',
     categoryNames: {
       Stock: 'Equity',
@@ -162,7 +162,7 @@ const translations = {
     importData: '匯入資料',
     importSuccess: '資產資料已成功匯入。',
     exitReorder: '完成調整',
-    reorderHint: '已進入佈局調整模式：可使用 W/H 按鈕縮放各區塊尺寸。',
+    reorderHint: '已進入佈局調整模式：可使用 W 調整寬度，H (箭頭) 調整高度。',
     liveRates: '即時匯率 (1 USD)',
     categoryNames: {
       Stock: '股票',
@@ -198,13 +198,13 @@ export default function AssetInsightsPage() {
   
   const [sections, setSections] = useState<string[]>(['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'ai', 'addAsset']);
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
-    summary: { width: 12, height: 380 },
+    summary: { width: 12, height: 320 },
     controls: { width: 12, height: 160 },
-    historicalTrend: { width: 12, height: 550 },
-    allocation: { width: 12, height: 550 },
-    list: { width: 12, height: 800 },
-    ai: { width: 12, height: 650 },
-    addAsset: { width: 12, height: 650 }
+    historicalTrend: { width: 12, height: 500 },
+    allocation: { width: 12, height: 500 },
+    list: { width: 12, height: 700 },
+    ai: { width: 12, height: 600 },
+    addAsset: { width: 12, height: 600 }
   });
 
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -438,11 +438,11 @@ export default function AssetInsightsPage() {
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'up')} disabled={index === 0}><ChevronUp className="w-5 h-5" /></Button>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'down')} disabled={index === sections.length - 1}><ChevronDown className="w-5 h-5" /></Button>
         <div className="w-px h-6 bg-white/20 mx-1" />
-        <span className="text-[10px] font-black uppercase tracking-widest px-1 opacity-60">W</span>
+        <span className="text-[11px] font-black uppercase tracking-widest px-1 opacity-60">W</span>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'dec')}><Minimize2 className="w-5 h-5" /></Button>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'inc')}><Maximize2 className="w-5 h-5" /></Button>
         <div className="w-px h-6 bg-white/20 mx-1" />
-        <span className="text-[10px] font-black uppercase tracking-widest px-1 opacity-60">H</span>
+        <span className="text-[11px] font-black uppercase tracking-widest px-1 opacity-60">H</span>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'dec')}><ChevronUp className="w-5 h-5" /></Button>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'inc')}><ChevronDown className="w-5 h-5" /></Button>
       </div>
@@ -468,23 +468,23 @@ export default function AssetInsightsPage() {
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
               <Card className="lg:col-span-9 modern-card p-12 relative overflow-hidden bg-white shadow-3xl border-slate-100 flex flex-col justify-center rounded-2xl">
                 <div className="space-y-6 z-20 relative">
-                  <div className="text-[12px] xl:text-[14px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-5">
+                  <div className="text-[11px] xl:text-[13px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-5">
                     <Globe className="w-6 h-6" /> {t.totalValue}
                   </div>
-                  <div className="text-6xl xl:text-8xl font-black tracking-tighter flex items-baseline gap-6">
+                  <div className="text-4xl xl:text-6xl font-black tracking-tighter flex items-baseline gap-6">
                     <span className="text-slate-200 font-medium">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                     <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                    {loading && <Loader2 className="w-14 h-14 animate-spin text-slate-200 ml-6" />}
+                    {loading && <Loader2 className="w-10 h-10 animate-spin text-slate-200 ml-6" />}
                   </div>
                 </div>
                 <div className="absolute bottom-12 right-12 opacity-15 pointer-events-none">
-                  <Wallet className="w-44 h-44 text-black" />
+                  <Wallet className="w-40 h-40 text-black rotate-0" />
                 </div>
               </Card>
               <div className="lg:col-span-3">
                 <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[160px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-5 rounded-2xl shadow-xl transition-all active:scale-95">
                   <RefreshCw className={cn("w-12 h-12", loading && "animate-spin")} />
-                  <span className="text-[12px] tracking-[0.4em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
+                  <span className="text-[11px] tracking-[0.4em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
                 </Button>
               </div>
             </section>
@@ -563,7 +563,7 @@ export default function AssetInsightsPage() {
             {controls}
             <Card className="modern-card bg-white shadow-3xl border-slate-100 rounded-2xl overflow-hidden h-full flex flex-col">
               <div className="px-10 py-8 border-b border-slate-50 shrink-0">
-                <CardTitle className="text-[12px] xl:text-[14px] font-black tracking-widest uppercase flex items-center gap-6 text-slate-400">
+                <CardTitle className="text-[11px] xl:text-[13px] font-black tracking-widest uppercase flex items-center gap-6 text-slate-400">
                   <BarChart3 className="w-7 h-7" /> {t.dashboard}
                 </CardTitle>
               </div>
@@ -629,7 +629,7 @@ export default function AssetInsightsPage() {
             {controls}
             <Card className="modern-card bg-white shadow-3xl border-slate-100 rounded-2xl h-full flex flex-col">
               <CardHeader className="px-10 py-8 border-b border-slate-50 shrink-0">
-                <CardTitle className="text-[12px] xl:text-[14px] font-black uppercase tracking-widest flex items-center gap-6 text-slate-400">
+                <CardTitle className="text-[11px] xl:text-[13px] font-black uppercase tracking-widest flex items-center gap-6 text-slate-400">
                   <Plus className="w-7 h-7" /> {t.addAsset}
                 </CardTitle>
               </CardHeader>
@@ -698,7 +698,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-10 pt-20 xl:pt-24">
+      <main className="max-w-[1900px] mx-auto px-10 pt-28 xl:pt-36">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>

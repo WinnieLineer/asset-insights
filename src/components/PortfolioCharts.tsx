@@ -8,12 +8,11 @@ import {
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// 定義更具辨識度且協調的專業金融配色
 const ASSET_COLORS: Record<string, string> = {
-  'Stock': '#020617',   // 股票 - 極致黑 (Slate 950)
-  'Crypto': '#312e81',  // 加密貨幣 - 深靛藍 (Indigo 900)
-  'Bank': '#064e3b',    // 其他資產 - 森林綠 (Emerald 950)
-  'Savings': '#78350f'  // 存款 - 琥珀棕 (Amber 900)
+  'Stock': '#000000',   // 股票 - 經典黑
+  'Crypto': '#4f46e5',  // 加密貨幣 - 現代靛藍
+  'Bank': '#10b981',    // 其他資產 - 專業翡翠綠
+  'Savings': '#f59e0b'  // 存款 - 穩重琥珀色
 };
 
 const SYMBOLS: Record<Currency, string> = { TWD: 'NT$', USD: '$', CNY: '¥', SGD: 'S$' };
@@ -40,8 +39,8 @@ const renderActiveShape = (props: any) => {
       <text x={cx} y={cy} dy={16} textAnchor="middle" fill="#000" fontSize={42} fontWeight={900}>
         {`${(percent * 100).toFixed(1)}%`}
       </text>
-      <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 10} startAngle={startAngle} endAngle={endAngle} fill={fill} />
-      <circle cx={cx} cy={cy} r={innerRadius - 12} fill={fill} opacity={0.06} />
+      <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 12} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+      <circle cx={cx} cy={cy} r={innerRadius - 15} fill={fill} opacity={0.08} />
     </g>
   );
 };
@@ -54,7 +53,7 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   const sy = cy + (outerRadius + 10) * sin;
   const mx = cx + (outerRadius + 25) * cos;
   const my = cy + (outerRadius + 25) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 15;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 20;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
@@ -62,9 +61,9 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
 
   return (
     <g>
-      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#e2e8f0" strokeWidth={1.5} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 6} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={12} fontWeight={800} className="uppercase tracking-widest">{langCategories[name] || name}</text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 6} y={ey} dy={12} textAnchor={textAnchor} fill="#94a3b8" fontSize={11} fontWeight={600}>{`${(percent * 100).toFixed(1)}%`}</text>
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#e2e8f0" strokeWidth={2} fill="none" />
+      <text x={ex + (cos >= 0 ? 1 : -1) * 8} y={ey} dy={-6} textAnchor={textAnchor} fill="#64748b" fontSize={13} fontWeight={800} className="uppercase tracking-widest">{langCategories[name] || name}</text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 8} y={ey} dy={14} textAnchor={textAnchor} fill="#94a3b8" fontSize={12} fontWeight={600}>{`${(percent * 100).toFixed(1)}%`}</text>
     </g>
   );
 };
@@ -83,19 +82,19 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   return (
     <div className="modern-card p-12 border-slate-100 bg-white relative shadow-3xl rounded-2xl h-full flex flex-col overflow-hidden">
       <div className="w-full mb-10 flex items-center justify-between shrink-0">
-        <h3 className="text-[12px] xl:text-[14px] font-black text-slate-400 uppercase tracking-[0.4em]">{lang.trend}</h3>
+        <h3 className="text-[11px] xl:text-[13px] font-black text-slate-400 uppercase tracking-[0.4em]">{lang.trend}</h3>
       </div>
       <div className="w-full flex-1" style={{ height: height ? `${height - 180}px` : '450px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={historicalData} margin={{ top: 15, right: 25, bottom: 15, left: 25 }}>
             <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 800 }} dy={15} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#cbd5e1', fontWeight: 700 }} tickFormatter={(v) => `${symbol}${(v/1000).toFixed(0)}k`} />
+            <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#94a3b8', fontWeight: 800 }} dy={15} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#cbd5e1', fontWeight: 700 }} tickFormatter={(v) => `${symbol}${(v/1000).toFixed(0)}k`} />
             <RechartsTooltip cursor={{ fill: '#f8fafc', opacity: 0.8 }} content={({ active, payload, label }) => {
               if (active && payload?.length) {
                 return (
                   <div className="bg-white border border-slate-100 p-8 rounded-2xl shadow-3xl z-[1000] min-w-[280px] pointer-events-none ring-12 ring-black/5">
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em] mb-5 border-b border-slate-50 pb-3">{label}</p>
+                    <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] mb-5 border-b border-slate-50 pb-3">{label}</p>
                     <div className="space-y-4">
                       {payload.map((p: any, i: number) => {
                         if (p.dataKey === 'totalValue' || !p.value) return null;
@@ -103,16 +102,16 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                         return (
                           <div key={i} className={`flex justify-between items-center gap-10 transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-15'}`}>
                             <div className="flex items-center gap-4">
-                              <div className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: ASSET_COLORS[p.name] || '#ccc' }} />
-                              <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">{lang.categories[p.name] || p.name}</span>
+                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: ASSET_COLORS[p.name] || '#ccc' }} />
+                              <span className="text-[12px] font-black text-slate-600 uppercase tracking-widest">{lang.categories[p.name] || p.name}</span>
                             </div>
-                            <span className="text-sm font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                            <span className="text-base font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                           </div>
                         );
                       })}
                       <div className="mt-5 pt-5 border-t border-slate-50 flex justify-between items-center">
-                        <span className="text-[12px] font-black text-black uppercase tracking-[0.5em]">{lang.total}</span>
-                        <span className="text-2xl font-black text-black">{symbol}{Number(payload.find((p:any)=>p.dataKey==='totalValue')?.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                        <span className="text-[13px] font-black text-black uppercase tracking-[0.5em]">{lang.total}</span>
+                        <span className="text-3xl font-black text-black">{symbol}{Number(payload.find((p:any)=>p.dataKey==='totalValue')?.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                       </div>
                     </div>
                   </div>
@@ -136,8 +135,8 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                       onMouseEnter={() => setActiveCategory(entry.value)}
                       onMouseLeave={() => setActiveCategory(null)}
                     >
-                      <div className="w-3 h-3 rounded-full transition-transform" style={{ backgroundColor: ASSET_COLORS[entry.value] || entry.color }} />
-                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.35em]">{lang.categories[entry.value] || entry.value}</span>
+                      <div className="w-3.5 h-3.5 rounded-full transition-transform" style={{ backgroundColor: ASSET_COLORS[entry.value] || entry.color }} />
+                      <span className="text-[12px] font-black text-slate-400 uppercase tracking-[0.35em]">{lang.categories[entry.value] || entry.value}</span>
                     </div>
                   ))}
                 </div>
@@ -150,7 +149,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                 stackId="a" 
                 fill={ASSET_COLORS[cat]} 
                 barSize={24} 
-                opacity={(!activeCategory || activeCategory === cat) ? 1 : 0.1}
+                opacity={(!activeCategory || activeCategory === cat) ? 1 : 0.15}
                 className="transition-opacity duration-300"
               />
             ))}
@@ -158,13 +157,13 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               type="monotone" 
               dataKey="totalValue" 
               stroke="#000000" 
-              strokeWidth={4} 
+              strokeWidth={5} 
               dot={false} 
-              activeDot={{ r: 8, fill: '#000000', stroke: '#fff', strokeWidth: 3 }} 
-              opacity={!activeCategory ? 1 : 0.05}
+              activeDot={{ r: 9, fill: '#000000', stroke: '#fff', strokeWidth: 4 }} 
+              opacity={!activeCategory ? 1 : 0.1}
               className="transition-opacity duration-300"
             />
-            <Brush dataKey="displayDate" height={28} stroke="#f1f5f9" fill="#fafafa" travellerWidth={12} className="font-black text-[10px]" />
+            <Brush dataKey="displayDate" height={32} stroke="#f1f5f9" fill="#fafafa" travellerWidth={12} className="font-black text-[11px]" />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -184,7 +183,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
   return (
     <div className="modern-card p-12 flex flex-col items-center border-slate-100 bg-white relative shadow-3xl rounded-2xl h-full overflow-hidden">
       <div className="w-full mb-10 text-left shrink-0">
-        <h3 className="text-[12px] xl:text-[14px] font-black text-slate-400 uppercase tracking-[0.4em]">{lang.allocation}</h3>
+        <h3 className="text-[11px] xl:text-[13px] font-black text-slate-400 uppercase tracking-[0.4em]">{lang.allocation}</h3>
       </div>
       <div className="flex-1 w-full relative" style={{ height: height ? `${height - 180}px` : '450px' }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -195,9 +194,9 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
               data={filteredData} 
               cx="50%" 
               cy="50%" 
-              innerRadius={Math.min(100, (height||450)/4.5)} 
-              outerRadius={Math.min(150, (height||450)/3)} 
-              paddingAngle={5} 
+              innerRadius={Math.min(110, (height||450)/4.2)} 
+              outerRadius={Math.min(160, (height||450)/2.8)} 
+              paddingAngle={6} 
               dataKey="value" 
               stroke="transparent" 
               onMouseEnter={(_, index) => setActiveIndex(index)} 
@@ -209,7 +208,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 <Cell 
                   key={i} 
                   fill={ASSET_COLORS[entry.name] || '#ccc'} 
-                  opacity={activeIndex === null || activeIndex === i ? 1 : 0.15}
+                  opacity={activeIndex === null || activeIndex === i ? 1 : 0.2}
                   className="transition-opacity duration-300 outline-none"
                 />
               ))}
@@ -217,9 +216,9 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
             <RechartsTooltip content={({ active, payload }) => {
               if (active && payload?.length) {
                 return (
-                  <div className="bg-white border border-slate-100 p-5 rounded-xl shadow-3xl z-[1000] min-w-[180px] pointer-events-none ring-10 ring-black/5">
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em] mb-1.5">{lang.categories[payload[0].name] || payload[0].name}</p>
-                    <p className="text-2xl font-black text-black">{symbol}{Number(payload[0].value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                  <div className="bg-white border border-slate-100 p-6 rounded-xl shadow-3xl z-[1000] min-w-[200px] pointer-events-none ring-10 ring-black/5">
+                    <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] mb-2">{lang.categories[payload[0].name] || payload[0].name}</p>
+                    <p className="text-3xl font-black text-black">{symbol}{Number(payload[0].value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                   </div>
                 );
               }
@@ -228,9 +227,9 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
           </PieChart>
         </ResponsiveContainer>
         {activeIndex === null && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none mt-3">
-            <p className="text-[10px] font-black text-slate-200 uppercase tracking-[0.5em]">{lang.total}</p>
-            <p className="text-3xl xl:text-4xl font-black text-slate-100 tracking-tighter">100%</p>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none mt-4">
+            <p className="text-[11px] font-black text-slate-200 uppercase tracking-[0.5em]">{lang.total}</p>
+            <p className="text-4xl xl:text-5xl font-black text-slate-100 tracking-tighter">100%</p>
           </div>
         )}
       </div>
