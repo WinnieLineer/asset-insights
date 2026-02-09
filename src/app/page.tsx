@@ -1,11 +1,10 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Asset, MarketData, AssetCategory, Currency } from './lib/types';
 import { fetchMarketData } from '@/app/lib/market-api';
 import { AssetForm } from '@/components/AssetForm';
-import { PortfolioCharts } from '@/components/PortfolioCharts';
+import { HistoricalTrendChart, AllocationPieChart } from '@/components/PortfolioCharts';
 import { AITipCard } from '@/components/AITipCard';
 import { Button } from '@/components/ui/button';
 import { 
@@ -18,7 +17,6 @@ import {
   Edit2,
   Loader2,
   Calendar,
-  ArrowRightLeft,
   Clock,
   Briefcase,
   Download,
@@ -26,13 +24,11 @@ import {
   History,
   TrendingUp,
   TrendingDown,
-  Layout,
   ChevronUp,
   ChevronDown,
   Check,
   Maximize2,
   Minimize2,
-  ArrowLeftRight
 } from 'lucide-react';
 import { 
   Card, 
@@ -111,12 +107,9 @@ const translations = {
     dataUpdated: 'Market data synced.',
     acqDate: 'Acquired',
     posEndDate: 'Closed',
-    movedToClosed: 'Asset moved to historical records.',
-    movedToClosedDesc: 'The end date is active. Position moved to history.',
     exportData: 'Export',
     importData: 'Import',
     importSuccess: 'Data imported successfully.',
-    reorderMode: 'Layout Mode',
     exitReorder: 'Done',
     categoryNames: {
       Stock: 'Equity',
@@ -165,7 +158,6 @@ const translations = {
     exportData: '匯出資料',
     importData: '匯入資料',
     importSuccess: '資產資料已成功匯入。',
-    reorderMode: '佈局調整模式',
     exitReorder: '完成調整',
     categoryNames: {
       Stock: '股票',
@@ -177,8 +169,8 @@ const translations = {
 };
 
 interface LayoutConfig {
-  width: number; // xl:col-span-X
-  height: number; // min-height in px
+  width: number; // 4, 6, 8, 10, 12
+  height: number; // px
 }
 
 export default function AssetInsightsPage() {
@@ -199,12 +191,13 @@ export default function AssetInsightsPage() {
   const [loading, setLoading] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
   
-  const [sections, setSections] = useState<string[]>(['summary', 'controls', 'charts', 'list', 'ai']);
+  const [sections, setSections] = useState<string[]>(['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'ai']);
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
     summary: { width: 12, height: 160 },
     controls: { width: 12, height: 100 },
-    charts: { width: 8, height: 600 },
-    list: { width: 8, height: 500 },
+    historicalTrend: { width: 8, height: 450 },
+    allocation: { width: 4, height: 450 },
+    list: { width: 8, height: 600 },
     ai: { width: 4, height: 800 }
   });
 
@@ -347,7 +340,7 @@ export default function AssetInsightsPage() {
       if (pointTotalTWD > 0) {
         const item = { timestamp: point.timestamp, displayDate: new Date(pointTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), totalValue: pointTotalTWD * (displayRate / rateTWD) };
         Object.entries(categories).forEach(([cat, val]) => { item[cat] = val * (displayRate / rateTWD); });
-        historyMap.set(dateKey, item); // Deduplicate: keep last point of the day
+        historyMap.set(dateKey, item); 
       }
     });
 
@@ -380,8 +373,8 @@ export default function AssetInsightsPage() {
         if (direction === 'inc' && currentIdx < steps.length - 1) config.width = steps[currentIdx + 1];
         if (direction === 'dec' && currentIdx > 0) config.width = steps[currentIdx - 1];
       } else {
-        if (direction === 'inc') config.height = Math.min(1500, config.height + 100);
-        if (direction === 'dec') config.height = Math.max(100, config.height - 100);
+        if (direction === 'inc') config.height = Math.min(1500, config.height + 50);
+        if (direction === 'dec') config.height = Math.max(100, config.height - 50);
       }
       return { ...prev, [id]: config };
     });
@@ -538,14 +531,26 @@ export default function AssetInsightsPage() {
             </section>
           </div>
         );
-      case 'charts':
+      case 'historicalTrend':
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <PortfolioCharts 
+            <HistoricalTrendChart 
+              language={language} 
+              historicalData={assetCalculations.chartData} 
+              displayCurrency={displayCurrency} 
+              loading={loading}
+              height={config.height}
+            />
+          </div>
+        );
+      case 'allocation':
+        return (
+          <div key={id} className={commonClass} style={wrapperStyle}>
+            {controls}
+            <AllocationPieChart 
               language={language} 
               allocationData={assetCalculations.allocationData} 
-              historicalData={assetCalculations.chartData} 
               displayCurrency={displayCurrency} 
               loading={loading}
               height={config.height}
@@ -618,8 +623,8 @@ export default function AssetInsightsPage() {
 
   return (
     <div className="min-h-screen bg-white text-black pb-32 font-sans overflow-x-hidden" onMouseDown={handleMouseDown} onTouchStart={handleMouseDown}>
-      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/80 backdrop-blur-xl">
-        <div className="max-w-[1600px] mx-auto px-4 h-10 xl:h-14 flex items-center justify-between gap-4">
+      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/80 backdrop-blur-xl h-10 xl:h-14">
+        <div className="max-w-[1600px] mx-auto px-4 h-full flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 xl:gap-3">
             <div className="w-5 h-5 xl:w-8 xl:h-8 bg-black rounded flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-3 h-3 xl:w-4 xl:h-4 text-white" /></div>
             <div>
