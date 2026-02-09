@@ -319,7 +319,6 @@ export default function AssetInsightsPage() {
       return { ...asset, isClosed, valueInDisplay, priceInDisplay: unitPriceInDisplay, dayChangeInDisplay: dayChangeInTWD * (displayRate / rateTWD), dayChangePercent };
     });
 
-    // 歷史走勢優化：Forward Filling 邏輯
     const historyData: any[] = [];
     const lastKnownPrices: Record<string, number> = {};
     const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
@@ -335,7 +334,6 @@ export default function AssetInsightsPage() {
         const endTimeStr = asset.endDate || '9999-12-31';
         if (pointTime < acqTime || dateKey > endTimeStr) return; 
 
-        // 價格更新
         if (point.assets[asset.id] !== undefined) {
           lastKnownPrices[asset.id] = point.assets[asset.id];
         }
