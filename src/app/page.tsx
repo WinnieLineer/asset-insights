@@ -28,6 +28,8 @@ import {
   Minimize2,
   History,
   Briefcase,
+  Download,
+  Upload,
 } from 'lucide-react';
 import { 
   Card, 
@@ -110,6 +112,12 @@ const translations = {
     exitReorder: 'Save Layout',
     movedToClosed: 'Asset moved to historical records.',
     movedToClosedDesc: 'The end date is active. Position moved to history.',
+    exportData: 'Export',
+    importData: 'Import',
+    importSuccess: 'Data imported successfully.',
+    importError: 'Import failed. Invalid file format.',
+    allocation: 'Portfolio Allocation',
+    trend: 'Asset Evolution Matrix',
     categoryNames: {
       Stock: 'Equity',
       Crypto: 'Crypto',
@@ -156,6 +164,12 @@ const translations = {
     exitReorder: '儲存佈局',
     movedToClosed: '資產已移至歷史結清',
     movedToClosedDesc: '結清日期已生效，已移動至歷史分頁。',
+    exportData: '匯出資料',
+    importData: '匯入資料',
+    importSuccess: '資產資料已成功匯入。',
+    importError: '匯入失敗，請確認檔案格式正確。',
+    allocation: '當前資產配置比例',
+    trend: '歷史資產演變走勢',
     categoryNames: {
       Stock: '股票',
       Crypto: '加密貨幣',
@@ -202,6 +216,7 @@ export default function AssetInsightsPage() {
   const [isReordering, setIsReordering] = useState(false);
   const [layout, setLayout] = useState<LayoutItem[]>(DEFAULT_LAYOUT);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [marketData, setMarketData] = useState<MarketData>({
     exchangeRate: 32.5,
@@ -330,7 +345,7 @@ export default function AssetInsightsPage() {
       };
     });
 
-    // --- 歷史數據去重與優化：確保日線一天畫一次，且排除 0 價值點 ---
+    // --- 歷史數據去重與優化 ---
     const historyMap = new Map();
     marketTimeline.forEach((point: any) => {
       const pointTime = point.timestamp * 1000;
@@ -378,7 +393,6 @@ export default function AssetInsightsPage() {
           item[cat as keyof typeof item] = (val * (displayRate / rateTWD)) as any;
         });
         
-        // 如果是日線或更長，相同日期只保留最新的一個數據點
         historyMap.set(dateKey, item);
       }
     });
@@ -431,6 +445,41 @@ export default function AssetInsightsPage() {
     }
   };
 
+  const handleExport = () => {
+    const dataStr = JSON.stringify(assets, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `asset-insights-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const imported = JSON.parse(event.target?.result as string);
+        if (Array.isArray(imported)) {
+          setAssets(imported);
+          toast({ title: t.importSuccess });
+        } else {
+          throw new Error();
+        }
+      } catch (err) {
+        toast({ variant: 'destructive', title: t.importError });
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
     
@@ -438,7 +487,6 @@ export default function AssetInsightsPage() {
       if (!el) return false;
       const tagName = el.tagName.toLowerCase();
       const role = el.getAttribute('role');
-      const dataState = el.getAttribute('data-state');
       const isRadix = el.getAttribute('data-radix-collection-item') !== null || 
                        el.className?.toString().includes('radix') ||
                        el.hasAttribute('aria-haspopup');
@@ -592,6 +640,15 @@ export default function AssetInsightsPage() {
                     <SelectItem value="1mo" className="font-bold">{t.int1mo}</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="flex items-end gap-2">
+                <Button variant="outline" onClick={handleExport} className="flex-1 h-10 xl:h-12 font-black text-[10px] xl:text-xs uppercase tracking-widest gap-2 bg-white border-slate-200">
+                  <Download className="w-3 h-3 xl:w-4 xl:h-4" /> {t.exportData}
+                </Button>
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 xl:h-12 font-black text-[10px] xl:text-xs uppercase tracking-widest gap-2 bg-white border-slate-200">
+                  <Upload className="w-3 h-3 xl:w-4 xl:h-4" /> {t.importData}
+                </Button>
+                <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" className="hidden" />
               </div>
             </div>
 
