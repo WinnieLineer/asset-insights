@@ -159,97 +159,97 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
 
   return (
     <Card className="modern-card border-slate-200 bg-white shadow-3xl overflow-hidden animate-fade-in h-full flex flex-col">
-      <CardHeader className="px-9 py-9 border-b border-slate-100 bg-zinc-50/50 shrink-0">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-9">
-          <div className="space-y-4">
-            <div className="flex items-center gap-5">
-              <div className="p-4 bg-black rounded-xl shrink-0 shadow-lg">
-                <Brain className="w-7 h-7 text-white" />
+      <CardHeader className="px-10 py-10 border-b border-slate-100 bg-zinc-50/50 shrink-0">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10">
+          <div className="space-y-5">
+            <div className="flex items-center gap-6">
+              <div className="p-5 bg-black rounded-xl shrink-0 shadow-lg">
+                <Brain className="w-8 h-8 text-white" />
               </div>
-              <CardTitle className="text-xl xl:text-3xl font-black tracking-tight uppercase leading-none">{lang.title}</CardTitle>
+              <CardTitle className="text-3xl xl:text-5xl font-black tracking-tighter uppercase leading-none">{lang.title}</CardTitle>
             </div>
-            <CardDescription className="text-[11px] font-black text-slate-400 uppercase tracking-[0.35em]">{lang.desc}</CardDescription>
+            <CardDescription className="text-[12px] font-black text-slate-400 uppercase tracking-[0.4em]">{lang.desc}</CardDescription>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-5 flex-1 max-w-xl w-full">
-            <div className="w-full space-y-2.5">
-              <label className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.25em] flex items-center gap-3.5 ml-1">
-                <MessageSquare className="w-5 h-5" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-6 flex-1 max-w-xl w-full">
+            <div className="w-full space-y-3">
+              <label className="text-[12px] font-black text-zinc-400 uppercase tracking-[0.3em] flex items-center gap-4 ml-1">
+                <MessageSquare className="w-6 h-6" />
                 {lang.instructionLabel}
               </label>
               <Textarea 
                 placeholder={lang.instructionPlaceholder}
-                className="text-sm min-h-[65px] bg-white border-zinc-200 focus:ring-black focus:border-black rounded-xl p-4.5 font-black shadow-sm"
+                className="text-base min-h-[75px] bg-white border-zinc-200 focus:ring-black focus:border-black rounded-xl p-5 font-black shadow-sm"
                 value={userQuestion}
                 onChange={(e) => setUserQuestion(e.target.value)}
               />
             </div>
             <Button 
-              className="bg-black hover:bg-zinc-800 text-white font-black h-[65px] px-9 rounded-xl shrink-0 w-full sm:w-auto transition-all active:scale-95 shadow-xl"
+              className="bg-black hover:bg-zinc-800 text-white font-black h-[75px] px-10 rounded-xl shrink-0 w-full sm:w-auto transition-all active:scale-95 shadow-xl"
               onClick={callGeminiAPI}
               disabled={loading || assets.length === 0}
             >
-              {loading ? <Loader2 className="w-6 h-6 animate-spin mr-3.5" /> : <Sparkles className="w-6 h-6 mr-3.5" />}
-              <span className="text-[11px] tracking-[0.25em] uppercase">{loading ? lang.loading : lang.ctaButton}</span>
+              {loading ? <Loader2 className="w-7 h-7 animate-spin mr-4" /> : <Sparkles className="w-7 h-7 mr-4" />}
+              <span className="text-[12px] tracking-[0.3em] uppercase">{loading ? lang.loading : lang.ctaButton}</span>
             </Button>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent className="p-9 flex-1 overflow-auto">
+      <CardContent className="p-10 flex-1 overflow-auto">
         {insight ? (
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-11 animate-fade-in">
-            <div className="xl:col-span-5 space-y-9">
-              <div className="space-y-5">
-                <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.35em] flex items-center gap-3.5">
-                  <Target className="w-5 h-5" />
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 animate-fade-in">
+            <div className="xl:col-span-5 space-y-10">
+              <div className="space-y-6">
+                <h4 className="text-[12px] font-black text-zinc-400 uppercase tracking-[0.4em] flex items-center gap-4">
+                  <Target className="w-6 h-6" />
                   {lang.answer}
                 </h4>
-                <div className="text-base font-black text-zinc-900 leading-relaxed border-l-4 border-black pl-7 py-2.5 bg-zinc-50 rounded-r-xl">
+                <div className="text-lg font-black text-zinc-900 leading-relaxed border-l-4 border-black pl-8 py-3 bg-zinc-50 rounded-r-xl">
                   {insight.answer}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-7">
-                <div className="bg-white p-7 rounded-2xl border border-zinc-100 shadow-xl">
-                  <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.35em] mb-5">{lang.risk}</h4>
-                  <Badge className={cn("text-[11px] font-black py-2.5 px-7 border-none uppercase tracking-[0.15em] rounded-full", getRiskColor(insight.riskLevel))}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <div className="bg-white p-8 rounded-2xl border border-zinc-100 shadow-xl">
+                  <h4 className="text-[12px] font-black text-zinc-400 uppercase tracking-[0.4em] mb-6">{lang.risk}</h4>
+                  <Badge className={cn("text-[12px] font-black py-3 px-8 border-none uppercase tracking-[0.2em] rounded-full", getRiskColor(insight.riskLevel))}>
                     {insight.riskLevel}
                   </Badge>
                 </div>
-                <div className="bg-white p-7 rounded-2xl border border-zinc-100 shadow-xl">
-                  <div className="flex justify-between items-center mb-5">
-                    <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.35em]">{lang.diversification}</h4>
-                    <span className="text-sm font-black text-black">{insight.diversificationScore}%</span>
+                <div className="bg-white p-8 rounded-2xl border border-zinc-100 shadow-xl">
+                  <div className="flex justify-between items-center mb-6">
+                    <h4 className="text-[12px] font-black text-zinc-400 uppercase tracking-[0.4em]">{lang.diversification}</h4>
+                    <span className="text-base font-black text-black">{insight.diversificationScore}%</span>
                   </div>
-                  <Progress value={insight.diversificationScore} className="h-3.5 bg-zinc-100 [&>div]:bg-black" />
+                  <Progress value={insight.diversificationScore} className="h-4 bg-zinc-100 [&>div]:bg-black" />
                 </div>
               </div>
             </div>
 
-            <div className="xl:col-span-7 space-y-11">
-              <div className="space-y-5">
-                <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.35em] flex items-center gap-3.5">
-                  <ShieldCheck className="w-5 h-5" />
+            <div className="xl:col-span-7 space-y-12">
+              <div className="space-y-6">
+                <h4 className="text-[12px] font-black text-zinc-400 uppercase tracking-[0.4em] flex items-center gap-4">
+                  <ShieldCheck className="w-6 h-6" />
                   {lang.analysis}
                 </h4>
-                <p className="text-sm font-bold text-zinc-600 leading-loose">
+                <p className="text-base font-bold text-zinc-600 leading-loose">
                   {insight.analysis}
                 </p>
               </div>
 
-              <div className="space-y-7">
-                <h4 className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.35em] flex items-center gap-3.5">
-                  <TrendingUp className="w-5 h-5" />
+              <div className="space-y-8">
+                <h4 className="text-[12px] font-black text-zinc-400 uppercase tracking-[0.4em] flex items-center gap-4">
+                  <TrendingUp className="w-6 h-6" />
                   {lang.recommendations}
                 </h4>
-                <div className="grid gap-5">
+                <div className="grid gap-6">
                   {insight.recommendations.map((rec: string, i: number) => (
-                    <div key={i} className="flex items-center gap-7 p-5 bg-white border border-zinc-100 rounded-2xl hover:border-black transition-all group shadow-sm">
-                      <div className="w-9 h-9 rounded-lg bg-black text-white flex items-center justify-center shrink-0 font-black text-sm group-hover:scale-110 transition-transform">
+                    <div key={i} className="flex items-center gap-8 p-6 bg-white border border-zinc-100 rounded-2xl hover:border-black transition-all group shadow-sm">
+                      <div className="w-10 h-10 rounded-lg bg-black text-white flex items-center justify-center shrink-0 font-black text-base group-hover:scale-110 transition-transform">
                         {i + 1}
                       </div>
-                      <span className="text-sm font-black text-zinc-700">{rec}</span>
+                      <span className="text-base font-black text-zinc-700">{rec}</span>
                     </div>
                   ))}
                 </div>
@@ -257,9 +257,9 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
             </div>
           </div>
         ) : (
-          <div className="py-26 text-center flex flex-col items-center gap-9 opacity-10">
-            <Brain className="w-26 h-26" />
-            <p className="text-[11px] font-black uppercase tracking-[0.45em]">點擊按鈕啟動專業資產審計</p>
+          <div className="py-32 text-center flex flex-col items-center gap-10 opacity-10">
+            <Brain className="w-32 h-32" />
+            <p className="text-[12px] font-black uppercase tracking-[0.5em]">點擊按鈕啟動專業資產審計</p>
           </div>
         )}
       </CardContent>
