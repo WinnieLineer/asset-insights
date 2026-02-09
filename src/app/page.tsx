@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -29,6 +30,7 @@ import {
   Check,
   Maximize2,
   Minimize2,
+  Plus
 } from 'lucide-react';
 import { 
   Card, 
@@ -169,8 +171,8 @@ const translations = {
 };
 
 interface LayoutConfig {
-  width: number; // 4, 6, 8, 10, 12
-  height: number; // px
+  width: number;
+  height: number;
 }
 
 export default function AssetInsightsPage() {
@@ -191,14 +193,15 @@ export default function AssetInsightsPage() {
   const [loading, setLoading] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
   
-  const [sections, setSections] = useState<string[]>(['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'ai']);
+  const [sections, setSections] = useState<string[]>(['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'ai', 'addAsset']);
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
     summary: { width: 12, height: 160 },
     controls: { width: 12, height: 100 },
     historicalTrend: { width: 8, height: 450 },
     allocation: { width: 4, height: 450 },
     list: { width: 8, height: 600 },
-    ai: { width: 4, height: 800 }
+    ai: { width: 4, height: 600 },
+    addAsset: { width: 4, height: 450 }
   });
 
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -606,13 +609,30 @@ export default function AssetInsightsPage() {
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <div className="space-y-4 h-full flex flex-col">
-              <div className="flex-1"><AITipCard language={language} assets={assetCalculations.processedAssets} totalTWD={assetCalculations.totalTWD} /></div>
-              <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl shrink-0">
-                <CardHeader className="px-4 py-4 border-b border-slate-50"><CardTitle className="text-base xl:text-lg font-black uppercase tracking-widest flex items-center gap-2"><Activity className="w-4 h-4 text-primary" /> {t.addAsset}</CardTitle></CardHeader>
-                <CardContent className="p-4"><AssetForm language={language} onAdd={(a) => { setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }]); updateAllData([...assets, { ...a, id: 'temp' } as any]); }} /></CardContent>
-              </Card>
-            </div>
+            <AITipCard language={language} assets={assetCalculations.processedAssets} totalTWD={assetCalculations.totalTWD} />
+          </div>
+        );
+      case 'addAsset':
+        return (
+          <div key={id} className={commonClass} style={wrapperStyle}>
+            {controls}
+            <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl h-full flex flex-col">
+              <CardHeader className="px-4 py-4 border-b border-slate-50 shrink-0">
+                <CardTitle className="text-base xl:text-lg font-black uppercase tracking-widest flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-primary" /> {t.addAsset}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 flex-1 overflow-auto">
+                <AssetForm 
+                  language={language} 
+                  onAdd={(a) => { 
+                    const newAsset = { ...a, id: crypto.randomUUID() };
+                    setAssets(prev => [...prev, newAsset]); 
+                    updateAllData([...assets, newAsset]); 
+                  }} 
+                />
+              </CardContent>
+            </Card>
           </div>
         );
       default: return null;
