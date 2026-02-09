@@ -193,6 +193,7 @@ export default function AssetInsightsPage() {
   const [loading, setLoading] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
   
+  // 核心區塊：拆分為 7 個獨立方塊
   const [sections, setSections] = useState<string[]>(['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'ai', 'addAsset']);
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
     summary: { width: 12, height: 160 },
