@@ -199,8 +199,8 @@ export default function AssetInsightsPage() {
     historicalTrend: { width: 12, height: 500 },
     allocation: { width: 12, height: 500 },
     list: { width: 12, height: 800 },
-    ai: { width: 6, height: 600 },
-    addAsset: { width: 6, height: 600 }
+    ai: { width: 12, height: 600 },
+    addAsset: { width: 12, height: 600 }
   });
 
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -274,6 +274,7 @@ export default function AssetInsightsPage() {
     const displayRate = marketData.rates[displayCurrency] || 1;
     const todayStr = new Date().toISOString().split('T')[0];
 
+    // Current positions calculation
     const processedAssets = assets.map(asset => {
       const marketInfo = marketData.assetMarketPrices[asset.id];
       const nativePrice = marketInfo?.price || 0;
@@ -315,8 +316,14 @@ export default function AssetInsightsPage() {
       return { ...asset, isClosed, valueInDisplay, priceInDisplay: unitPriceInDisplay, dayChangeInDisplay: dayChangeInTWD * (displayRate / rateTWD), dayChangePercent };
     });
 
-    const historyMap = new Map();
-    marketTimeline.forEach((point: any) => {
+    // Historical calculation with Forward Filling
+    const historyData: any[] = [];
+    const lastKnownPrices: Record<string, number> = {};
+    
+    // Sort timeline by timestamp to ensure forward filling works
+    const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
+
+    sortedTimeline.forEach((point: any) => {
       const pointTime = point.timestamp * 1000;
       const dateKey = new Date(pointTime).toISOString().split('T')[0];
       let pointTotalTWD = 0;
@@ -325,13 +332,25 @@ export default function AssetInsightsPage() {
       processedAssets.forEach(asset => {
         const acqTime = new Date(asset.acquisitionDate).getTime();
         const endTimeStr = asset.endDate || '9999-12-31';
-        if (pointTime < acqTime || dateKey > endTimeStr) return; 
         
-        let priceAtT = point.assets[asset.id];
-        if (priceAtT === undefined) return;
-        if (asset.category === 'Bank' || asset.category === 'Savings') priceAtT = 1;
+        // Skip if asset wasn't acquired yet or was already closed at this point
+        if (pointTime < acqTime || dateKey > endTimeStr) return; 
 
-        const apiCurrency = marketData.assetMarketPrices[asset.id]?.currency || 'TWD';
+        // Forward Filling Logic: Update last known price if new data available
+        if (point.assets[asset.id] !== undefined) {
+          lastKnownPrices[asset.id] = point.assets[asset.id];
+        }
+
+        let priceAtT = lastKnownPrices[asset.id];
+        
+        // If we still have no price (e.g., first point in tracking range but stock was closed Friday), 
+        // try to fallback to something, but usually handled by the acquisitionDate check above.
+        if (priceAtT === undefined) {
+          if (asset.category === 'Bank' || asset.category === 'Savings') priceAtT = 1;
+          else return; 
+        }
+
+        const apiCurrency = marketData.assetMarketPrices[asset.id]?.currency || asset.currency || 'TWD';
         const apiCurrencyRate = marketData.rates[apiCurrency as Currency] || 1;
         const priceInTWDAtT = priceAtT * (rateTWD / apiCurrencyRate);
         
@@ -339,12 +358,16 @@ export default function AssetInsightsPage() {
         if (asset.category === 'Stock' || asset.category === 'Crypto') {
           valInTWD = asset.amount * priceInTWDAtT;
         } else {
-          valInTWD = asset.amount * (rateTWD / (marketData.rates[asset.currency] || 1));
+          // Bank assets are usually stored in their own currency unit
+          const assetCurrencyRate = marketData.rates[asset.currency] || 1;
+          valInTWD = asset.amount * (rateTWD / assetCurrencyRate);
         }
+        
         pointTotalTWD += valInTWD;
         categories[asset.category] += valInTWD;
       });
 
+      // Filter out points with zero value (usually means tracking hasn't started or no data yet)
       if (pointTotalTWD > 0) {
         const item = { 
           timestamp: point.timestamp, 
@@ -354,11 +377,10 @@ export default function AssetInsightsPage() {
         Object.entries(categories).forEach(([cat, val]) => { 
           item[cat] = val * (displayRate / rateTWD); 
         });
-        historyMap.set(dateKey, item); 
+        historyData.push(item);
       }
     });
 
-    const chartData = Array.from(historyMap.values()).sort((a: any, b: any) => a.timestamp - b.timestamp);
     return { 
       processedAssets, 
       activeAssets: processedAssets.filter(a => !a.isClosed),
@@ -366,7 +388,7 @@ export default function AssetInsightsPage() {
       totalTWD, 
       totalDisplay: totalTWD * (displayRate / rateTWD), 
       allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ name, value: value * (displayRate / rateTWD) })),
-      chartData
+      chartData: historyData
     };
   }, [assets, marketData, displayCurrency, marketTimeline]);
 
@@ -470,7 +492,7 @@ export default function AssetInsightsPage() {
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
               <Card className="lg:col-span-9 modern-card p-10 relative overflow-hidden bg-white shadow-3xl border-slate-100 flex flex-col justify-center">
                 <div className="space-y-4 z-20 relative">
-                  <div className="text-xl xl:text-3xl font-black text-black uppercase tracking-tight flex items-center gap-4"><Globe className="w-8 h-8" /> {t.totalValue}</div>
+                  <div className="text-xl xl:text-2xl font-black text-black uppercase tracking-tight flex items-center gap-4"><Globe className="w-8 h-8" /> {t.totalValue}</div>
                   <div className="text-4xl xl:text-6xl font-black tracking-tighter flex items-baseline gap-4">
                     <span className="text-slate-200 font-medium">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                     <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
@@ -573,7 +595,7 @@ export default function AssetInsightsPage() {
               <Tabs defaultValue="active" className="flex flex-col h-full">
                 <CardHeader className="px-8 py-6 border-b border-slate-50 shrink-0">
                   <div className="flex items-center justify-between mb-4">
-                    <CardTitle className="text-xl xl:text-3xl font-black tracking-tight uppercase flex items-center gap-4"><BarChart3 className="w-8 h-8 text-primary" /> {t.dashboard}</CardTitle>
+                    <CardTitle className="text-xl xl:text-2xl font-black tracking-tight uppercase flex items-center gap-4"><BarChart3 className="w-8 h-8 text-primary" /> {t.dashboard}</CardTitle>
                   </div>
                   <TabsList className="bg-slate-100 p-1 rounded-xl w-fit h-10">
                     <TabsTrigger value="active" className="text-xs font-black px-6 gap-2 h-8 rounded-lg"><Briefcase className="w-4 h-4" /> {t.activePositions}</TabsTrigger>
@@ -646,7 +668,7 @@ export default function AssetInsightsPage() {
             {controls}
             <Card className="modern-card bg-white shadow-3xl border-slate-100 rounded-2xl h-full flex flex-col">
               <CardHeader className="px-8 py-6 border-b border-slate-50 shrink-0">
-                <CardTitle className="text-xl xl:text-3xl font-black uppercase tracking-tight flex items-center gap-4">
+                <CardTitle className="text-xl xl:text-2xl font-black uppercase tracking-tight flex items-center gap-4">
                   <Plus className="w-8 h-8 text-primary" /> {t.addAsset}
                 </CardTitle>
               </CardHeader>
