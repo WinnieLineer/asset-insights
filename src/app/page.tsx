@@ -18,10 +18,8 @@ import {
   Loader2,
   Calendar,
   Clock,
-  Briefcase,
   Download,
   Upload,
-  History,
   TrendingUp,
   TrendingDown,
   ChevronUp,
@@ -47,7 +45,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Dialog,
   DialogContent,
@@ -467,14 +465,14 @@ export default function AssetInsightsPage() {
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
               <Card className="lg:col-span-9 modern-card p-10 relative overflow-hidden bg-white shadow-3xl border-slate-100 flex flex-col justify-center rounded-2xl">
                 <div className="space-y-4 z-20 relative">
-                  <div className="text-xs xl:text-lg font-black text-slate-400 uppercase tracking-widest flex items-center gap-4"><Globe className="w-6 h-6" /> {t.totalValue}</div>
+                  <div className="text-[10px] xl:text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-4"><Globe className="w-5 h-5" /> {t.totalValue}</div>
                   <div className="text-4xl xl:text-6xl font-black tracking-tighter flex items-baseline gap-4">
                     <span className="text-slate-200 font-medium">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                     <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                     {loading && <Loader2 className="w-10 h-10 animate-spin text-slate-200 ml-4" />}
                   </div>
                 </div>
-                <div className="absolute bottom-6 right-6 opacity-10 pointer-events-none transform rotate-12"><Wallet className="w-32 h-32 text-black" /></div>
+                <div className="absolute bottom-10 right-10 opacity-10 pointer-events-none transform"><Wallet className="w-32 h-32 text-black" /></div>
               </Card>
               <div className="lg:col-span-3">
                 <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[120px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-3 rounded-2xl shadow-xl transition-all active:scale-95">
@@ -491,9 +489,9 @@ export default function AssetInsightsPage() {
             {controls}
             <section className="bg-slate-50/80 backdrop-blur-md p-6 border border-slate-100 rounded-2xl grid grid-cols-1 md:grid-cols-12 gap-4 shadow-inner h-full content-center">
               <div className="md:col-span-3 space-y-2">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
+                <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
-                  <SelectTrigger className="h-10 bg-white font-black text-sm rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 bg-white font-black text-xs rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="30">{t.days30}</SelectItem>
                     <SelectItem value="90">{t.days90}</SelectItem>
@@ -503,9 +501,9 @@ export default function AssetInsightsPage() {
                 </Select>
               </div>
               <div className="md:col-span-3 space-y-2">
-                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Clock className="w-4 h-4" /> {t.interval}</Label>
+                <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Clock className="w-4 h-4" /> {t.interval}</Label>
                 <Select value={interval} onValueChange={setInterval}>
-                  <SelectTrigger className="h-10 bg-white font-black text-sm rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 bg-white font-black text-xs rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1d">{t.int1d}</SelectItem>
                     <SelectItem value="1wk">{t.int1wk}</SelectItem>
@@ -557,63 +555,55 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <Card className="modern-card bg-white shadow-3xl border-slate-100 rounded-2xl overflow-hidden h-full flex flex-col">
-              <Tabs defaultValue="active" className="flex flex-col h-full">
-                <CardHeader className="px-8 py-6 border-b border-slate-50 shrink-0">
-                  <div className="flex items-center justify-between mb-4">
-                    <CardTitle className="text-sm xl:text-lg font-black tracking-widest uppercase flex items-center gap-4 text-slate-400"><BarChart3 className="w-6 h-6" /> {t.dashboard}</CardTitle>
-                  </div>
-                  <TabsList className="bg-slate-100 p-1 rounded-xl w-fit h-8">
-                    <TabsTrigger value="active" className="text-[10px] font-black px-4 gap-2 h-6 rounded-lg">{t.activePositions}</TabsTrigger>
-                    <TabsTrigger value="closed" className="text-[10px] font-black px-4 gap-2 h-6 rounded-lg">{t.closedPositions}</TabsTrigger>
-                  </TabsList>
-                </CardHeader>
-                <CardContent className="p-0 flex-1 overflow-auto">
-                  <Table className="min-w-[800px]">
-                    <TableHeader className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md">
-                      <TableRow className="hover:bg-transparent border-slate-100">
-                        <TableHead className="px-8 h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.assetName}</TableHead>
-                        <TableHead className="h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.holdings}</TableHead>
-                        <TableHead className="h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.unitPrice}</TableHead>
-                        <TableHead className="h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.change}</TableHead>
-                        <TableHead className="h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right pr-8">{t.valuation}</TableHead>
-                        <TableHead className="w-[80px]"></TableHead>
+              <div className="px-8 py-6 border-b border-slate-50 shrink-0">
+                <CardTitle className="text-[10px] xl:text-sm font-black tracking-widest uppercase flex items-center gap-4 text-slate-400"><BarChart3 className="w-5 h-5" /> {t.dashboard}</CardTitle>
+              </div>
+              <CardContent className="p-0 flex-1 overflow-auto">
+                <Table className="min-w-[800px]">
+                  <TableHeader className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md">
+                    <TableRow className="hover:bg-transparent border-slate-100">
+                      <TableHead className="px-8 h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.assetName}</TableHead>
+                      <TableHead className="h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.holdings}</TableHead>
+                      <TableHead className="h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.unitPrice}</TableHead>
+                      <TableHead className="h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.change}</TableHead>
+                      <TableHead className="h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right pr-8">{t.valuation}</TableHead>
+                      <TableHead className="w-[80px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assetCalculations.activeAssets.map((asset: any) => (
+                      <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
+                        <TableCell className="px-8 py-4">
+                          <div className="font-black text-xs text-slate-900">{asset.name}</div>
+                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-0.5">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
+                        </TableCell>
+                        <TableCell><span className="text-xs font-black text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
+                        <TableCell><div className="flex items-center gap-2"><span className="text-[9px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-xs font-black text-slate-700">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></div></TableCell>
+                        <TableCell>
+                          {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
+                            <div className={cn("flex items-center gap-2 font-black text-[10px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                              {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                              <span>{asset.dayChangePercent.toFixed(1)}%</span>
+                            </div>
+                          ) : <span className="text-slate-200">—</span>}
+                        </TableCell>
+                        <TableCell className="text-right pr-8">
+                          <div className="font-black text-sm">
+                            <span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>
+                            {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                          </div>
+                        </TableCell>
+                        <TableCell className="pr-8 text-right">
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-slate-100" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); setEditEndDate(asset.endDate || ''); }}><Edit2 className="w-3 h-3" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-rose-50 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3 h-3" /></Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {assetCalculations.activeAssets.map((asset: any) => (
-                        <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
-                          <TableCell className="px-8 py-4">
-                            <div className="font-black text-xs text-slate-900">{asset.name}</div>
-                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-0.5">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
-                          </TableCell>
-                          <TableCell><span className="text-xs font-black text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
-                          <TableCell><div className="flex items-center gap-2"><span className="text-[9px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-xs font-black text-slate-700">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></div></TableCell>
-                          <TableCell>
-                            {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
-                              <div className={cn("flex items-center gap-2 font-black text-[10px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
-                                {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                                <span>{asset.dayChangePercent.toFixed(1)}%</span>
-                              </div>
-                            ) : <span className="text-slate-200">—</span>}
-                          </TableCell>
-                          <TableCell className="text-right pr-8">
-                            <div className="font-black text-sm">
-                              <span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>
-                              {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                            </div>
-                          </TableCell>
-                          <TableCell className="pr-8 text-right">
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-slate-100" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); setEditEndDate(asset.endDate || ''); }}><Edit2 className="w-3 h-3" /></Button>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-rose-50 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3 h-3" /></Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Tabs>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
             </Card>
           </div>
         );
@@ -630,8 +620,8 @@ export default function AssetInsightsPage() {
             {controls}
             <Card className="modern-card bg-white shadow-3xl border-slate-100 rounded-2xl h-full flex flex-col">
               <CardHeader className="px-8 py-6 border-b border-slate-50 shrink-0">
-                <CardTitle className="text-sm xl:text-lg font-black uppercase tracking-widest flex items-center gap-4 text-slate-400">
-                  <Plus className="w-6 h-6" /> {t.addAsset}
+                <CardTitle className="text-[10px] xl:text-sm font-black uppercase tracking-widest flex items-center gap-4 text-slate-400">
+                  <Plus className="w-5 h-5" /> {t.addAsset}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 flex-1 overflow-auto">
