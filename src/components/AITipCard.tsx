@@ -115,7 +115,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
     `;
 
     try {
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent", {
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent", {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -158,98 +158,98 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
   };
 
   return (
-    <Card className="modern-card border-slate-200 bg-white shadow-xl overflow-hidden animate-fade-in">
-      <CardHeader className="px-6 sm:px-10 py-6 sm:py-8 border-b border-slate-100 bg-zinc-50/50">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-black rounded shrink-0">
-                <Brain className="w-5 h-5 text-white" />
+    <Card className="modern-card border-slate-200 bg-white shadow-2xl overflow-hidden animate-fade-in h-full flex flex-col">
+      <CardHeader className="px-8 py-10 border-b border-slate-100 bg-zinc-50/50 shrink-0">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-black rounded-xl shrink-0 shadow-lg">
+                <Brain className="w-6 h-6 text-white" />
               </div>
-              <CardTitle className="text-lg sm:text-xl font-bold tracking-tight uppercase">{lang.title}</CardTitle>
+              <CardTitle className="text-xl xl:text-2xl font-black tracking-tight uppercase">{lang.title}</CardTitle>
             </div>
-            <CardDescription className="text-xs font-bold text-slate-400 uppercase tracking-widest">{lang.desc}</CardDescription>
+            <CardDescription className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{lang.desc}</CardDescription>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 sm:gap-4 flex-1 max-w-2xl w-full">
-            <div className="w-full space-y-2">
-              <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2 ml-1">
-                <MessageSquare className="w-3.5 h-3.5" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 flex-1 max-w-2xl w-full">
+            <div className="w-full space-y-2.5">
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2 ml-1">
+                <MessageSquare className="w-4 h-4" />
                 {lang.instructionLabel}
               </label>
               <Textarea 
                 placeholder={lang.instructionPlaceholder}
-                className="text-sm min-h-[60px] bg-white border-zinc-200 focus:ring-black focus:border-black rounded-md p-3 font-bold shadow-sm"
+                className="text-sm min-h-[70px] bg-white border-zinc-200 focus:ring-black focus:border-black rounded-xl p-4 font-black shadow-sm"
                 value={userQuestion}
                 onChange={(e) => setUserQuestion(e.target.value)}
               />
             </div>
             <Button 
-              className="bg-black hover:bg-zinc-800 text-white font-bold h-[60px] px-8 rounded-md shrink-0 w-full sm:w-auto transition-all active:scale-95 shadow-md"
+              className="bg-black hover:bg-zinc-800 text-white font-black h-[70px] px-10 rounded-xl shrink-0 w-full sm:w-auto transition-all active:scale-95 shadow-xl"
               onClick={callGeminiAPI}
               disabled={loading || assets.length === 0}
             >
-              {loading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-              <span className="text-xs tracking-widest uppercase">{loading ? lang.loading : lang.ctaButton}</span>
+              {loading ? <Loader2 className="w-5 h-5 animate-spin mr-3" /> : <Sparkles className="w-5 h-5 mr-3" />}
+              <span className="text-xs tracking-[0.2em] uppercase">{loading ? lang.loading : lang.ctaButton}</span>
             </Button>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent className="p-6 sm:p-10">
+      <CardContent className="p-8 sm:p-12 flex-1 overflow-auto">
         {insight ? (
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 animate-fade-in">
-            <div className="xl:col-span-5 space-y-8">
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                  <Target className="w-4 h-4" />
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-12 animate-fade-in">
+            <div className="xl:col-span-5 space-y-10">
+              <div className="space-y-5">
+                <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] flex items-center gap-3">
+                  <Target className="w-5 h-5" />
                   {lang.answer}
                 </h4>
-                <div className="text-sm sm:text-base font-bold text-zinc-900 leading-relaxed border-l-4 border-black pl-5 py-2">
+                <div className="text-base sm:text-lg font-black text-zinc-900 leading-relaxed border-l-6 border-black pl-8 py-3 bg-zinc-50 rounded-r-xl">
                   {insight.answer}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="bg-zinc-50 p-6 rounded-md border border-zinc-100 shadow-inner">
-                  <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">{lang.risk}</h4>
-                  <Badge className={cn("text-xs font-bold py-1.5 px-4 border-none uppercase tracking-widest", getRiskColor(insight.riskLevel))}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="bg-white p-8 rounded-2xl border border-zinc-100 shadow-xl">
+                  <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-4">{lang.risk}</h4>
+                  <Badge className={cn("text-xs font-black py-2 px-6 border-none uppercase tracking-widest rounded-full", getRiskColor(insight.riskLevel))}>
                     {insight.riskLevel}
                   </Badge>
                 </div>
-                <div className="bg-zinc-50 p-6 rounded-md border border-zinc-100 shadow-inner">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{lang.diversification}</h4>
-                    <span className="text-xs font-bold text-black">{insight.diversificationScore}%</span>
+                <div className="bg-white p-8 rounded-2xl border border-zinc-100 shadow-xl">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">{lang.diversification}</h4>
+                    <span className="text-sm font-black text-black">{insight.diversificationScore}%</span>
                   </div>
-                  <Progress value={insight.diversificationScore} className="h-2 bg-zinc-200 [&>div]:bg-black" />
+                  <Progress value={insight.diversificationScore} className="h-3 bg-zinc-100 [&>div]:bg-black" />
                 </div>
               </div>
             </div>
 
-            <div className="xl:col-span-7 space-y-10">
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4" />
+            <div className="xl:col-span-7 space-y-12">
+              <div className="space-y-5">
+                <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] flex items-center gap-3">
+                  <ShieldCheck className="w-5 h-5" />
                   {lang.analysis}
                 </h4>
-                <p className="text-sm sm:text-base font-medium text-zinc-600 leading-loose">
+                <p className="text-base sm:text-lg font-bold text-zinc-600 leading-loose">
                   {insight.analysis}
                 </p>
               </div>
 
-              <div className="space-y-5">
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" />
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] flex items-center gap-3">
+                  <TrendingUp className="w-5 h-5" />
                   {lang.recommendations}
                 </h4>
-                <div className="grid gap-3">
+                <div className="grid gap-4">
                   {insight.recommendations.map((rec: string, i: number) => (
-                    <div key={i} className="flex items-center gap-4 p-4 bg-zinc-50 border border-zinc-100 rounded-md hover:border-black transition-all group shadow-sm">
-                      <div className="w-6 h-6 rounded bg-black text-white flex items-center justify-center shrink-0 font-bold text-xs group-hover:scale-110 transition-transform">
+                    <div key={i} className="flex items-center gap-6 p-6 bg-white border border-zinc-100 rounded-2xl hover:border-black transition-all group shadow-sm hover:shadow-xl">
+                      <div className="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center shrink-0 font-black text-sm group-hover:scale-110 transition-transform shadow-lg">
                         {i + 1}
                       </div>
-                      <span className="text-sm font-bold text-zinc-700">{rec}</span>
+                      <span className="text-sm sm:text-base font-black text-zinc-700">{rec}</span>
                     </div>
                   ))}
                 </div>
@@ -257,9 +257,9 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
             </div>
           </div>
         ) : (
-          <div className="py-20 text-center flex flex-col items-center gap-6 opacity-30">
-            <Brain className="w-16 h-16" />
-            <p className="text-sm font-bold uppercase tracking-widest">點擊按鈕開始資產配置分析</p>
+          <div className="py-24 text-center flex flex-col items-center gap-8 opacity-20">
+            <Brain className="w-24 h-24" />
+            <p className="text-sm font-black uppercase tracking-[0.4em]">點擊按鈕啟動專業資產審計</p>
           </div>
         )}
       </CardContent>
