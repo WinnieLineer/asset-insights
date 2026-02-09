@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -134,7 +135,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
   return (
     <div className="modern-card p-6 flex flex-col items-center border-slate-100 bg-white relative shadow-xl rounded-2xl h-full">
       <div className="w-full mb-4 text-left"><h3 className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest">{lang.allocation}</h3></div>
-      <div className="flex-1 w-full relative">
+      <div className="flex-1 w-full relative" style={{ height: height ? `${height - 100}px` : '400px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie activeIndex={activeIndex ?? undefined} activeShape={renderActiveShape} data={allocationData} cx="50%" cy="50%" innerRadius={Math.min(50, (height||400)/8)} outerRadius={Math.min(70, (height||400)/6)} paddingAngle={5} dataKey="value" stroke="transparent" onMouseEnter={(_, index) => setActiveIndex(index)} onMouseLeave={() => setActiveIndex(null)} label={(props) => renderCustomLabel({ ...props, symbol, langCategories: lang.categories })} labelLine={false}>
