@@ -3,16 +3,16 @@
 import React, { useState } from 'react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Sector,
-  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend, Brush
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend
 } from 'recharts';
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const ASSET_COLORS: Record<string, string> = {
-  'Stock': '#000000',   // 股票 - 經典黑
-  'Crypto': '#4f46e5',  // 加密貨幣 - 現代靛藍
-  'Bank': '#10b981',    // 其他資產 - 專業翡翠綠
-  'Savings': '#f59e0b'  // 存款 - 穩重琥珀色
+  'Stock': '#000000',   
+  'Crypto': '#3730a3',  
+  'Bank': '#064e3b',    
+  'Savings': '#92400e'  
 };
 
 const SYMBOLS: Record<Currency, string> = { TWD: 'NT$', USD: '$', CNY: '¥', SGD: 'S$' };
@@ -80,11 +80,11 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   )) as AssetCategory[];
 
   return (
-    <div className="modern-card p-12 border-slate-100 bg-white relative shadow-3xl rounded-2xl h-full flex flex-col overflow-hidden">
-      <div className="w-full mb-10 flex items-center justify-between shrink-0">
+    <div className="modern-card p-10 border-slate-100 bg-white relative shadow-3xl rounded-2xl h-full flex flex-col overflow-hidden">
+      <div className="w-full mb-8 flex items-center justify-between shrink-0">
         <h3 className="text-[11px] xl:text-[13px] font-black text-slate-400 uppercase tracking-[0.4em]">{lang.trend}</h3>
       </div>
-      <div className="w-full flex-1" style={{ height: height ? `${height - 180}px` : '450px' }}>
+      <div className="w-full flex-1" style={{ height: height ? `${height - 140}px` : '400px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={historicalData} margin={{ top: 15, right: 25, bottom: 15, left: 25 }}>
             <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="#f1f5f9" />
@@ -123,7 +123,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               verticalAlign="top" 
               align="right" 
               iconType="circle" 
-              wrapperStyle={{ paddingTop: '0px', paddingBottom: '40px' }} 
+              wrapperStyle={{ paddingTop: '0px', paddingBottom: '30px' }} 
               onMouseEnter={(e: any) => setActiveCategory(e.dataKey || e.value)}
               onMouseLeave={() => setActiveCategory(null)}
               content={({ payload }) => (
@@ -148,7 +148,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                 dataKey={cat} 
                 stackId="a" 
                 fill={ASSET_COLORS[cat]} 
-                barSize={24} 
+                barSize={20} 
                 opacity={(!activeCategory || activeCategory === cat) ? 1 : 0.15}
                 className="transition-opacity duration-300"
               />
@@ -163,7 +163,6 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               opacity={!activeCategory ? 1 : 0.1}
               className="transition-opacity duration-300"
             />
-            <Brush dataKey="displayDate" height={32} stroke="#f1f5f9" fill="#fafafa" travellerWidth={12} className="font-black text-[11px]" />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -181,11 +180,11 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
   const filteredData = allocationData.filter((d: any) => d.value > 0);
 
   return (
-    <div className="modern-card p-12 flex flex-col items-center border-slate-100 bg-white relative shadow-3xl rounded-2xl h-full overflow-hidden">
-      <div className="w-full mb-10 text-left shrink-0">
+    <div className="modern-card p-10 flex flex-col items-center border-slate-100 bg-white relative shadow-3xl rounded-2xl h-full overflow-hidden">
+      <div className="w-full mb-8 text-left shrink-0">
         <h3 className="text-[11px] xl:text-[13px] font-black text-slate-400 uppercase tracking-[0.4em]">{lang.allocation}</h3>
       </div>
-      <div className="flex-1 w-full relative" style={{ height: height ? `${height - 180}px` : '450px' }}>
+      <div className="flex-1 w-full relative" style={{ height: height ? `${height - 140}px` : '400px' }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie 
@@ -194,8 +193,8 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
               data={filteredData} 
               cx="50%" 
               cy="50%" 
-              innerRadius={Math.min(110, (height||450)/4.2)} 
-              outerRadius={Math.min(160, (height||450)/2.8)} 
+              innerRadius={Math.min(100, (height||400)/4.2)} 
+              outerRadius={Math.min(150, (height||400)/2.8)} 
               paddingAngle={6} 
               dataKey="value" 
               stroke="transparent" 

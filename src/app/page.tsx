@@ -163,7 +163,7 @@ const translations = {
     importSuccess: '資產資料已成功匯入。',
     exitReorder: '完成調整',
     reorderHint: '已進入佈局調整模式：可使用 W 調整寬度，H (箭頭) 調整高度。',
-    liveRates: '即時匯率 (1 USD)',
+    liveRates: '即時匯率 (1 [CUR])',
     categoryNames: {
       Stock: '股票',
       Crypto: '加密貨幣',
@@ -198,12 +198,12 @@ export default function AssetInsightsPage() {
   
   const [sections, setSections] = useState<string[]>(['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'ai', 'addAsset']);
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
-    summary: { width: 12, height: 320 },
+    summary: { width: 12, height: 280 },
     controls: { width: 12, height: 160 },
-    historicalTrend: { width: 12, height: 500 },
-    allocation: { width: 12, height: 500 },
+    historicalTrend: { width: 12, height: 480 },
+    allocation: { width: 12, height: 480 },
     list: { width: 12, height: 700 },
-    ai: { width: 12, height: 600 },
+    ai: { width: 12, height: 580 },
     addAsset: { width: 12, height: 600 }
   });
 
@@ -409,7 +409,7 @@ export default function AssetInsightsPage() {
   };
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
-    if ((e.target as HTMLElement).closest('button, input, select, [role="tab"], .recharts-surface, .lucide')) return;
+    if ((e.target as HTMLElement).closest('button, input, select, [role="tab"], .recharts-surface, .lucide, textarea')) return;
     const cleanup = () => {
       if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
       window.removeEventListener('mouseup', cleanup);
@@ -466,19 +466,19 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-              <Card className="lg:col-span-9 modern-card p-12 relative overflow-hidden bg-white shadow-3xl border-slate-100 flex flex-col justify-center rounded-2xl">
-                <div className="space-y-6 z-20 relative">
+              <Card className="lg:col-span-9 modern-card p-10 relative overflow-hidden bg-white shadow-3xl border-slate-100 flex flex-col justify-center rounded-2xl">
+                <div className="space-y-5 z-20 relative">
                   <div className="text-[11px] xl:text-[13px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-5">
                     <Globe className="w-6 h-6" /> {t.totalValue}
                   </div>
-                  <div className="text-4xl xl:text-6xl font-black tracking-tighter flex items-baseline gap-6">
+                  <div className="text-3xl xl:text-5xl font-black tracking-tighter flex items-baseline gap-6 uppercase">
                     <span className="text-slate-200 font-medium">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                     <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                     {loading && <Loader2 className="w-10 h-10 animate-spin text-slate-200 ml-6" />}
                   </div>
                 </div>
-                <div className="absolute bottom-12 right-12 opacity-15 pointer-events-none">
-                  <Wallet className="w-40 h-40 text-black rotate-0" />
+                <div className="absolute bottom-10 right-10 opacity-15 pointer-events-none">
+                  <Wallet className="w-32 h-32 text-black" />
                 </div>
               </Card>
               <div className="lg:col-span-3">
@@ -498,7 +498,7 @@ export default function AssetInsightsPage() {
               <div className="md:col-span-3 space-y-3">
                 <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-3 ml-1"><Calendar className="w-5 h-5" /> {t.baseRange}</Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
-                  <SelectTrigger className="h-12 bg-white font-black text-base rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-12 bg-white font-black text-base rounded-xl border-slate-200 focus:ring-black"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="30">{t.days30}</SelectItem>
                     <SelectItem value="90">{t.days90}</SelectItem>
@@ -510,7 +510,7 @@ export default function AssetInsightsPage() {
               <div className="md:col-span-3 space-y-3">
                 <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-3 ml-1"><Clock className="w-5 h-5" /> {t.interval}</Label>
                 <Select value={interval} onValueChange={setInterval}>
-                  <SelectTrigger className="h-12 bg-white font-black text-base rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-12 bg-white font-black text-base rounded-xl border-slate-200 focus:ring-black"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1d">{t.int1d}</SelectItem>
                     <SelectItem value="1wk">{t.int1wk}</SelectItem>
@@ -519,8 +519,8 @@ export default function AssetInsightsPage() {
                 </Select>
               </div>
               <div className="md:col-span-6 flex items-end gap-4">
-                <Button variant="outline" onClick={handleExport} className="flex-1 h-12 font-black text-[11px] uppercase tracking-[0.25em] gap-3 bg-white rounded-xl shadow-sm"><Download className="w-6 h-6" /> {t.exportData}</Button>
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-12 font-black text-[11px] uppercase tracking-[0.25em] gap-3 bg-white rounded-xl shadow-sm"><Upload className="w-6 h-6" /> {t.importData}</Button>
+                <Button variant="outline" onClick={handleExport} className="flex-1 h-12 font-black text-[11px] uppercase tracking-[0.25em] gap-3 bg-white rounded-xl shadow-sm border-slate-200 hover:border-black"><Download className="w-6 h-6" /> {t.exportData}</Button>
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-12 font-black text-[11px] uppercase tracking-[0.25em] gap-3 bg-white rounded-xl shadow-sm border-slate-200 hover:border-black"><Upload className="w-6 h-6" /> {t.importData}</Button>
                 <input type="file" ref={fileInputRef} onChange={(e) => {
                    const file = e.target.files?.[0]; if (!file) return;
                    const reader = new FileReader(); reader.onload = (event) => {
@@ -651,13 +651,13 @@ export default function AssetInsightsPage() {
         <div className="max-w-[1900px] mx-auto px-10 h-full flex items-center justify-between gap-10 overflow-hidden">
           <div className="flex items-center gap-5 shrink-0">
             <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-5 h-5 text-white" /></div>
-            <h1 className="text-base xl:text-lg font-black tracking-tighter uppercase leading-none hidden sm:block">{t.title}</h1>
+            <h1 className="text-[11px] xl:text-[13px] font-black tracking-tighter uppercase leading-none hidden sm:block">{t.title}</h1>
           </div>
           
           <div className="flex-1 flex items-center gap-10 overflow-hidden">
             <div className="flex items-center gap-6 px-6 border-l border-slate-100 overflow-auto no-scrollbar">
                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
-                 {t.liveRates.replace('USD', displayCurrency)}
+                 {t.liveRates.replace('[CUR]', displayCurrency)}
                </span>
                <div className="flex items-center gap-7">
                  {Object.entries(marketData.rates).filter(([cur]) => cur !== displayCurrency).map(([cur, rate]) => {
@@ -666,9 +666,9 @@ export default function AssetInsightsPage() {
                    const relativeRate = targetRate / baseRate;
                    return (
                      <div key={cur} className="flex items-center gap-3 whitespace-nowrap">
-                       <span className="text-[12px] font-black text-slate-900">{cur}</span>
+                       <span className="text-[11px] font-black text-slate-900">{cur}</span>
                        <ArrowRightLeft className="w-3.5 h-3.5 text-slate-200" />
-                       <span className="text-[12px] font-black text-emerald-600">
+                       <span className="text-[11px] font-black text-emerald-600">
                          {relativeRate < 0.1 ? relativeRate.toFixed(4) : relativeRate.toFixed(2)}
                        </span>
                      </div>
@@ -718,10 +718,10 @@ export default function AssetInsightsPage() {
           <DialogHeader><DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-5"><Edit2 className="w-7 h-7 text-primary" /> {t.editAsset}</DialogTitle></DialogHeader>
           <div className="grid gap-8 py-8">
             <div className="space-y-3"><Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label><div className="p-5 bg-slate-50 rounded-xl font-black text-base text-slate-900 border border-slate-100">{editingAsset?.name}</div></div>
-            <div className="space-y-3"><Label htmlFor="amount" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label><Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-12 font-black text-xl border-slate-200 rounded-xl" /></div>
+            <div className="space-y-3"><Label htmlFor="amount" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label><Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-12 font-black text-xl border-slate-300 rounded-xl focus:ring-black" /></div>
             <div className="grid grid-cols-2 gap-5">
-              <div className="space-y-3"><Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-12 font-black text-base rounded-xl border-slate-200" /></div>
-              <div className="space-y-3"><Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-12 font-black text-base rounded-xl border-slate-200" /></div>
+              <div className="space-y-3"><Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-12 font-black text-base rounded-xl border-slate-300 focus:ring-black" /></div>
+              <div className="space-y-3"><Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-12 font-black text-base rounded-xl border-slate-300 focus:ring-black" /></div>
             </div>
           </div>
           <DialogFooter className="flex gap-4">
