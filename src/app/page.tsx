@@ -331,6 +331,7 @@ export default function AssetInsightsPage() {
         const endTimeStr = asset.endDate || '9999-12-31';
         if (pointTime < acqTime || dateKey > endTimeStr) return; 
 
+        // Forward filling logic
         if (point.assets[asset.id] !== undefined) {
           lastKnownPrices[asset.id] = point.assets[asset.id];
         }
@@ -465,14 +466,18 @@ export default function AssetInsightsPage() {
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
               <Card className="lg:col-span-9 modern-card p-10 relative overflow-hidden bg-white shadow-3xl border-slate-100 flex flex-col justify-center rounded-2xl">
                 <div className="space-y-4 z-20 relative">
-                  <div className="text-[10px] xl:text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-4"><Globe className="w-5 h-5" /> {t.totalValue}</div>
+                  <div className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-4">
+                    <Globe className="w-5 h-5" /> {t.totalValue}
+                  </div>
                   <div className="text-4xl xl:text-6xl font-black tracking-tighter flex items-baseline gap-4">
                     <span className="text-slate-200 font-medium">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                     <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                     {loading && <Loader2 className="w-10 h-10 animate-spin text-slate-200 ml-4" />}
                   </div>
                 </div>
-                <div className="absolute bottom-10 right-10 opacity-10 pointer-events-none transform"><Wallet className="w-32 h-32 text-black" /></div>
+                <div className="absolute bottom-10 right-10 opacity-10 pointer-events-none">
+                  <Wallet className="w-32 h-32 text-black" />
+                </div>
               </Card>
               <div className="lg:col-span-3">
                 <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[120px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-3 rounded-2xl shadow-xl transition-all active:scale-95">
@@ -556,7 +561,9 @@ export default function AssetInsightsPage() {
             {controls}
             <Card className="modern-card bg-white shadow-3xl border-slate-100 rounded-2xl overflow-hidden h-full flex flex-col">
               <div className="px-8 py-6 border-b border-slate-50 shrink-0">
-                <CardTitle className="text-[10px] xl:text-sm font-black tracking-widest uppercase flex items-center gap-4 text-slate-400"><BarChart3 className="w-5 h-5" /> {t.dashboard}</CardTitle>
+                <CardTitle className="text-xs xl:text-sm font-black tracking-widest uppercase flex items-center gap-4 text-slate-400">
+                  <BarChart3 className="w-5 h-5" /> {t.dashboard}
+                </CardTitle>
               </div>
               <CardContent className="p-0 flex-1 overflow-auto">
                 <Table className="min-w-[800px]">
@@ -620,7 +627,7 @@ export default function AssetInsightsPage() {
             {controls}
             <Card className="modern-card bg-white shadow-3xl border-slate-100 rounded-2xl h-full flex flex-col">
               <CardHeader className="px-8 py-6 border-b border-slate-50 shrink-0">
-                <CardTitle className="text-[10px] xl:text-sm font-black uppercase tracking-widest flex items-center gap-4 text-slate-400">
+                <CardTitle className="text-xs xl:text-sm font-black uppercase tracking-widest flex items-center gap-4 text-slate-400">
                   <Plus className="w-5 h-5" /> {t.addAsset}
                 </CardTitle>
               </CardHeader>
@@ -647,15 +654,24 @@ export default function AssetInsightsPage() {
           
           <div className="flex-1 flex items-center gap-6 overflow-hidden">
             <div className="flex items-center gap-4 px-4 border-l border-slate-100 overflow-auto no-scrollbar">
-               <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest whitespace-nowrap">{t.liveRates}</span>
+               <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest whitespace-nowrap">
+                 {t.liveRates.replace('USD', displayCurrency)}
+               </span>
                <div className="flex items-center gap-4">
-                 {Object.entries(marketData.rates).filter(([k]) => k !== 'USD').map(([cur, rate]) => (
-                   <div key={cur} className="flex items-center gap-1.5 whitespace-nowrap">
-                     <span className="text-[10px] font-black text-slate-900">{cur}</span>
-                     <ArrowRightLeft className="w-2.5 h-2.5 text-slate-200" />
-                     <span className="text-[10px] font-black text-emerald-600">{rate.toFixed(2)}</span>
-                   </div>
-                 ))}
+                 {Object.entries(marketData.rates).filter(([cur]) => cur !== displayCurrency).map(([cur, rate]) => {
+                   const baseRate = marketData.rates[displayCurrency] || 1;
+                   const targetRate = rate;
+                   const relativeRate = targetRate / baseRate;
+                   return (
+                     <div key={cur} className="flex items-center gap-1.5 whitespace-nowrap">
+                       <span className="text-[10px] font-black text-slate-900">{cur}</span>
+                       <ArrowRightLeft className="w-2.5 h-2.5 text-slate-200" />
+                       <span className="text-[10px] font-black text-emerald-600">
+                         {relativeRate < 0.1 ? relativeRate.toFixed(4) : relativeRate.toFixed(2)}
+                       </span>
+                     </div>
+                   );
+                 })}
                </div>
             </div>
           </div>

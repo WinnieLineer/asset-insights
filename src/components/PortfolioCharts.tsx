@@ -46,19 +46,19 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   const cos = Math.cos(-RADIAN * midAngle);
   const sx = cx + (outerRadius + 5) * cos;
   const sy = cy + (outerRadius + 5) * sin;
-  const mx = cx + (outerRadius + 20) * cos;
-  const my = cy + (outerRadius + 20) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 15;
+  const mx = cx + (outerRadius + 15) * cos;
+  const my = cy + (outerRadius + 15) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 12;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
-  if (percent < 0.03) return null; // Hide labels for very small slices to prevent overlap
+  if (percent < 0.03) return null; 
 
   return (
     <g>
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#e2e8f0" strokeWidth={1} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={-2} textAnchor={textAnchor} fill="#64748b" fontSize={10} fontWeight={800} className="uppercase tracking-widest">{langCategories[name] || name}</text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={12} textAnchor={textAnchor} fill="#94a3b8" fontSize={9} fontWeight={600}>{`${(percent * 100).toFixed(1)}%`}</text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={-2} textAnchor={textAnchor} fill="#64748b" fontSize={9} fontWeight={800} className="uppercase tracking-widest">{langCategories[name] || name}</text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={8} fontWeight={600}>{`${(percent * 100).toFixed(1)}%`}</text>
     </g>
   );
 };
@@ -72,7 +72,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   return (
     <div className="modern-card p-10 border-slate-100 bg-white relative shadow-3xl rounded-2xl h-full flex flex-col overflow-hidden">
       <div className="w-full mb-8 flex items-center justify-between shrink-0">
-        <h3 className="text-[10px] xl:text-sm font-black text-slate-400 uppercase tracking-widest">{lang.trend}</h3>
+        <h3 className="text-xs xl:text-sm font-black text-slate-400 uppercase tracking-widest">{lang.trend}</h3>
       </div>
       <div className="w-full flex-1" style={{ height: height ? `${height - 160}px` : '400px' }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -138,7 +138,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
   return (
     <div className="modern-card p-10 flex flex-col items-center border-slate-100 bg-white relative shadow-3xl rounded-2xl h-full overflow-hidden">
       <div className="w-full mb-8 text-left shrink-0">
-        <h3 className="text-[10px] xl:text-sm font-black text-slate-400 uppercase tracking-widest">{lang.allocation}</h3>
+        <h3 className="text-xs xl:text-sm font-black text-slate-400 uppercase tracking-widest">{lang.allocation}</h3>
       </div>
       <div className="flex-1 w-full relative" style={{ height: height ? `${height - 160}px` : '400px' }}>
         <ResponsiveContainer width="100%" height="100%">
