@@ -384,7 +384,6 @@ export default function AssetInsightsPage() {
         categories[asset.category] += valInTWD;
       });
 
-      // 日線去重與 0 值過濾 (Deduplication & Filtering 0)
       if (pointTotalTWD > 0) {
         const item = {
           date: new Date(pointTime).toISOString(),
@@ -480,10 +479,12 @@ export default function AssetInsightsPage() {
       const tagName = el.tagName.toLowerCase();
       const role = el.getAttribute('role');
       const className = el.className?.toString() || '';
+      const isRecharts = el.closest('.recharts-brush') || el.closest('.recharts-surface') || className.includes('recharts');
+      
       return (
         tagName === 'button' || tagName === 'input' || tagName === 'select' || tagName === 'textarea' || tagName === 'a' ||
         role === 'button' || role === 'combobox' || role === 'tab' || role === 'menuitem' ||
-        className.includes('recharts-brush') || el.closest('.recharts-brush') !== null ||
+        !!isRecharts ||
         el.hasAttribute('data-radix-collection-item') || el.closest('[role="combobox"]') !== null ||
         el.closest('[role="tab"]') !== null || el.closest('button') !== null
       );
@@ -534,11 +535,13 @@ export default function AssetInsightsPage() {
     setLayout(prev => prev.map(item => {
       if (item.id !== id) return item;
       if (type === 'w') {
-        let newW = direction === 'increase' ? item.w + 2 : item.w - 2;
-        newW = Math.max(4, Math.min(12, newW));
-        return { ...item, w: newW };
+        const widths = [4, 6, 8, 10, 12];
+        const currentIndex = widths.indexOf(item.w);
+        let nextIndex = direction === 'increase' ? currentIndex + 1 : currentIndex - 1;
+        nextIndex = Math.max(0, Math.min(widths.length - 1, nextIndex));
+        return { ...item, w: widths[nextIndex] };
       } else {
-        let newH = direction === 'increase' ? item.h + 50 : item.h - 50;
+        let newH = direction === 'increase' ? item.h + 100 : item.h - 100;
         newH = Math.max(100, Math.min(1500, newH));
         return { ...item, h: newH };
       }
@@ -558,24 +561,26 @@ export default function AssetInsightsPage() {
     const wrapper = (content: React.ReactNode) => (
       <div key={id} className={cn("relative transition-all duration-300", colSpanClasses[w] || 'xl:col-span-12')} style={{ minHeight: isReordering ? h : 'auto' }}>
         {isReordering && (
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-1 z-[60] bg-white border border-slate-200 shadow-2xl rounded-full px-4 py-1.5 scale-90">
-            <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'up')} className="h-7 w-7"><ChevronUp className="w-3.5 h-3.5" /></Button>
-            <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'down')} className="h-7 w-7"><ChevronDown className="w-3.5 h-3.5" /></Button>
-            <div className="w-px h-3 bg-slate-200 mx-1" />
-            <div className="flex items-center gap-0.5 px-1">
-              <span className="text-[8px] font-black text-slate-300 mr-1">W</span>
-              <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'w', 'decrease')} className="h-7 w-7"><Minimize2 className="w-3.5 h-3.5" /></Button>
-              <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'w', 'increase')} className="h-7 w-7"><Maximize2 className="w-3.5 h-3.5" /></Button>
+          <div className="absolute -top-14 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-[110] bg-white border border-slate-200 shadow-2xl rounded-full px-4 py-2 scale-90 border-b-4 border-b-primary/10">
+            <div className="flex items-center gap-0.5">
+              <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'up')} className="h-8 w-8"><ChevronUp className="w-4 h-4" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'down')} className="h-8 w-8"><ChevronDown className="w-4 h-4" /></Button>
             </div>
-            <div className="w-px h-3 bg-slate-200 mx-1" />
-            <div className="flex items-center gap-0.5 px-1">
-              <span className="text-[8px] font-black text-slate-300 mr-1">H</span>
-              <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'h', 'decrease')} className="h-7 w-7"><ArrowUp className="w-3.5 h-3.5" /></Button>
-              <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'h', 'increase')} className="h-7 w-7"><ArrowDown className="w-3.5 h-3.5" /></Button>
+            <div className="w-px h-4 bg-slate-100 mx-1" />
+            <div className="flex items-center gap-1 px-1">
+              <span className="text-[9px] font-black text-slate-300 mr-1">X-寬</span>
+              <Button size="icon" variant="outline" onClick={() => resizeSection(id, 'w', 'decrease')} className="h-7 w-7 bg-slate-50 border-slate-100"><Minimize2 className="w-3.5 h-3.5" /></Button>
+              <Button size="icon" variant="outline" onClick={() => resizeSection(id, 'w', 'increase')} className="h-7 w-7 bg-slate-50 border-slate-100"><Maximize2 className="w-3.5 h-3.5" /></Button>
+            </div>
+            <div className="w-px h-4 bg-slate-100 mx-1" />
+            <div className="flex items-center gap-1 px-1">
+              <span className="text-[9px] font-black text-slate-300 mr-1">Y-高</span>
+              <Button size="icon" variant="outline" onClick={() => resizeSection(id, 'h', 'decrease')} className="h-7 w-7 bg-slate-50 border-slate-100"><ArrowUp className="w-3.5 h-3.5" /></Button>
+              <Button size="icon" variant="outline" onClick={() => resizeSection(id, 'h', 'increase')} className="h-7 w-7 bg-slate-50 border-slate-100"><ArrowDown className="w-3.5 h-3.5" /></Button>
             </div>
           </div>
         )}
-        <div className={cn("h-full", isReordering && "ring-4 ring-primary/10 rounded-2xl bg-slate-50/30 p-1")} style={{ height: (id === 'summary' || id === 'controls') && !isReordering ? 'auto' : h }}>
+        <div className={cn("h-full transition-all duration-500", isReordering && "ring-8 ring-primary/5 rounded-2xl bg-slate-50/50 p-1.5")} style={{ height: (id === 'summary' || id === 'controls') && !isReordering ? 'auto' : h }}>
           {content}
         </div>
       </div>
@@ -636,19 +641,19 @@ export default function AssetInsightsPage() {
               </Select>
             </div>
             <div className="md:col-span-6 flex items-end gap-2">
-              <Button variant="outline" onClick={handleExport} className="flex-1 h-10 font-black text-[9px] uppercase tracking-widest gap-2 bg-white border-slate-200"><Download className="w-3 h-3" /> {t.exportData}</Button>
-              <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 font-black text-[9px] uppercase tracking-widest gap-2 bg-white border-slate-200"><Upload className="w-3 h-3" /> {t.importData}</Button>
+              <Button variant="outline" onClick={handleExport} className="flex-1 h-10 font-black text-[9px] uppercase tracking-widest gap-2 bg-white border-slate-200 hover:bg-slate-50 transition-colors"><Download className="w-3 h-3" /> {t.exportData}</Button>
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 font-black text-[9px] uppercase tracking-widest gap-2 bg-white border-slate-200 hover:bg-slate-50 transition-colors"><Upload className="w-3 h-3" /> {t.importData}</Button>
               <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" className="hidden" />
             </div>
             {trackingDays === 'custom' && (
-              <div className="md:col-span-12 grid grid-cols-2 gap-4 pt-2 border-t border-slate-100 animate-fade-in">
+              <div className="md:col-span-12 grid grid-cols-2 gap-4 pt-3 border-t border-slate-100 animate-fade-in">
                 <div className="space-y-1">
                   <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.startDate}</Label>
-                  <Input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="h-10 bg-white font-bold text-xs rounded-lg" />
+                  <Input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="h-10 bg-white font-bold text-xs rounded-lg border-slate-100 focus:ring-primary/20" />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.endDate}</Label>
-                  <Input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="h-10 bg-white font-bold text-xs rounded-lg" />
+                  <Input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="h-10 bg-white font-bold text-xs rounded-lg border-slate-100 focus:ring-primary/20" />
                 </div>
               </div>
             )}
@@ -661,8 +666,8 @@ export default function AssetInsightsPage() {
               <CardHeader className="px-4 py-3 border-b border-slate-50 shrink-0">
                 <CardTitle className="text-base xl:text-lg font-black tracking-tighter uppercase flex items-center gap-2 mb-3"><BarChart3 className="w-4 h-4 text-primary" /> {t.dashboard}</CardTitle>
                 <TabsList className="bg-slate-100 p-0.5 rounded-lg w-fit h-8">
-                  <TabsTrigger value="active" className="text-[10px] font-black px-3 gap-1.5 h-7"><Briefcase className="w-3 h-3" /> {t.activePositions}</TabsTrigger>
-                  <TabsTrigger value="closed" className="text-[10px] font-black px-3 gap-1.5 h-7"><History className="w-3 h-3" /> {t.closedPositions}</TabsTrigger>
+                  <TabsTrigger value="active" className="text-[10px] font-black px-3 gap-1.5 h-7 data-[state=active]:bg-white"><Briefcase className="w-3 h-3" /> {t.activePositions}</TabsTrigger>
+                  <TabsTrigger value="closed" className="text-[10px] font-black px-3 gap-1.5 h-7 data-[state=active]:bg-white"><History className="w-3 h-3" /> {t.closedPositions}</TabsTrigger>
                 </TabsList>
               </CardHeader>
               <CardContent className="p-0 flex-1 overflow-auto">{renderTable(TabsContent, assetCalculations)}</CardContent>
@@ -771,20 +776,20 @@ export default function AssetInsightsPage() {
       onTouchStart={handleMouseDown}
       onTouchEnd={handleMouseUp}
     >
-      <header className="fixed top-0 left-0 right-0 py-2 xl:py-4 border-b border-slate-100 z-[100] bg-white/80 backdrop-blur-xl">
-        <div className="max-w-[1600px] mx-auto px-4 flex flex-row items-center justify-between gap-2 xl:gap-4">
+      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[100] bg-white/80 backdrop-blur-xl">
+        <div className="max-w-[1600px] mx-auto px-4 h-12 xl:h-16 flex flex-row items-center justify-between gap-2 xl:gap-4">
           <div className="flex items-center gap-2 xl:gap-4 shrink-0">
-            <div className="w-6 h-6 xl:w-10 xl:h-10 bg-black rounded flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-3.5 h-3.5 xl:w-6 xl:h-6 text-white" /></div>
+            <div className="w-6 h-6 xl:w-9 xl:h-9 bg-black rounded flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-3.5 h-3.5 xl:w-5 xl:h-5 text-white" /></div>
             <div>
-              <h1 className="text-[10px] xl:text-xl font-black tracking-tighter uppercase leading-none">{t.title}</h1>
-              <p className="hidden xl:block text-[8px] font-black text-slate-400 tracking-[0.2em] uppercase mt-1">{t.subtitle}</p>
+              <h1 className="text-[10px] xl:text-lg font-black tracking-tighter uppercase leading-none">{t.title}</h1>
+              <p className="hidden xl:block text-[8px] font-black text-slate-400 tracking-[0.2em] uppercase mt-0.5">{t.subtitle}</p>
             </div>
           </div>
           <div className="flex items-center justify-end gap-1.5 xl:gap-4 scale-90 xl:scale-100 shrink-0">
-            {isReordering && (<Button onClick={() => setIsReordering(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black gap-1.5 px-3 h-7 xl:h-10 rounded-full shadow-2xl animate-bounce text-[8px] xl:text-[9px]"><Check className="w-3 h-3" /> {t.exitReorder}</Button>)}
+            {isReordering && (<Button onClick={() => setIsReordering(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black gap-1.5 px-3 h-7 xl:h-9 rounded-full shadow-2xl animate-bounce text-[8px] xl:text-[9px]"><Check className="w-3 h-3" /> {t.exitReorder}</Button>)}
             <div className="hidden xl:flex flex-col items-end">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.exchangeRate}</span>
-              <span className="text-[9px] font-bold text-black flex items-center gap-2 bg-slate-50/80 px-3 py-1 rounded-lg border border-slate-100">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{t.exchangeRate}</span>
+              <span className="text-[9px] font-bold text-black flex items-center gap-2 bg-slate-50/80 px-3 py-0.5 rounded-lg border border-slate-100">
                 <ArrowRightLeft className="w-3 h-3 text-primary" />
                 1 {displayCurrency} = {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).filter(c => c !== displayCurrency).slice(0, 2).map(c => `${CURRENCY_SYMBOLS[c]}${(marketData.rates[c] / marketData.rates[displayCurrency]).toFixed(2)}`).join(' | ')}
               </span>
@@ -794,7 +799,7 @@ export default function AssetInsightsPage() {
               <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-6 px-2 font-bold text-[8px] xl:text-[9px]">EN</Button>
             </div>
             <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)} className="shrink-0">
-              <TabsList className="h-7 xl:h-9 bg-slate-100 p-0.5 rounded-lg">
+              <TabsList className="h-7 xl:h-8 bg-slate-100 p-0.5 rounded-lg">
                 {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<TabsTrigger key={cur} value={cur} className="text-[8px] xl:text-[9px] font-black uppercase px-1.5 xl:px-3 h-6 xl:h-7">{cur}</TabsTrigger>))}
               </TabsList>
             </Tabs>
@@ -802,7 +807,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1600px] mx-auto px-4 pt-24 xl:pt-32 pb-10">
+      <main className="max-w-[1600px] mx-auto px-4 pt-16 xl:pt-24 pb-10">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-8 items-stretch">
           {layout.map(item => renderSection(item))}
         </div>
