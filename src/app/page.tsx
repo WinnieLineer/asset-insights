@@ -28,7 +28,8 @@ import {
   Maximize2,
   Minimize2,
   Plus,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Info
 } from 'lucide-react';
 import { 
   Card, 
@@ -111,6 +112,7 @@ const translations = {
     importData: 'Import',
     importSuccess: 'Data imported successfully.',
     exitReorder: 'DONE',
+    reorderHint: 'REORDER MODE ACTIVE: Drag components to organize or use X/Y buttons.',
     liveRates: 'LIVE RATES (1 USD)',
     categoryNames: {
       Stock: 'Equity',
@@ -160,6 +162,7 @@ const translations = {
     importData: '匯入資料',
     importSuccess: '資產資料已成功匯入。',
     exitReorder: '完成調整',
+    reorderHint: '已進入佈局調整模式：可使用 X/Y 按鈕縮放各區塊，點擊完成結束調整。',
     liveRates: '即時匯率 (1 USD)',
     categoryNames: {
       Stock: '股票',
@@ -197,11 +200,11 @@ export default function AssetInsightsPage() {
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
     summary: { width: 12, height: 320 },
     controls: { width: 12, height: 140 },
-    historicalTrend: { width: 12, height: 480 },
-    allocation: { width: 12, height: 480 },
-    list: { width: 12, height: 750 },
-    ai: { width: 12, height: 550 },
-    addAsset: { width: 12, height: 550 }
+    historicalTrend: { width: 12, height: 500 },
+    allocation: { width: 12, height: 500 },
+    list: { width: 12, height: 800 },
+    ai: { width: 12, height: 600 },
+    addAsset: { width: 12, height: 600 }
   });
 
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -331,7 +334,6 @@ export default function AssetInsightsPage() {
         const endTimeStr = asset.endDate || '9999-12-31';
         if (pointTime < acqTime || dateKey > endTimeStr) return; 
 
-        // Forward filling logic
         if (point.assets[asset.id] !== undefined) {
           lastKnownPrices[asset.id] = point.assets[asset.id];
         }
@@ -407,7 +409,7 @@ export default function AssetInsightsPage() {
   };
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
-    if ((e.target as HTMLElement).closest('button, input, select, [role="tab"], .recharts-surface')) return;
+    if ((e.target as HTMLElement).closest('button, input, select, [role="tab"], .recharts-surface, .lucide')) return;
     const cleanup = () => {
       if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
       window.removeEventListener('mouseup', cleanup);
@@ -432,23 +434,23 @@ export default function AssetInsightsPage() {
   const renderSection = (id: string, index: number) => {
     const config = layoutConfigs[id] || { width: 12, height: 400 };
     const controls = isReordering && (
-      <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-[110] flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full shadow-2xl border border-white/20">
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => moveSection(index, 'up')} disabled={index === 0}><ChevronUp className="w-5 h-5" /></Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => moveSection(index, 'down')} disabled={index === sections.length - 1}><ChevronDown className="w-5 h-5" /></Button>
+      <div className="absolute -top-14 left-1/2 -translate-x-1/2 z-[110] flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full shadow-2xl border border-white/20 scale-95 md:scale-100">
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'up')} disabled={index === 0}><ChevronUp className="w-5 h-5" /></Button>
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'down')} disabled={index === sections.length - 1}><ChevronDown className="w-5 h-5" /></Button>
         <div className="w-px h-6 bg-white/20 mx-1" />
         <span className="text-[10px] font-black uppercase tracking-widest px-1 opacity-60">W</span>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'dec')}><Minimize2 className="w-5 h-5" /></Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'inc')}><Maximize2 className="w-5 h-5" /></Button>
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'dec')}><Minimize2 className="w-5 h-5" /></Button>
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'inc')}><Maximize2 className="w-5 h-5" /></Button>
         <div className="w-px h-6 bg-white/20 mx-1" />
         <span className="text-[10px] font-black uppercase tracking-widest px-1 opacity-60">H</span>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'dec')}><ChevronUp className="w-5 h-5 rotate-180" /></Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'inc')}><ChevronDown className="w-5 h-5" /></Button>
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'dec')}><ChevronUp className="w-5 h-5 rotate-0" /></Button>
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'inc')}><ChevronDown className="w-5 h-5" /></Button>
       </div>
     );
 
     const commonClass = cn(
       "relative transition-all duration-300",
-      isReordering && "ring-4 ring-black ring-offset-2 rounded-2xl z-[105]",
+      isReordering && "ring-4 ring-black ring-offset-2 rounded-2xl z-[105] shadow-2xl scale-[0.98]",
       config.width === 4 && "xl:col-span-4",
       config.width === 6 && "xl:col-span-6",
       config.width === 8 && "xl:col-span-8",
@@ -466,23 +468,23 @@ export default function AssetInsightsPage() {
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
               <Card className="lg:col-span-9 modern-card p-10 relative overflow-hidden bg-white shadow-3xl border-slate-100 flex flex-col justify-center rounded-2xl">
                 <div className="space-y-4 z-20 relative">
-                  <div className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-4">
+                  <div className="text-[11px] xl:text-[12px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-4">
                     <Globe className="w-5 h-5" /> {t.totalValue}
                   </div>
-                  <div className="text-4xl xl:text-6xl font-black tracking-tighter flex items-baseline gap-4">
+                  <div className="text-5xl xl:text-7xl font-black tracking-tighter flex items-baseline gap-5">
                     <span className="text-slate-200 font-medium">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                     <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                    {loading && <Loader2 className="w-10 h-10 animate-spin text-slate-200 ml-4" />}
+                    {loading && <Loader2 className="w-12 h-12 animate-spin text-slate-200 ml-5" />}
                   </div>
                 </div>
-                <div className="absolute bottom-10 right-10 opacity-10 pointer-events-none">
-                  <Wallet className="w-32 h-32 text-black" />
+                <div className="absolute bottom-10 right-10 opacity-15 pointer-events-none">
+                  <Wallet className="w-36 h-36 text-black" />
                 </div>
               </Card>
               <div className="lg:col-span-3">
-                <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[120px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-3 rounded-2xl shadow-xl transition-all active:scale-95">
-                  <RefreshCw className={cn("w-8 h-8", loading && "animate-spin")} />
-                  <span className="text-[10px] tracking-[0.3em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
+                <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[140px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-4 rounded-2xl shadow-xl transition-all active:scale-95">
+                  <RefreshCw className={cn("w-10 h-10", loading && "animate-spin")} />
+                  <span className="text-[11px] tracking-[0.35em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
                 </Button>
               </div>
             </section>
@@ -492,11 +494,11 @@ export default function AssetInsightsPage() {
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <section className="bg-slate-50/80 backdrop-blur-md p-6 border border-slate-100 rounded-2xl grid grid-cols-1 md:grid-cols-12 gap-4 shadow-inner h-full content-center">
-              <div className="md:col-span-3 space-y-2">
-                <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
+            <section className="bg-slate-50/80 backdrop-blur-md p-7 border border-slate-100 rounded-2xl grid grid-cols-1 md:grid-cols-12 gap-5 shadow-inner h-full content-center">
+              <div className="md:col-span-3 space-y-2.5">
+                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2.5 ml-1"><Calendar className="w-4.5 h-4.5" /> {t.baseRange}</Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
-                  <SelectTrigger className="h-10 bg-white font-black text-xs rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-11 bg-white font-black text-sm rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="30">{t.days30}</SelectItem>
                     <SelectItem value="90">{t.days90}</SelectItem>
@@ -505,10 +507,10 @@ export default function AssetInsightsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="md:col-span-3 space-y-2">
-                <Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Clock className="w-4 h-4" /> {t.interval}</Label>
+              <div className="md:col-span-3 space-y-2.5">
+                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2.5 ml-1"><Clock className="w-4.5 h-4.5" /> {t.interval}</Label>
                 <Select value={interval} onValueChange={setInterval}>
-                  <SelectTrigger className="h-10 bg-white font-black text-xs rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-11 bg-white font-black text-sm rounded-xl border-slate-200"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1d">{t.int1d}</SelectItem>
                     <SelectItem value="1wk">{t.int1wk}</SelectItem>
@@ -516,9 +518,9 @@ export default function AssetInsightsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="md:col-span-6 flex items-end gap-2">
-                <Button variant="outline" onClick={handleExport} className="flex-1 h-10 font-black text-[9px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm"><Download className="w-4 h-4" /> {t.exportData}</Button>
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 font-black text-[9px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm"><Upload className="w-4 h-4" /> {t.importData}</Button>
+              <div className="md:col-span-6 flex items-end gap-3">
+                <Button variant="outline" onClick={handleExport} className="flex-1 h-11 font-black text-[10px] uppercase tracking-[0.25em] gap-2.5 bg-white rounded-xl shadow-sm"><Download className="w-5 h-5" /> {t.exportData}</Button>
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-11 font-black text-[10px] uppercase tracking-[0.25em] gap-2.5 bg-white rounded-xl shadow-sm"><Upload className="w-5 h-5" /> {t.importData}</Button>
                 <input type="file" ref={fileInputRef} onChange={(e) => {
                    const file = e.target.files?.[0]; if (!file) return;
                    const reader = new FileReader(); reader.onload = (event) => {
@@ -560,50 +562,50 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <Card className="modern-card bg-white shadow-3xl border-slate-100 rounded-2xl overflow-hidden h-full flex flex-col">
-              <div className="px-8 py-6 border-b border-slate-50 shrink-0">
-                <CardTitle className="text-xs xl:text-sm font-black tracking-widest uppercase flex items-center gap-4 text-slate-400">
-                  <BarChart3 className="w-5 h-5" /> {t.dashboard}
+              <div className="px-9 py-7 border-b border-slate-50 shrink-0">
+                <CardTitle className="text-[11px] xl:text-[13px] font-black tracking-widest uppercase flex items-center gap-5 text-slate-400">
+                  <BarChart3 className="w-6 h-6" /> {t.dashboard}
                 </CardTitle>
               </div>
               <CardContent className="p-0 flex-1 overflow-auto">
-                <Table className="min-w-[800px]">
+                <Table className="min-w-[850px]">
                   <TableHeader className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md">
                     <TableRow className="hover:bg-transparent border-slate-100">
-                      <TableHead className="px-8 h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.assetName}</TableHead>
-                      <TableHead className="h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.holdings}</TableHead>
-                      <TableHead className="h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.unitPrice}</TableHead>
-                      <TableHead className="h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest">{t.change}</TableHead>
-                      <TableHead className="h-10 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right pr-8">{t.valuation}</TableHead>
-                      <TableHead className="w-[80px]"></TableHead>
+                      <TableHead className="px-9 h-11 text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.assetName}</TableHead>
+                      <TableHead className="h-11 text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.holdings}</TableHead>
+                      <TableHead className="h-11 text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.unitPrice}</TableHead>
+                      <TableHead className="h-11 text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.change}</TableHead>
+                      <TableHead className="h-11 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right pr-9">{t.valuation}</TableHead>
+                      <TableHead className="w-[90px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {assetCalculations.activeAssets.map((asset: any) => (
                       <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
-                        <TableCell className="px-8 py-4">
-                          <div className="font-black text-xs text-slate-900">{asset.name}</div>
-                          <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-0.5">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
+                        <TableCell className="px-9 py-5">
+                          <div className="font-black text-sm text-slate-900">{asset.name}</div>
+                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
                         </TableCell>
-                        <TableCell><span className="text-xs font-black text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
-                        <TableCell><div className="flex items-center gap-2"><span className="text-[9px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-xs font-black text-slate-700">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></div></TableCell>
+                        <TableCell><span className="text-sm font-black text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
+                        <TableCell><div className="flex items-center gap-2.5"><span className="text-[10px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-sm font-black text-slate-700">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></div></TableCell>
                         <TableCell>
                           {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
-                            <div className={cn("flex items-center gap-2 font-black text-[10px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
-                              {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                            <div className={cn("flex items-center gap-2.5 font-black text-[11px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                              {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                               <span>{asset.dayChangePercent.toFixed(1)}%</span>
                             </div>
                           ) : <span className="text-slate-200">—</span>}
                         </TableCell>
-                        <TableCell className="text-right pr-8">
-                          <div className="font-black text-sm">
-                            <span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>
+                        <TableCell className="text-right pr-9">
+                          <div className="font-black text-base">
+                            <span className="text-slate-300 text-[11px] mr-1.5">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                             {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </div>
                         </TableCell>
-                        <TableCell className="pr-8 text-right">
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-slate-100" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); setEditEndDate(asset.endDate || ''); }}><Edit2 className="w-3 h-3" /></Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-rose-50 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3 h-3" /></Button>
+                        <TableCell className="pr-9 text-right">
+                          <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); setEditEndDate(asset.endDate || ''); }}><Edit2 className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-rose-50 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-4 h-4" /></Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -626,12 +628,12 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <Card className="modern-card bg-white shadow-3xl border-slate-100 rounded-2xl h-full flex flex-col">
-              <CardHeader className="px-8 py-6 border-b border-slate-50 shrink-0">
-                <CardTitle className="text-xs xl:text-sm font-black uppercase tracking-widest flex items-center gap-4 text-slate-400">
-                  <Plus className="w-5 h-5" /> {t.addAsset}
+              <CardHeader className="px-9 py-7 border-b border-slate-50 shrink-0">
+                <CardTitle className="text-[11px] xl:text-[13px] font-black uppercase tracking-widest flex items-center gap-5 text-slate-400">
+                  <Plus className="w-6 h-6" /> {t.addAsset}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 flex-1 overflow-auto">
+              <CardContent className="p-7 flex-1 overflow-auto">
                 <AssetForm language={language} onAdd={(a) => { const newAsset = { ...a, id: crypto.randomUUID() }; setAssets(prev => [...prev, newAsset]); updateAllData([...assets, newAsset]); }} />
               </CardContent>
             </Card>
@@ -645,28 +647,28 @@ export default function AssetInsightsPage() {
 
   return (
     <div className="min-h-screen bg-white text-black pb-32 font-sans overflow-x-hidden" onMouseDown={handleMouseDown}>
-      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl h-10 xl:h-12">
-        <div className="max-w-[1900px] mx-auto px-6 h-full flex items-center justify-between gap-6 overflow-hidden">
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="w-6 h-6 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-3.5 h-3.5 text-white" /></div>
-            <h1 className="text-xs xl:text-sm font-black tracking-tighter uppercase leading-none hidden sm:block">{t.title}</h1>
+      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl h-11 xl:h-13">
+        <div className="max-w-[1900px] mx-auto px-7 h-full flex items-center justify-between gap-7 overflow-hidden">
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-4 h-4 text-white" /></div>
+            <h1 className="text-sm xl:text-base font-black tracking-tighter uppercase leading-none hidden sm:block">{t.title}</h1>
           </div>
           
-          <div className="flex-1 flex items-center gap-6 overflow-hidden">
-            <div className="flex items-center gap-4 px-4 border-l border-slate-100 overflow-auto no-scrollbar">
-               <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest whitespace-nowrap">
+          <div className="flex-1 flex items-center gap-7 overflow-hidden">
+            <div className="flex items-center gap-5 px-5 border-l border-slate-100 overflow-auto no-scrollbar">
+               <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest whitespace-nowrap">
                  {t.liveRates.replace('USD', displayCurrency)}
                </span>
-               <div className="flex items-center gap-4">
+               <div className="flex items-center gap-5">
                  {Object.entries(marketData.rates).filter(([cur]) => cur !== displayCurrency).map(([cur, rate]) => {
                    const baseRate = marketData.rates[displayCurrency] || 1;
                    const targetRate = rate;
                    const relativeRate = targetRate / baseRate;
                    return (
-                     <div key={cur} className="flex items-center gap-1.5 whitespace-nowrap">
-                       <span className="text-[10px] font-black text-slate-900">{cur}</span>
-                       <ArrowRightLeft className="w-2.5 h-2.5 text-slate-200" />
-                       <span className="text-[10px] font-black text-emerald-600">
+                     <div key={cur} className="flex items-center gap-2 whitespace-nowrap">
+                       <span className="text-[11px] font-black text-slate-900">{cur}</span>
+                       <ArrowRightLeft className="w-3 h-3 text-slate-200" />
+                       <span className="text-[11px] font-black text-emerald-600">
                          {relativeRate < 0.1 ? relativeRate.toFixed(4) : relativeRate.toFixed(2)}
                        </span>
                      </div>
@@ -676,18 +678,18 @@ export default function AssetInsightsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 scale-90 xl:scale-100 shrink-0">
+          <div className="flex items-center gap-4 scale-95 xl:scale-100 shrink-0">
             {isReordering ? (
-              <Button onClick={() => setIsReordering(false)} className="h-7 bg-black text-white px-4 font-black text-[9px] uppercase tracking-[0.2em] gap-2 rounded-full"><Check className="w-3 h-3" /> {t.exitReorder}</Button>
+              <Button onClick={() => setIsReordering(false)} className="h-8 bg-black text-white px-5 font-black text-[10px] uppercase tracking-[0.25em] gap-2.5 rounded-full shadow-lg"><Check className="w-4 h-4" /> {t.exitReorder}</Button>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <div className="flex bg-slate-100 p-0.5 rounded-lg">
-                  <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-6 px-2 font-black text-[9px]">繁中</Button>
-                  <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-6 px-2 font-black text-[9px]">EN</Button>
+                  <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-7 px-2.5 font-black text-[10px]">繁中</Button>
+                  <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-7 px-2.5 font-black text-[10px]">EN</Button>
                 </div>
                 <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
-                  <TabsList className="h-7 bg-slate-100 p-0.5 rounded-lg">
-                    {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<TabsTrigger key={cur} value={cur} className="text-[9px] font-black uppercase px-2 h-6">{cur}</TabsTrigger>))}
+                  <TabsList className="h-8 bg-slate-100 p-0.5 rounded-lg">
+                    {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<TabsTrigger key={cur} value={cur} className="text-[10px] font-black uppercase px-2.5 h-7">{cur}</TabsTrigger>))}
                   </TabsList>
                 </Tabs>
               </div>
@@ -696,29 +698,38 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-6 pt-16 xl:pt-20">
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+      <main className="max-w-[1900px] mx-auto px-7 pt-18 xl:pt-22">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-7 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>
       </main>
 
+      {isReordering && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[150] animate-bounce">
+          <div className="bg-black text-white px-6 py-3 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-3">
+            <Info className="w-5 h-5 text-emerald-400" />
+            <span className="text-[11px] font-black uppercase tracking-[0.2em]">{t.reorderHint}</span>
+          </div>
+        </div>
+      )}
+
       <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
-        <DialogContent className="max-w-[420px] bg-white rounded-3xl p-8 shadow-3xl border-slate-100">
-          <DialogHeader><DialogTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-3"><Edit2 className="w-5 h-5 text-primary" /> {t.editAsset}</DialogTitle></DialogHeader>
-          <div className="grid gap-6 py-6">
-            <div className="space-y-1.5"><Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label><div className="p-3 bg-slate-50 rounded-xl font-black text-xs text-slate-900 border border-slate-100">{editingAsset?.name}</div></div>
-            <div className="space-y-1.5"><Label htmlFor="amount" className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label><Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-10 font-black text-base border-slate-200 rounded-xl" /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5"><Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-10 font-black text-xs rounded-xl border-slate-200" /></div>
-              <div className="space-y-1.5"><Label className="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-10 font-black text-xs rounded-xl border-slate-200" /></div>
+        <DialogContent className="max-w-[450px] bg-white rounded-3xl p-9 shadow-3xl border-slate-100">
+          <DialogHeader><DialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-4"><Edit2 className="w-6 h-6 text-primary" /> {t.editAsset}</DialogTitle></DialogHeader>
+          <div className="grid gap-7 py-7">
+            <div className="space-y-2"><Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label><div className="p-4 bg-slate-50 rounded-xl font-black text-sm text-slate-900 border border-slate-100">{editingAsset?.name}</div></div>
+            <div className="space-y-2"><Label htmlFor="amount" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label><Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-11 font-black text-lg border-slate-200 rounded-xl" /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-11 font-black text-sm rounded-xl border-slate-200" /></div>
+              <div className="space-y-2"><Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-11 font-black text-sm rounded-xl border-slate-200" /></div>
             </div>
           </div>
-          <DialogFooter className="flex gap-2">
-            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-black h-10 flex-1 rounded-xl text-[9px] uppercase tracking-[0.2em]">{t.cancel}</Button>
+          <DialogFooter className="flex gap-3">
+            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-black h-11 flex-1 rounded-xl text-[10px] uppercase tracking-[0.25em]">{t.cancel}</Button>
             <Button onClick={() => {
               const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, amount: editAmount, acquisitionDate: editDate, endDate: editEndDate || undefined } : a);
               setAssets(updated); setEditingAsset(null); updateAllData(updated);
-            }} className="bg-black text-white font-black h-10 flex-1 rounded-xl text-[9px] uppercase tracking-[0.2em] shadow-xl">{t.saveChanges}</Button>
+            }} className="bg-black text-white font-black h-11 flex-1 rounded-xl text-[10px] uppercase tracking-[0.25em] shadow-xl">{t.saveChanges}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
