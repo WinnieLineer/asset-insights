@@ -316,6 +316,7 @@ export default function AssetInsightsPage() {
       return { ...asset, isClosed, valueInDisplay, priceInDisplay: unitPriceInDisplay, dayChangeInDisplay: dayChangeInTWD * (displayRate / rateTWD), dayChangePercent };
     });
 
+    // 歷史數據去重與假日 0 值過濾
     const historyMap = new Map();
     marketTimeline.forEach((point: any) => {
       const pointTime = point.timestamp * 1000;
@@ -327,22 +328,35 @@ export default function AssetInsightsPage() {
         const acqTime = new Date(asset.acquisitionDate).getTime();
         const endTimeStr = asset.endDate || '9999-12-31';
         if (pointTime < acqTime || dateKey > endTimeStr) return; 
+        
         let priceAtT = point.assets[asset.id];
         if (priceAtT === undefined) return;
         if (asset.category === 'Bank' || asset.category === 'Savings') priceAtT = 1;
+
         const apiCurrency = marketData.assetMarketPrices[asset.id]?.currency || 'TWD';
         const apiCurrencyRate = marketData.rates[apiCurrency as Currency] || 1;
         const priceInTWDAtT = priceAtT * (rateTWD / apiCurrencyRate);
+        
         let valInTWD = 0;
-        if (asset.category === 'Stock' || asset.category === 'Crypto') valInTWD = asset.amount * priceInTWDAtT;
-        else valInTWD = asset.amount * (rateTWD / (marketData.rates[asset.currency] || 1));
+        if (asset.category === 'Stock' || asset.category === 'Crypto') {
+          valInTWD = asset.amount * priceInTWDAtT;
+        } else {
+          valInTWD = asset.amount * (rateTWD / (marketData.rates[asset.currency] || 1));
+        }
         pointTotalTWD += valInTWD;
         categories[asset.category] += valInTWD;
       });
 
+      // 過濾假日 0 值，且每天僅取最後一個點
       if (pointTotalTWD > 0) {
-        const item = { timestamp: point.timestamp, displayDate: new Date(pointTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), totalValue: pointTotalTWD * (displayRate / rateTWD) };
-        Object.entries(categories).forEach(([cat, val]) => { item[cat] = val * (displayRate / rateTWD); });
+        const item = { 
+          timestamp: point.timestamp, 
+          displayDate: new Date(pointTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), 
+          totalValue: pointTotalTWD * (displayRate / rateTWD) 
+        };
+        Object.entries(categories).forEach(([cat, val]) => { 
+          item[cat] = val * (displayRate / rateTWD); 
+        });
         historyMap.set(dateKey, item); 
       }
     });
@@ -643,6 +657,7 @@ export default function AssetInsightsPage() {
 
   return (
     <div className="min-h-screen bg-white text-black pb-32 font-sans overflow-x-hidden" onMouseDown={handleMouseDown} onTouchStart={handleMouseDown}>
+      {/* 極致精簡置頂導覽列 */}
       <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/80 backdrop-blur-xl h-10 xl:h-14">
         <div className="max-w-[1600px] mx-auto px-4 h-full flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 xl:gap-3">
