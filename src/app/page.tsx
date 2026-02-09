@@ -29,7 +29,10 @@ import {
   Layout,
   ChevronUp,
   ChevronDown,
-  Check
+  Check,
+  Maximize2,
+  Minimize2,
+  ArrowLeftRight
 } from 'lucide-react';
 import { 
   Card, 
@@ -173,6 +176,11 @@ const translations = {
   }
 };
 
+interface LayoutConfig {
+  width: number; // xl:col-span-X
+  height: number; // min-height in px
+}
+
 export default function AssetInsightsPage() {
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
@@ -190,7 +198,16 @@ export default function AssetInsightsPage() {
   const [marketTimeline, setMarketTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
+  
   const [sections, setSections] = useState<string[]>(['summary', 'controls', 'charts', 'list', 'ai']);
+  const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
+    summary: { width: 12, height: 160 },
+    controls: { width: 12, height: 100 },
+    charts: { width: 8, height: 600 },
+    list: { width: 8, height: 500 },
+    ai: { width: 4, height: 800 }
+  });
+
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -237,6 +254,8 @@ export default function AssetInsightsPage() {
     if (savedAssets) setAssets(JSON.parse(savedAssets));
     const savedSections = localStorage.getItem('sections');
     if (savedSections) setSections(JSON.parse(savedSections));
+    const savedConfigs = localStorage.getItem('layoutConfigs');
+    if (savedConfigs) setLayoutConfigs(JSON.parse(savedConfigs));
   }, []);
 
   useEffect(() => {
@@ -249,8 +268,9 @@ export default function AssetInsightsPage() {
     if (mounted) {
       localStorage.setItem('assets', JSON.stringify(assets));
       localStorage.setItem('sections', JSON.stringify(sections));
+      localStorage.setItem('layoutConfigs', JSON.stringify(layoutConfigs));
     }
-  }, [assets, sections, mounted]);
+  }, [assets, sections, layoutConfigs, mounted]);
 
   const assetCalculations = useMemo(() => {
     let totalTWD = 0;
@@ -327,7 +347,7 @@ export default function AssetInsightsPage() {
       if (pointTotalTWD > 0) {
         const item = { timestamp: point.timestamp, displayDate: new Date(pointTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), totalValue: pointTotalTWD * (displayRate / rateTWD) };
         Object.entries(categories).forEach(([cat, val]) => { item[cat] = val * (displayRate / rateTWD); });
-        historyMap.set(dateKey, item);
+        historyMap.set(dateKey, item); // Deduplicate: keep last point of the day
       }
     });
 
@@ -351,11 +371,27 @@ export default function AssetInsightsPage() {
     setSections(newSections);
   };
 
+  const resizeSection = (id: string, axis: 'x' | 'y', direction: 'inc' | 'dec') => {
+    setLayoutConfigs(prev => {
+      const config = { ...prev[id] };
+      if (axis === 'x') {
+        const steps = [4, 6, 8, 10, 12];
+        const currentIdx = steps.indexOf(config.width);
+        if (direction === 'inc' && currentIdx < steps.length - 1) config.width = steps[currentIdx + 1];
+        if (direction === 'dec' && currentIdx > 0) config.width = steps[currentIdx - 1];
+      } else {
+        if (direction === 'inc') config.height = Math.min(1500, config.height + 100);
+        if (direction === 'dec') config.height = Math.max(100, config.height - 100);
+      }
+      return { ...prev, [id]: config };
+    });
+  };
+
   const isInteractive = (el: HTMLElement | null): boolean => {
     if (!el) return false;
-    const interactiveTags = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA', 'LABEL'];
+    const interactiveTags = ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA', 'LABEL', 'SVG', 'PATH'];
     if (interactiveTags.includes(el.tagName)) return true;
-    if (el.closest('[role="tab"], [role="menuitem"], [role="combobox"], [role="slider"], .recharts-brush')) return true;
+    if (el.closest('[role="tab"], [role="menuitem"], [role="combobox"], [role="slider"], .recharts-brush, .recharts-surface, .radix-popover-content, .radix-select-content, .radix-dialog-content')) return true;
     return false;
   };
 
@@ -368,11 +404,11 @@ export default function AssetInsightsPage() {
       }
       window.removeEventListener('mouseup', cleanup);
       window.removeEventListener('touchend', cleanup);
-      window.removeEventListener('scroll', cleanup);
+      window.removeEventListener('scroll', cleanup, { capture: true });
     };
     window.addEventListener('mouseup', cleanup);
     window.addEventListener('touchend', cleanup);
-    window.addEventListener('scroll', cleanup);
+    window.addEventListener('scroll', cleanup, { capture: true });
     longPressTimer.current = setTimeout(() => {
       setIsReordering(true);
       cleanup();
@@ -380,35 +416,55 @@ export default function AssetInsightsPage() {
   };
 
   const handleExport = () => {
-    const dataStr = JSON.stringify(assets, null, 2);
+    const dataStr = JSON.stringify({ assets, sections, layoutConfigs }, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `assets-backup-${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `assets-insights-backup-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
   };
 
   const renderSection = (id: string, index: number) => {
+    const config = layoutConfigs[id] || { width: 12, height: 400 };
     const controls = isReordering && (
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-[50] flex items-center gap-1 bg-black text-white px-2 py-1 rounded-full shadow-2xl border border-white/20 scale-90">
+      <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-[110] flex items-center gap-1 bg-black text-white px-2 py-1.5 rounded-full shadow-2xl border border-white/20 scale-90 whitespace-nowrap">
         <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => moveSection(index, 'up')} disabled={index === 0}><ChevronUp className="w-3 h-3" /></Button>
-        <div className="w-px h-3 bg-white/20 mx-1" />
         <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => moveSection(index, 'down')} disabled={index === sections.length - 1}><ChevronDown className="w-3 h-3" /></Button>
+        <div className="w-px h-3 bg-white/20 mx-1" />
+        <span className="text-[8px] font-black uppercase tracking-widest px-1 opacity-60">X</span>
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'dec')}><Minimize2 className="w-3 h-3" /></Button>
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'inc')}><Maximize2 className="w-3 h-3" /></Button>
+        <div className="w-px h-3 bg-white/20 mx-1" />
+        <span className="text-[8px] font-black uppercase tracking-widest px-1 opacity-60">Y</span>
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'dec')}><ChevronDown className="w-3 h-3 rotate-180" /></Button>
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'inc')}><ChevronDown className="w-3 h-3" /></Button>
       </div>
     );
+
+    const commonClass = cn(
+      "relative transition-all duration-500 ease-in-out",
+      isReordering && "ring-2 ring-black ring-offset-4 rounded-2xl animate-pulse z-[105]",
+      config.width === 4 && "xl:col-span-4",
+      config.width === 6 && "xl:col-span-6",
+      config.width === 8 && "xl:col-span-8",
+      config.width === 10 && "xl:col-span-10",
+      config.width === 12 && "xl:col-span-12"
+    );
+
+    const wrapperStyle = { minHeight: `${config.height}px` };
 
     switch (id) {
       case 'summary':
         return (
-          <div key={id} className={cn("relative lg:col-span-12", isReordering && "ring-2 ring-black ring-offset-4 rounded-xl animate-pulse")}>
+          <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
               <Card className="lg:col-span-9 modern-card p-6 relative overflow-hidden bg-white shadow-xl border-slate-100 flex flex-col justify-center">
                 <div className="space-y-3 z-20 relative">
                   <div className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Globe className="w-4 h-4" /> {t.totalValue}</div>
-                  <div className="text-3xl xl:text-4xl font-black tracking-tighter flex items-baseline gap-2">
+                  <div className="text-2xl xl:text-3xl font-black tracking-tighter flex items-baseline gap-2">
                     <span className="text-slate-200 font-medium">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                     <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                     {loading && <Loader2 className="w-5 h-5 animate-spin text-slate-200 ml-2" />}
@@ -427,9 +483,9 @@ export default function AssetInsightsPage() {
         );
       case 'controls':
         return (
-          <div key={id} className={cn("relative lg:col-span-12", isReordering && "ring-2 ring-black ring-offset-4 rounded-xl animate-pulse")}>
+          <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <section className="bg-slate-50/80 backdrop-blur-sm p-4 border border-slate-100 rounded-xl grid grid-cols-1 md:grid-cols-12 gap-4 shadow-inner">
+            <section className="bg-slate-50/80 backdrop-blur-sm p-4 border border-slate-100 rounded-xl grid grid-cols-1 md:grid-cols-12 gap-4 shadow-inner h-full content-center">
               <div className="md:col-span-3 space-y-1">
                 <Label className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Calendar className="w-3 h-3" /> {t.baseRange}</Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
@@ -463,8 +519,11 @@ export default function AssetInsightsPage() {
                   const reader = new FileReader();
                   reader.onload = (event) => {
                     try {
-                      const imported = JSON.parse(event.target?.result as string);
-                      if (Array.isArray(imported)) { setAssets(imported); toast({ title: t.importSuccess }); }
+                      const data = JSON.parse(event.target?.result as string);
+                      if (data.assets) setAssets(data.assets);
+                      if (data.sections) setSections(data.sections);
+                      if (data.layoutConfigs) setLayoutConfigs(data.layoutConfigs);
+                      toast({ title: t.importSuccess });
                     } catch (err) { toast({ variant: 'destructive', title: '匯入失敗' }); }
                   };
                   reader.readAsText(file);
@@ -481,28 +540,35 @@ export default function AssetInsightsPage() {
         );
       case 'charts':
         return (
-          <div key={id} className={cn("relative xl:col-span-8", isReordering && "ring-2 ring-black ring-offset-4 rounded-xl animate-pulse")}>
+          <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <PortfolioCharts language={language} allocationData={assetCalculations.allocationData} historicalData={assetCalculations.chartData} displayCurrency={displayCurrency} loading={loading} />
+            <PortfolioCharts 
+              language={language} 
+              allocationData={assetCalculations.allocationData} 
+              historicalData={assetCalculations.chartData} 
+              displayCurrency={displayCurrency} 
+              loading={loading}
+              height={config.height}
+            />
           </div>
         );
       case 'list':
         return (
-          <div key={id} className={cn("relative xl:col-span-8", isReordering && "ring-2 ring-black ring-offset-4 rounded-xl animate-pulse")}>
+          <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl overflow-hidden">
-              <Tabs defaultValue="active">
-                <CardHeader className="px-4 py-3 border-b border-slate-50">
+            <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl overflow-hidden h-full flex flex-col">
+              <Tabs defaultValue="active" className="flex flex-col h-full">
+                <CardHeader className="px-4 py-3 border-b border-slate-50 shrink-0">
                   <CardTitle className="text-base xl:text-lg font-black tracking-tighter uppercase flex items-center gap-2 mb-3"><BarChart3 className="w-4 h-4 text-primary" /> {t.dashboard}</CardTitle>
                   <TabsList className="bg-slate-100 p-0.5 rounded-lg w-fit h-8">
                     <TabsTrigger value="active" className="text-[10px] font-black px-3 gap-1.5 h-7"><Briefcase className="w-3 h-3" /> {t.activePositions}</TabsTrigger>
                     <TabsTrigger value="closed" className="text-[10px] font-black px-3 gap-1.5 h-7"><History className="w-3 h-3" /> {t.closedPositions}</TabsTrigger>
                   </TabsList>
                 </CardHeader>
-                <CardContent className="p-0">
-                  <TabsContent value="active" className="m-0">
+                <CardContent className="p-0 flex-1 overflow-auto">
+                  <TabsContent value="active" className="m-0 h-full">
                     <Table className="min-w-[700px]">
-                      <TableHeader className="bg-slate-50/50">
+                      <TableHeader className="bg-slate-50/50 sticky top-0 z-10">
                         <TableRow className="hover:bg-transparent border-none">
                           <TableHead className="px-4 h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
                           <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
@@ -533,13 +599,15 @@ export default function AssetInsightsPage() {
         );
       case 'ai':
         return (
-          <div key={id} className={cn("relative xl:col-span-4 space-y-8", isReordering && "ring-2 ring-black ring-offset-4 rounded-xl animate-pulse")}>
+          <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <AITipCard language={language} assets={assetCalculations.processedAssets} totalTWD={assetCalculations.totalTWD} />
-            <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl">
-              <CardHeader className="px-4 py-4 border-b border-slate-50"><CardTitle className="text-base xl:text-lg font-black uppercase tracking-widest flex items-center gap-2"><Activity className="w-4 h-4 text-primary" /> {t.addAsset}</CardTitle></CardHeader>
-              <CardContent className="p-4"><AssetForm language={language} onAdd={(a) => { setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }]); updateAllData([...assets, { ...a, id: 'temp' } as any]); }} /></CardContent>
-            </Card>
+            <div className="space-y-4 h-full flex flex-col">
+              <div className="flex-1"><AITipCard language={language} assets={assetCalculations.processedAssets} totalTWD={assetCalculations.totalTWD} /></div>
+              <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl shrink-0">
+                <CardHeader className="px-4 py-4 border-b border-slate-50"><CardTitle className="text-base xl:text-lg font-black uppercase tracking-widest flex items-center gap-2"><Activity className="w-4 h-4 text-primary" /> {t.addAsset}</CardTitle></CardHeader>
+                <CardContent className="p-4"><AssetForm language={language} onAdd={(a) => { setAssets(prev => [...prev, { ...a, id: crypto.randomUUID() }]); updateAllData([...assets, { ...a, id: 'temp' } as any]); }} /></CardContent>
+              </Card>
+            </div>
           </div>
         );
       default: return null;
@@ -550,10 +618,10 @@ export default function AssetInsightsPage() {
 
   return (
     <div className="min-h-screen bg-white text-black pb-32 font-sans overflow-x-hidden" onMouseDown={handleMouseDown} onTouchStart={handleMouseDown}>
-      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[100] bg-white/80 backdrop-blur-xl">
-        <div className="max-w-[1600px] mx-auto px-4 h-12 xl:h-14 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-6 xl:w-8 xl:h-8 bg-black rounded flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-white" /></div>
+      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/80 backdrop-blur-xl">
+        <div className="max-w-[1600px] mx-auto px-4 h-10 xl:h-14 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 xl:gap-3">
+            <div className="w-5 h-5 xl:w-8 xl:h-8 bg-black rounded flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-3 h-3 xl:w-4 xl:h-4 text-white" /></div>
             <div>
               <h1 className="text-[10px] xl:text-base font-black tracking-tighter uppercase leading-none">{t.title}</h1>
               <p className="hidden xl:block text-[8px] font-black text-slate-400 tracking-[0.2em] uppercase mt-0.5">{t.subtitle}</p>
@@ -579,8 +647,8 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1600px] mx-auto px-4 pt-20 xl:pt-24 space-y-8">
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+      <main className="max-w-[1600px] mx-auto px-4 pt-16 xl:pt-24">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>
       </main>
