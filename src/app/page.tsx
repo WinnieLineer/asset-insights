@@ -79,7 +79,7 @@ const translations = {
     subtitle: 'PROFESSIONAL TRACKING',
     syncMarket: 'Sync',
     totalValue: 'Portfolio Value',
-    addAsset: 'Add New Position',
+    addAsset: 'Add Position',
     assetName: 'Asset',
     holdings: 'Quantity',
     valuation: 'Market Value',
@@ -193,7 +193,6 @@ export default function AssetInsightsPage() {
   const [loading, setLoading] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
   
-  // 核心區塊：拆分為 7 個獨立方塊
   const [sections, setSections] = useState<string[]>(['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'ai', 'addAsset']);
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
     summary: { width: 12, height: 160 },
@@ -317,7 +316,6 @@ export default function AssetInsightsPage() {
       return { ...asset, isClosed, valueInDisplay, priceInDisplay: unitPriceInDisplay, dayChangeInDisplay: dayChangeInTWD * (displayRate / rateTWD), dayChangePercent };
     });
 
-    // 歷史數據去重與假日 0 值過濾
     const historyMap = new Map();
     marketTimeline.forEach((point: any) => {
       const pointTime = point.timestamp * 1000;
@@ -348,7 +346,6 @@ export default function AssetInsightsPage() {
         categories[asset.category] += valInTWD;
       });
 
-      // 過濾假日 0 值，且每天僅取最後一個點
       if (pointTotalTWD > 0) {
         const item = { 
           timestamp: point.timestamp, 
@@ -658,7 +655,6 @@ export default function AssetInsightsPage() {
 
   return (
     <div className="min-h-screen bg-white text-black pb-32 font-sans overflow-x-hidden" onMouseDown={handleMouseDown} onTouchStart={handleMouseDown}>
-      {/* 極致精簡置頂導覽列 */}
       <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/80 backdrop-blur-xl h-10 xl:h-14">
         <div className="max-w-[1600px] mx-auto px-4 h-full flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 xl:gap-3">
