@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -263,7 +264,7 @@ export default function AssetInsightsPage() {
     const savedAssets = localStorage.getItem('assets');
     if (savedAssets) setAssets(JSON.parse(savedAssets));
     
-    const savedLayout = localStorage.getItem('assetInsightsLayoutV4');
+    const savedLayout = localStorage.getItem('assetInsightsLayoutV5');
     if (savedLayout) setLayout(JSON.parse(savedLayout));
   }, []);
 
@@ -281,7 +282,7 @@ export default function AssetInsightsPage() {
 
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem('assetInsightsLayoutV4', JSON.stringify(layout));
+      localStorage.setItem('assetInsightsLayoutV5', JSON.stringify(layout));
     }
   }, [layout, mounted]);
 
@@ -399,7 +400,7 @@ export default function AssetInsightsPage() {
       }
     });
 
-    const chartData = Array.from(historyMap.values()).sort((a, b) => a.timestamp - b.timestamp);
+    const chartData = Array.from(historyMap.values()).sort((a: any, b: any) => a.timestamp - b.timestamp);
 
     return { 
       processedAssets, 
@@ -424,26 +425,19 @@ export default function AssetInsightsPage() {
 
   const saveEdit = () => {
     if (!editingAsset) return;
-    
     const todayStr = new Date().toISOString().split('T')[0];
     const isNowClosed = editEndDate && editEndDate <= todayStr;
-
     const updated = assets.map(a => a.id === editingAsset.id ? { 
       ...a, 
       amount: editAmount || 0, 
       acquisitionDate: editDate || a.acquisitionDate,
       endDate: editEndDate || undefined
     } : a);
-    
     setAssets(updated);
     setEditingAsset(null);
     updateAllData(updated);
-
     if (isNowClosed && (!editingAsset.endDate || editingAsset.endDate > todayStr)) {
-      toast({
-        title: t.movedToClosed,
-        description: t.movedToClosedDesc,
-      });
+      toast({ title: t.movedToClosed, description: t.movedToClosedDesc });
     }
   };
 
@@ -463,7 +457,6 @@ export default function AssetInsightsPage() {
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
@@ -471,9 +464,7 @@ export default function AssetInsightsPage() {
         if (Array.isArray(imported)) {
           setAssets(imported);
           toast({ title: t.importSuccess });
-        } else {
-          throw new Error();
-        }
+        } else throw new Error();
       } catch (err) {
         toast({ variant: 'destructive', title: t.importError });
       }
@@ -484,36 +475,21 @@ export default function AssetInsightsPage() {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
-    
     const isInteractive = (el: HTMLElement | null): boolean => {
       if (!el) return false;
       const tagName = el.tagName.toLowerCase();
       const role = el.getAttribute('role');
-      const isRechartsBrush = el.closest('.recharts-brush') !== null || el.classList.contains('recharts-brush');
-      const isRadix = el.getAttribute('data-radix-collection-item') !== null || 
-                       el.className?.toString().includes('radix') ||
-                       el.hasAttribute('aria-haspopup') ||
-                       el.closest('[data-radix-popper-content-wrapper]') !== null ||
-                       el.closest('[role="combobox"]') !== null ||
-                       el.closest('[role="tab"]') !== null;
-      
+      const className = el.className?.toString() || '';
       return (
-        tagName === 'button' ||
-        tagName === 'input' ||
-        tagName === 'select' ||
-        tagName === 'textarea' ||
-        tagName === 'a' ||
-        role === 'button' ||
-        role === 'combobox' ||
-        role === 'tab' ||
-        role === 'menuitem' ||
-        isRechartsBrush ||
-        isRadix
+        tagName === 'button' || tagName === 'input' || tagName === 'select' || tagName === 'textarea' || tagName === 'a' ||
+        role === 'button' || role === 'combobox' || role === 'tab' || role === 'menuitem' ||
+        className.includes('recharts-brush') || el.closest('.recharts-brush') !== null ||
+        el.hasAttribute('data-radix-collection-item') || el.closest('[role="combobox"]') !== null ||
+        el.closest('[role="tab"]') !== null || el.closest('button') !== null
       );
     };
 
     if (isInteractive(target)) return;
-
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
 
     longPressTimer.current = setTimeout(() => {
@@ -528,9 +504,11 @@ export default function AssetInsightsPage() {
       }
       window.removeEventListener('mouseup', clearTimer);
       window.removeEventListener('touchend', clearTimer);
+      window.removeEventListener('scroll', clearTimer);
     };
     window.addEventListener('mouseup', clearTimer);
     window.addEventListener('touchend', clearTimer);
+    window.addEventListener('scroll', clearTimer);
   };
 
   const handleMouseUp = () => {
@@ -545,7 +523,6 @@ export default function AssetInsightsPage() {
     const index = newLayout.findIndex(i => i.id === id);
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= newLayout.length) return;
-    
     const currentOrder = newLayout[index].order;
     newLayout[index].order = newLayout[targetIndex].order;
     newLayout[targetIndex].order = currentOrder;
@@ -570,23 +547,35 @@ export default function AssetInsightsPage() {
 
   const renderSection = (item: LayoutItem) => {
     const { id, w, h } = item;
-    const colSpanClasses: Record<number, string> = { 4: 'xl:col-span-4', 6: 'xl:col-span-6', 8: 'xl:col-span-8', 10: 'xl:col-span-10', 12: 'xl:col-span-12' };
+    const colSpanClasses: Record<number, string> = { 
+      4: 'xl:col-span-4', 
+      6: 'xl:col-span-6', 
+      8: 'xl:col-span-8', 
+      10: 'xl:col-span-10', 
+      12: 'xl:col-span-12' 
+    };
 
     const wrapper = (content: React.ReactNode) => (
-      <div key={id} className={cn("relative transition-all duration-500", colSpanClasses[w] || 'xl:col-span-12')} style={{ minHeight: isReordering ? h : 'auto' }}>
+      <div key={id} className={cn("relative transition-all duration-300", colSpanClasses[w] || 'xl:col-span-12')} style={{ minHeight: isReordering ? h : 'auto' }}>
         {isReordering && (
           <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-1 z-[60] bg-white border border-slate-200 shadow-2xl rounded-full px-4 py-1.5 scale-90">
             <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'up')} className="h-7 w-7"><ChevronUp className="w-3.5 h-3.5" /></Button>
             <Button size="icon" variant="ghost" onClick={() => moveSection(id, 'down')} className="h-7 w-7"><ChevronDown className="w-3.5 h-3.5" /></Button>
             <div className="w-px h-3 bg-slate-200 mx-1" />
-            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'w', 'decrease')} className="h-7 w-7"><Minimize2 className="w-3.5 h-3.5" /></Button>
-            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'w', 'increase')} className="h-7 w-7"><Maximize2 className="w-3.5 h-3.5" /></Button>
+            <div className="flex items-center gap-0.5 px-1">
+              <span className="text-[8px] font-black text-slate-300 mr-1">W</span>
+              <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'w', 'decrease')} className="h-7 w-7"><Minimize2 className="w-3.5 h-3.5" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'w', 'increase')} className="h-7 w-7"><Maximize2 className="w-3.5 h-3.5" /></Button>
+            </div>
             <div className="w-px h-3 bg-slate-200 mx-1" />
-            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'h', 'decrease')} className="h-7 w-7"><ArrowUp className="w-3.5 h-3.5" /></Button>
-            <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'h', 'increase')} className="h-7 w-7"><ArrowDown className="w-3.5 h-3.5" /></Button>
+            <div className="flex items-center gap-0.5 px-1">
+              <span className="text-[8px] font-black text-slate-300 mr-1">H</span>
+              <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'h', 'decrease')} className="h-7 w-7"><ArrowUp className="w-3.5 h-3.5" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => resizeSection(id, 'h', 'increase')} className="h-7 w-7"><ArrowDown className="w-3.5 h-3.5" /></Button>
+            </div>
           </div>
         )}
-        <div className={cn("h-full", isReordering && "ring-4 ring-primary/10 rounded-2xl bg-slate-50/30 p-1")} style={{ height: id === 'summary' || id === 'controls' ? 'auto' : h }}>
+        <div className={cn("h-full", isReordering && "ring-4 ring-primary/10 rounded-2xl bg-slate-50/30 p-1")} style={{ height: (id === 'summary' || id === 'controls') && !isReordering ? 'auto' : h }}>
           {content}
         </div>
       </div>
@@ -595,12 +584,11 @@ export default function AssetInsightsPage() {
     switch (id) {
       case 'summary':
         return wrapper(
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-            <Card className="lg:col-span-9 modern-card p-6 relative overflow-hidden bg-white shadow-xl border-slate-100">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full">
+            <Card className="lg:col-span-9 modern-card p-6 relative overflow-hidden bg-white shadow-xl border-slate-100 h-full flex flex-col justify-center">
               <div className="space-y-3 z-20 relative">
                 <div className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Globe className="w-4 h-4" />
-                  {t.totalValue}
+                  <Globe className="w-4 h-4" /> {t.totalValue}
                 </div>
                 <div className="text-3xl xl:text-4xl font-black tracking-tighter flex items-baseline gap-2">
                   <span className="text-slate-200 font-medium">{CURRENCY_SYMBOLS[displayCurrency]}</span>
@@ -624,9 +612,7 @@ export default function AssetInsightsPage() {
         return wrapper(
           <div className="bg-slate-50/80 backdrop-blur-sm p-4 border border-slate-100 rounded-xl grid grid-cols-1 md:grid-cols-12 gap-4 h-full shadow-inner">
             <div className="md:col-span-3 space-y-1">
-              <Label className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1">
-                <Calendar className="w-3 h-3" /> {t.baseRange}
-              </Label>
+              <Label className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Calendar className="w-3 h-3" /> {t.baseRange}</Label>
               <Select value={trackingDays} onValueChange={setTrackingDays}>
                 <SelectTrigger className="h-10 bg-white font-bold text-xs rounded-lg shadow-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -639,9 +625,7 @@ export default function AssetInsightsPage() {
               </Select>
             </div>
             <div className="md:col-span-3 space-y-1">
-              <Label className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1">
-                <Clock className="w-3 h-3" /> {t.interval}
-              </Label>
+              <Label className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Clock className="w-3 h-3" /> {t.interval}</Label>
               <Select value={interval} onValueChange={setInterval}>
                 <SelectTrigger className="h-10 bg-white font-bold text-xs rounded-lg shadow-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -652,15 +636,10 @@ export default function AssetInsightsPage() {
               </Select>
             </div>
             <div className="md:col-span-6 flex items-end gap-2">
-              <Button variant="outline" onClick={handleExport} className="flex-1 h-10 font-black text-[9px] uppercase tracking-widest gap-2 bg-white border-slate-200">
-                <Download className="w-3 h-3" /> {t.exportData}
-              </Button>
-              <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 font-black text-[9px] uppercase tracking-widest gap-2 bg-white border-slate-200">
-                <Upload className="w-3 h-3" /> {t.importData}
-              </Button>
+              <Button variant="outline" onClick={handleExport} className="flex-1 h-10 font-black text-[9px] uppercase tracking-widest gap-2 bg-white border-slate-200"><Download className="w-3 h-3" /> {t.exportData}</Button>
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 font-black text-[9px] uppercase tracking-widest gap-2 bg-white border-slate-200"><Upload className="w-3 h-3" /> {t.importData}</Button>
               <input type="file" ref={fileInputRef} onChange={handleImport} accept=".json" className="hidden" />
             </div>
-
             {trackingDays === 'custom' && (
               <div className="md:col-span-12 grid grid-cols-2 gap-4 pt-2 border-t border-slate-100 animate-fade-in">
                 <div className="space-y-1">
@@ -680,31 +659,13 @@ export default function AssetInsightsPage() {
           <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl overflow-hidden flex flex-col h-full">
             <Tabs defaultValue="active" className="w-full flex flex-col h-full">
               <CardHeader className="px-4 py-3 border-b border-slate-50 shrink-0">
-                <div className="flex flex-row items-center justify-between mb-3">
-                  <CardTitle className="text-base xl:text-lg font-black tracking-tighter uppercase flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-primary" />
-                    {t.dashboard}
-                  </CardTitle>
-                </div>
+                <CardTitle className="text-base xl:text-lg font-black tracking-tighter uppercase flex items-center gap-2 mb-3"><BarChart3 className="w-4 h-4 text-primary" /> {t.dashboard}</CardTitle>
                 <TabsList className="bg-slate-100 p-0.5 rounded-lg w-fit h-8">
-                  <TabsTrigger value="active" className="text-[10px] font-black px-3 gap-1.5 h-7">
-                    <Briefcase className="w-3 h-3" />
-                    {t.activePositions}
-                  </TabsTrigger>
-                  <TabsTrigger value="closed" className="text-[10px] font-black px-3 gap-1.5 h-7">
-                    <History className="w-3 h-3" />
-                    {t.closedPositions}
-                  </TabsTrigger>
+                  <TabsTrigger value="active" className="text-[10px] font-black px-3 gap-1.5 h-7"><Briefcase className="w-3 h-3" /> {t.activePositions}</TabsTrigger>
+                  <TabsTrigger value="closed" className="text-[10px] font-black px-3 gap-1.5 h-7"><History className="w-3 h-3" /> {t.closedPositions}</TabsTrigger>
                 </TabsList>
               </CardHeader>
-              <CardContent className="p-0 flex-1 overflow-y-auto">
-                <TabsContent value="active" className="m-0 h-full">
-                  {renderTable(assetCalculations.activeAssets)}
-                </TabsContent>
-                <TabsContent value="closed" className="m-0 h-full">
-                  {renderTable(assetCalculations.closedAssets, true)}
-                </TabsContent>
-              </CardContent>
+              <CardContent className="p-0 flex-1 overflow-auto">{renderTable(TabsContent, assetCalculations)}</CardContent>
             </Tabs>
           </Card>
         );
@@ -722,107 +683,82 @@ export default function AssetInsightsPage() {
           </div>
         );
       case 'ai':
-        return wrapper(
-          <div className="h-full">
-            <AITipCard 
-              language={language} 
-              assets={assetCalculations.processedAssets} 
-              totalTWD={assetCalculations.totalTWD} 
-              marketConditions={loading ? "同步中" : "市場穩定"}
-            />
-          </div>
-        );
+        return wrapper(<div className="h-full"><AITipCard language={language} assets={assetCalculations.processedAssets} totalTWD={assetCalculations.totalTWD} marketConditions={loading ? "Syncing" : "Stable"} /></div>);
       case 'form':
         return wrapper(
           <Card className="modern-card bg-white shadow-xl border-slate-100 rounded-xl h-full overflow-y-auto">
-            <CardHeader className="px-4 py-4 border-b border-slate-50">
-              <CardTitle className="text-base xl:text-lg font-black uppercase tracking-widest flex items-center gap-2">
-                <Activity className="w-4 h-4 text-primary" />
-                {t.addAsset}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <AssetForm language={language} onAdd={handleAddAsset} />
-            </CardContent>
+            <CardHeader className="px-4 py-4 border-b border-slate-50"><CardTitle className="text-base xl:text-lg font-black uppercase tracking-widest flex items-center gap-2"><Activity className="w-4 h-4 text-primary" /> {t.addAsset}</CardTitle></CardHeader>
+            <CardContent className="p-4"><AssetForm language={language} onAdd={handleAddAsset} /></CardContent>
           </Card>
         );
-      default:
-        return null;
+      default: return null;
     }
   };
 
-  const renderTable = (data: any[], isClosed = false) => (
-    <div className="w-full">
-      <Table className="min-w-[800px]">
-        <TableHeader className="bg-slate-50/50 sticky top-0 z-10">
-          <TableRow className="hover:bg-transparent border-none">
-            <TableHead className="px-4 h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
-            <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
-            {!isClosed && <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.unitPrice}</TableHead>}
-            {!isClosed && <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.change}</TableHead>}
-            <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
-            <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.acqDate}</TableHead>
-            {isClosed && <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.posEndDate}</TableHead>}
-            <TableHead className="w-[80px]"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map(asset => (
-            <TableRow key={asset.id} className={cn("group hover:bg-slate-50/40 transition-colors border-slate-50", isClosed && "opacity-60")}>
-              <TableCell className="px-4 py-3">
-                <div className="font-bold text-xs text-black">{asset.name}</div>
-                <div className="text-[8px] font-black text-slate-300 tracking-widest uppercase mt-0.5">
-                  {asset.symbol || t.categoryNames[asset.category as AssetCategory]}
-                </div>
-              </TableCell>
-              <TableCell><span className="text-xs font-bold text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
-              {!isClosed && (
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] font-black text-slate-200">{CURRENCY_SYMBOLS[displayCurrency]}</span>
-                    <span className="text-xs font-bold text-slate-800">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                  </div>
-                </TableCell>
-              )}
-              {!isClosed && (
-                <TableCell>
-                  {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
-                    <div className={cn("flex items-center gap-0.5 font-bold text-[10px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
-                      {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                      <span>{CURRENCY_SYMBOLS[displayCurrency]}{Math.abs(asset.dayChangeInDisplay).toLocaleString(undefined, { maximumFractionDigits: 1 })}</span>
-                      <span className="text-[8px] opacity-60 ml-0.5">({asset.dayChangePercent >= 0 ? '+' : ''}{asset.dayChangePercent.toFixed(1)}%)</span>
-                    </div>
-                  ) : <span className="text-slate-200">—</span>}
-                </TableCell>
-              )}
-              <TableCell className="text-right pr-4">
-                <span className="font-bold text-xs whitespace-nowrap">
-                  <span className="text-slate-200 text-[10px] mr-0.5">{CURRENCY_SYMBOLS[displayCurrency]}</span>
-                  {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                </span>
-              </TableCell>
-              <TableCell><span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">{asset.acquisitionDate}</span></TableCell>
-              {isClosed && <TableCell><span className="text-[10px] font-bold text-rose-400 whitespace-nowrap">{asset.endDate}</span></TableCell>}
-              <TableCell className="pr-4">
-                <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-black" onClick={() => { 
-                    setEditingAsset(asset); 
-                    setEditAmount(asset.amount || 0); 
-                    setEditDate(asset.acquisitionDate || '');
-                    setEditEndDate(asset.endDate || '');
-                  }}>
-                    <Edit2 className="w-3 h-3" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-200 hover:text-rose-600" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); toast({ title: t.assetDeleted }); }}>
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+  const renderTable = (TabsContent: any, calc: any) => (
+    <>
+      <TabsContent value="active" className="m-0">
+        <div className="w-full overflow-auto">
+          <Table className="min-w-[800px]">
+            <TableHeader className="bg-slate-50/50 sticky top-0 z-10">
+              <TableRow className="hover:bg-transparent border-none">
+                <TableHead className="px-4 h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
+                <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
+                <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.unitPrice}</TableHead>
+                <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.change}</TableHead>
+                <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
+                <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{t.acqDate}</TableHead>
+                <TableHead className="w-[80px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {calc.activeAssets.map((asset: any) => (
+                <TableRow key={asset.id} className="group hover:bg-slate-50/40 transition-colors border-slate-50">
+                  <TableCell className="px-4 py-3">
+                    <div className="font-bold text-xs text-black">{asset.name}</div>
+                    <div className="text-[8px] font-black text-slate-300 tracking-widest uppercase mt-0.5">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
+                  </TableCell>
+                  <TableCell><span className="text-xs font-bold text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
+                  <TableCell><div className="flex items-center gap-1"><span className="text-[10px] font-black text-slate-200">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-xs font-bold text-slate-800">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></div></TableCell>
+                  <TableCell>{(asset.category === 'Stock' || asset.category === 'Crypto') ? (<div className={cn("flex items-center gap-0.5 font-bold text-[10px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>{asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}<span>{CURRENCY_SYMBOLS[displayCurrency]}{Math.abs(asset.dayChangeInDisplay).toLocaleString(undefined, { maximumFractionDigits: 1 })}</span><span className="text-[8px] opacity-60 ml-0.5">({asset.dayChangePercent.toFixed(1)}%)</span></div>) : <span className="text-slate-200">—</span>}</TableCell>
+                  <TableCell className="text-right pr-4"><span className="font-bold text-xs"><span className="text-slate-200 text-[10px] mr-0.5">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></TableCell>
+                  <TableCell className="text-center"><span className="text-[10px] font-bold text-slate-400">{asset.acquisitionDate}</span></TableCell>
+                  <TableCell className="pr-4"><div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); setEditEndDate(asset.endDate || ''); }}><Edit2 className="w-3 h-3" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-200 hover:text-rose-600" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); toast({ title: t.assetDeleted }); }}><Trash2 className="w-3 h-3" /></Button></div></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </TabsContent>
+      <TabsContent value="closed" className="m-0">
+        <div className="w-full overflow-auto">
+          <Table className="min-w-[800px]">
+            <TableHeader className="bg-slate-50/50 sticky top-0 z-10">
+              <TableRow className="hover:bg-transparent border-none">
+                <TableHead className="px-4 h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.assetName}</TableHead>
+                <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.holdings}</TableHead>
+                <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">{t.valuation}</TableHead>
+                <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{t.acqDate}</TableHead>
+                <TableHead className="h-10 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{t.posEndDate}</TableHead>
+                <TableHead className="w-[80px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {calc.closedAssets.map((asset: any) => (
+                <TableRow key={asset.id} className="group hover:bg-slate-50/40 transition-colors border-slate-50 opacity-60">
+                  <TableCell className="px-4 py-3"><div className="font-bold text-xs text-black">{asset.name}</div><div className="text-[8px] font-black text-slate-300 uppercase mt-0.5">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div></TableCell>
+                  <TableCell><span className="text-xs font-bold text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
+                  <TableCell className="text-right pr-4"><span className="font-bold text-xs"><span className="text-slate-200 text-[10px] mr-0.5">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></TableCell>
+                  <TableCell className="text-center"><span className="text-[10px] font-bold text-slate-400">{asset.acquisitionDate}</span></TableCell>
+                  <TableCell className="text-center"><span className="text-[10px] font-bold text-rose-400">{asset.endDate}</span></TableCell>
+                  <TableCell className="pr-4"><div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); setEditEndDate(asset.endDate || ''); }}><Edit2 className="w-3 h-3" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-200 hover:text-rose-600" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); toast({ title: t.assetDeleted }); }}><Trash2 className="w-3 h-3" /></Button></div></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </TabsContent>
+    </>
   );
 
   if (!mounted) return null;
@@ -838,20 +774,14 @@ export default function AssetInsightsPage() {
       <header className="fixed top-0 left-0 right-0 py-2 xl:py-4 border-b border-slate-100 z-[100] bg-white/80 backdrop-blur-xl">
         <div className="max-w-[1600px] mx-auto px-4 flex flex-row items-center justify-between gap-2 xl:gap-4">
           <div className="flex items-center gap-2 xl:gap-4 shrink-0">
-            <div className="w-6 h-6 xl:w-10 xl:h-10 bg-black rounded flex items-center justify-center shrink-0 shadow-lg">
-              <Activity className="w-3.5 h-3.5 xl:w-6 xl:h-6 text-white" />
-            </div>
+            <div className="w-6 h-6 xl:w-10 xl:h-10 bg-black rounded flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-3.5 h-3.5 xl:w-6 xl:h-6 text-white" /></div>
             <div>
               <h1 className="text-[10px] xl:text-xl font-black tracking-tighter uppercase leading-none">{t.title}</h1>
               <p className="hidden xl:block text-[8px] font-black text-slate-400 tracking-[0.2em] uppercase mt-1">{t.subtitle}</p>
             </div>
           </div>
           <div className="flex items-center justify-end gap-1.5 xl:gap-4 scale-90 xl:scale-100 shrink-0">
-            {isReordering && (
-              <Button onClick={() => setIsReordering(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black gap-1.5 px-3 h-7 xl:h-10 rounded-full shadow-2xl animate-bounce text-[8px] xl:text-[9px]">
-                <Check className="w-3 h-3" /> {t.exitReorder}
-              </Button>
-            )}
+            {isReordering && (<Button onClick={() => setIsReordering(false)} className="bg-emerald-600 hover:bg-emerald-700 text-white font-black gap-1.5 px-3 h-7 xl:h-10 rounded-full shadow-2xl animate-bounce text-[8px] xl:text-[9px]"><Check className="w-3 h-3" /> {t.exitReorder}</Button>)}
             <div className="hidden xl:flex flex-col items-end">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t.exchangeRate}</span>
               <span className="text-[9px] font-bold text-black flex items-center gap-2 bg-slate-50/80 px-3 py-1 rounded-lg border border-slate-100">
@@ -865,16 +795,14 @@ export default function AssetInsightsPage() {
             </div>
             <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)} className="shrink-0">
               <TabsList className="h-7 xl:h-9 bg-slate-100 p-0.5 rounded-lg">
-                {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (
-                  <TabsTrigger key={cur} value={cur} className="text-[8px] xl:text-[9px] font-black uppercase px-1.5 xl:px-3 h-6 xl:h-7">{cur}</TabsTrigger>
-                ))}
+                {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<TabsTrigger key={cur} value={cur} className="text-[8px] xl:text-[9px] font-black uppercase px-1.5 xl:px-3 h-6 xl:h-7">{cur}</TabsTrigger>))}
               </TabsList>
             </Tabs>
           </div>
         </div>
       </header>
       
-      <main className="max-w-[1600px] mx-auto px-4 pt-20 xl:pt-32 pb-10">
+      <main className="max-w-[1600px] mx-auto px-4 pt-24 xl:pt-32 pb-10">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-8 items-stretch">
           {layout.map(item => renderSection(item))}
         </div>
@@ -882,32 +810,13 @@ export default function AssetInsightsPage() {
 
       <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
         <DialogContent className="max-w-[420px] bg-white rounded-2xl p-6 shadow-2xl border-none">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-black uppercase tracking-tight text-black flex items-center gap-3">
-              <Edit2 className="w-4 h-4 text-primary" />
-              {t.editAsset}
-            </DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle className="text-lg font-black uppercase tracking-tight text-black flex items-center gap-3"><Edit2 className="w-4 h-4 text-primary" /> {t.editAsset}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="space-y-1.5">
-              <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label>
-              <div className="p-3 bg-slate-50/80 rounded-lg font-bold text-xs border border-slate-100 text-slate-700">
-                {editingAsset?.name} <span className="text-slate-300 font-medium ml-2">{editingAsset?.symbol || '—'}</span>
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="amount" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label>
-              <Input id="amount" type="number" value={editAmount ?? 0} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-10 font-black bg-slate-50 border-slate-200 text-base" />
-            </div>
+            <div className="space-y-1.5"><Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label><div className="p-3 bg-slate-50/80 rounded-lg font-bold text-xs border border-slate-100 text-slate-700">{editingAsset?.name} <span className="text-slate-300 font-medium ml-2">{editingAsset?.symbol || '—'}</span></div></div>
+            <div className="space-y-1.5"><Label htmlFor="amount" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label><Input id="amount" type="number" value={editAmount ?? 0} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-10 font-black bg-slate-50 border-slate-200 text-base" /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="date" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label>
-                <Input id="date" type="date" value={editDate ?? ''} onChange={(e) => setEditDate(e.target.value)} className="h-10 font-black bg-slate-50 border-slate-200 text-xs" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="endDate" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.posEndDate}</Label>
-                <Input id="endDate" type="date" value={editEndDate || ''} onChange={(e) => setEditEndDate(e.target.value)} className="h-10 font-black bg-slate-50 border-slate-200 text-xs" />
-              </div>
+              <div className="space-y-1.5"><Label htmlFor="date" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label><Input id="date" type="date" value={editDate ?? ''} onChange={(e) => setEditDate(e.target.value)} className="h-10 font-black bg-slate-50 border-slate-200 text-xs" /></div>
+              <div className="space-y-1.5"><Label htmlFor="endDate" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.posEndDate}</Label><Input id="endDate" type="date" value={editEndDate || ''} onChange={(e) => setEditEndDate(e.target.value)} className="h-10 font-black bg-slate-50 border-slate-200 text-xs" /></div>
             </div>
           </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
