@@ -34,16 +34,7 @@ const renderActiveShape = (props: any) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
   return (
     <g>
-      <Sector 
-        cx={cx} 
-        cy={cy} 
-        innerRadius={innerRadius} 
-        outerRadius={outerRadius + 8} 
-        startAngle={startAngle} 
-        endAngle={endAngle} 
-        fill={fill} 
-        className="transition-all duration-300"
-      />
+      <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} className="transition-all duration-300" />
       <circle cx={cx} cy={cy} r={innerRadius - 10} fill={fill} opacity={0.03} />
     </g>
   );
@@ -53,7 +44,6 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, 
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
-  
   const labelRadius = outerRadius + 15;
   const sx = cx + (outerRadius + 5) * cos;
   const sy = cy + (outerRadius + 5) * sin;
@@ -66,29 +56,8 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value, 
   return (
     <g>
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#e2e8f0" strokeWidth={1} fill="none" />
-      <text 
-        x={ex + (cos >= 0 ? 1 : -1) * 5} 
-        y={ey} 
-        dy={-2} 
-        textAnchor={textAnchor} 
-        fill="#000" 
-        fontSize={9} 
-        fontWeight={800} 
-        className="uppercase tracking-[0.1em]"
-      >
-        {langCategories[name] || name}
-      </text>
-      <text 
-        x={ex + (cos >= 0 ? 1 : -1) * 5} 
-        y={ey} 
-        dy={10} 
-        textAnchor={textAnchor} 
-        fill="#94a3b8" 
-        fontSize={8} 
-        fontWeight={700}
-      >
-        {`${(percent * 100).toFixed(1)}%`}
-      </text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={-2} textAnchor={textAnchor} fill="#000" fontSize={9} fontWeight={800} className="uppercase tracking-[0.1em]">{langCategories[name] || name}</text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={8} fontWeight={700}>{`${(percent * 100).toFixed(1)}%`}</text>
     </g>
   );
 };
@@ -101,14 +70,12 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
   
   const totalAllocationValue = useMemo(() => allocationData.reduce((acc: number, curr: any) => acc + curr.value, 0), [allocationData]);
 
-  if (loading && historicalData.length === 0) {
-    return <Skeleton className="w-full h-[600px] rounded-2xl" />;
-  }
+  if (loading && historicalData.length === 0) return <Skeleton className="w-full h-[600px] rounded-2xl" />;
 
   return (
     <div className="space-y-8 h-full">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        <div className="lg:col-span-12 modern-card p-6 border-slate-100 bg-white relative shadow-xl rounded-2xl flex flex-col">
+      <div className="grid grid-cols-1 gap-6">
+        <div className="modern-card p-6 border-slate-100 bg-white relative shadow-xl rounded-2xl flex flex-col">
           <div className="w-full mb-6 flex items-center justify-between">
             <h3 className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest">{lang.trend}</h3>
             <div className="flex items-center gap-1">
@@ -116,148 +83,82 @@ export function PortfolioCharts({ allocationData, historicalData, displayCurrenc
               <Button size="icon" variant="ghost" onClick={() => setChartHeight(h => Math.min(1500, h + 100))} className="h-7 w-7"><Maximize2 className="w-3.5 h-3.5" /></Button>
             </div>
           </div>
-
           <div className="w-full" style={{ height: chartHeight }}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 0, left: 10 }}>
                 <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f8fafc" />
-                <XAxis 
-                  dataKey="displayDate" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 9, fill: '#cbd5e1', fontWeight: 700 }} 
-                  dy={10} 
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fontSize: 9, fill: '#e2e8f0', fontWeight: 600 }} 
-                  tickFormatter={(v) => `${symbol}${(v/1000).toFixed(0)}k`} 
-                />
-                <RechartsTooltip 
-                  cursor={{ fill: '#f8fafc', opacity: 0.6 }}
-                  content={({ active, payload, label }) => {
-                    if (active && payload?.length) {
-                      return (
-                        <div className="bg-white border border-slate-100 p-3 rounded-xl shadow-2xl z-[1000] min-w-[180px] pointer-events-none ring-4 ring-black/5">
-                          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-2 border-b border-slate-50 pb-1">{label}</p>
-                          <div className="space-y-1.5">
-                            {payload.map((p: any, i: number) => {
-                              if (p.dataKey === 'totalValue' || !p.value) return null;
-                              return (
-                                <div key={i} className="flex justify-between items-center gap-4">
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.color }} />
-                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{lang.categories[p.name as keyof typeof lang.categories] || p.name}</span>
-                                  </div>
-                                  <span className="text-[10px] font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#cbd5e1', fontWeight: 700 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#e2e8f0', fontWeight: 600 }} tickFormatter={(v) => `${symbol}${(v/1000).toFixed(0)}k`} />
+                <RechartsTooltip cursor={{ fill: '#f8fafc', opacity: 0.6 }} content={({ active, payload, label }) => {
+                  if (active && payload?.length) {
+                    return (
+                      <div className="bg-white border border-slate-100 p-3 rounded-xl shadow-2xl z-[1000] min-w-[180px] pointer-events-none ring-4 ring-black/5">
+                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-2 border-b border-slate-50 pb-1">{label}</p>
+                        <div className="space-y-1.5">
+                          {payload.map((p: any, i: number) => {
+                            if (p.dataKey === 'totalValue' || !p.value) return null;
+                            return (
+                              <div key={i} className="flex justify-between items-center gap-4">
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.color }} />
+                                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{lang.categories[p.name] || p.name}</span>
                                 </div>
-                              );
-                            })}
-                            <div className="mt-2 pt-2 border-t border-slate-50 flex justify-between items-center">
-                              <span className="text-[9px] font-black text-black uppercase tracking-[0.2em]">{lang.total}</span>
-                              <span className="text-sm font-black text-black">{symbol}{Number(payload.find((p:any)=>p.dataKey==='totalValue')?.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                            </div>
+                                <span className="text-[10px] font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                              </div>
+                            );
+                          })}
+                          <div className="mt-2 pt-2 border-t border-slate-50 flex justify-between items-center">
+                            <span className="text-[9px] font-black text-black uppercase tracking-[0.2em]">{lang.total}</span>
+                            <span className="text-sm font-black text-black">{symbol}{Number(payload.find((p:any)=>p.dataKey==='totalValue')?.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                           </div>
                         </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Legend 
-                  verticalAlign="top" 
-                  align="right" 
-                  iconType="circle"
-                  content={({ payload }) => (
-                    <div className="flex flex-wrap justify-end gap-x-4 gap-y-1 mb-6">
-                      {payload?.map((entry: any, index: number) => (
-                        <div key={`item-${index}`} className="flex items-center gap-1.5">
-                          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                          <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.categories[entry.value as keyof typeof lang.categories] || entry.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                />
-                {CATEGORIES.map((cat, i) => (
-                  <Bar key={cat} dataKey={cat} stackId="a" fill={COLORS[i % COLORS.length]} barSize={12} radius={i === 0 ? [0, 0, 2, 2] : [0, 0, 0, 0]} />
-                ))}
+                      </div>
+                    );
+                  }
+                  return null;
+                }} />
+                <Legend verticalAlign="top" align="right" iconType="circle" content={({ payload }) => (
+                  <div className="flex flex-wrap justify-end gap-x-4 gap-y-1 mb-6">
+                    {payload?.map((entry: any, index: number) => (
+                      <div key={index} className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.categories[entry.value] || entry.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )} />
+                {CATEGORIES.map((cat, i) => (<Bar key={cat} dataKey={cat} stackId="a" fill={COLORS[i % COLORS.length]} barSize={12} radius={i === 0 ? [0, 0, 2, 2] : [0, 0, 0, 0]} />))}
                 <Line type="monotone" dataKey="totalValue" stroke="#000000" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#000000', stroke: '#fff', strokeWidth: 1.5 }} />
-                <Brush 
-                  dataKey="displayDate" 
-                  height={20} 
-                  stroke="#e2e8f0" 
-                  fill="#f8fafc" 
-                  travellerWidth={8}
-                  className="font-bold text-[8px]"
-                />
+                <Brush dataKey="displayDate" height={20} stroke="#e2e8f0" fill="#f8fafc" travellerWidth={8} className="font-bold text-[8px]" />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="lg:col-span-12 modern-card p-6 flex flex-col items-center border-slate-100 bg-white relative shadow-xl rounded-2xl h-full">
-          <div className="w-full mb-6 text-left">
-            <h3 className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest">{lang.allocation}</h3>
-          </div>
-          
+        <div className="modern-card p-6 flex flex-col items-center border-slate-100 bg-white relative shadow-xl rounded-2xl">
+          <div className="w-full mb-6 text-left"><h3 className="text-[10px] xl:text-xs font-black text-slate-400 uppercase tracking-widest">{lang.allocation}</h3></div>
           <div className="h-[300px] w-full relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie
-                  activeIndex={activeIndex ?? undefined}
-                  activeShape={renderActiveShape}
-                  data={allocationData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                  stroke="transparent"
-                  onMouseEnter={(_, index) => setActiveIndex(index)}
-                  onMouseLeave={() => setActiveIndex(null)}
-                  label={(props) => renderCustomLabel({ ...props, symbol, langCategories: lang.categories })}
-                  labelLine={false}
-                >
-                  {allocationData.map((_: any, i: number) => <Cell key={`cell-${i}`} fill={COLORS[i % COLORS.length]} />)}
+                <Pie activeIndex={activeIndex ?? undefined} activeShape={renderActiveShape} data={allocationData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="transparent" onMouseEnter={(_, index) => setActiveIndex(index)} onMouseLeave={() => setActiveIndex(null)} label={(props) => renderCustomLabel({ ...props, symbol, langCategories: lang.categories })} labelLine={false}>
+                  {allocationData.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
-                <RechartsTooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload?.length) {
-                      const val = Number(payload[0].value);
-                      return (
-                        <div className="bg-white border border-slate-100 p-3 rounded-xl shadow-2xl z-[1000] min-w-[150px] pointer-events-none ring-4 ring-black/5">
-                          <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">
-                            {lang.categories[payload[0].name as keyof typeof lang.categories] || payload[0].name}
-                          </p>
-                          <p className="text-sm font-black text-black">{symbol}{val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
+                <RechartsTooltip content={({ active, payload }) => {
+                  if (active && payload?.length) {
+                    return (
+                      <div className="bg-white border border-slate-100 p-3 rounded-xl shadow-2xl z-[1000] min-w-[150px] pointer-events-none ring-4 ring-black/5">
+                        <p className="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em] mb-1">{lang.categories[payload[0].name] || payload[0].name}</p>
+                        <p className="text-sm font-black text-black">{symbol}{Number(payload[0].value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }} />
               </PieChart>
             </ResponsiveContainer>
-            
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none w-full">
-              {activeIndex !== null && allocationData[activeIndex] ? (
-                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <p className="text-[8px] font-black text-slate-300 uppercase tracking-[0.1em] truncate px-4">
-                    {lang.categories[allocationData[activeIndex].name as keyof typeof lang.categories] || allocationData[activeIndex].name}
-                  </p>
-                  <p className="text-base font-black text-black tracking-tighter">
-                    {((allocationData[activeIndex].value / (totalAllocationValue || 1)) * 100).toFixed(1)}%
-                  </p>
-                </div>
-              ) : (
-                <div className="animate-in fade-in duration-500">
-                  <p className="text-[8px] font-black text-slate-200 uppercase tracking-[0.1em]">{lang.total}</p>
-                  <p className="text-lg font-black text-slate-100 tracking-tighter">100%</p>
-                </div>
-              )}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+              <p className="text-[8px] font-black text-slate-200 uppercase tracking-[0.1em]">{lang.total}</p>
+              <p className="text-lg font-black text-slate-100 tracking-tighter">100%</p>
             </div>
           </div>
         </div>
