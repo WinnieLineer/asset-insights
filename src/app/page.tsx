@@ -242,7 +242,6 @@ export default function AssetInsightsPage() {
     const displayRate = marketData.rates[displayCurrency] || 1;
     const todayStr = new Date().toISOString().split('T')[0];
 
-    // Forward fill logic for historical data
     const processedAssets = assets.map(asset => {
       const marketInfo = marketData.assetMarketPrices[asset.id];
       const nativePrice = marketInfo?.price || 0;
@@ -528,9 +527,9 @@ export default function AssetInsightsPage() {
             {controls}
             <Card className="modern-card bg-white h-full flex flex-col overflow-hidden">
               <div className="px-6 sm:px-10 py-6 border-b border-slate-50 shrink-0">
-                <CardTitle className="pro-label">
+                <h3 className="pro-label">
                   <BarChart3 className="w-6 h-6" /> {t.dashboard}
-                </CardTitle>
+                </h3>
               </div>
               <CardContent className="p-0 flex-1 overflow-auto no-scrollbar">
                 <Table className="min-w-[800px]">
@@ -594,9 +593,9 @@ export default function AssetInsightsPage() {
             {controls}
             <Card className="modern-card bg-white h-full flex flex-col overflow-hidden">
               <CardHeader className="px-6 sm:px-10 py-6 border-b border-slate-50 shrink-0">
-                <CardTitle className="pro-label">
+                <h3 className="pro-label">
                   <Plus className="w-6 h-6" /> {t.addAsset}
-                </CardTitle>
+                </h3>
               </CardHeader>
               <CardContent className="p-6 sm:p-10 flex-1 overflow-auto no-scrollbar">
                 <AssetForm language={language} onAdd={(a) => { const newAsset = { ...a, id: crypto.randomUUID() }; setAssets(prev => [...prev, newAsset]); updateAllData([...assets, newAsset]); }} />

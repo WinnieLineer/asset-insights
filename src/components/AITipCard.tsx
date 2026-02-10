@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Brain, ShieldCheck, Target, Loader2, Cpu, MessageSquare, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -145,7 +145,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-black rounded-lg shrink-0 shadow-lg"><Brain className="w-6 h-6 text-white" /></div>
-              <CardTitle className="pro-label">{lang.title}</CardTitle>
+              <h3 className="pro-label">{lang.title}</h3>
             </div>
             <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.desc}</div>
           </div>
@@ -168,7 +168,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
               disabled={loading || assets.length === 0}
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin mr-3" /> : <Sparkles className="w-5 h-5 mr-3" />}
-              <span className="text-[12px] tracking-[0.3em] uppercase">{loading ? lang.loading : lang.ctaButton}</span>
+              <span className="text-[14px] tracking-[0.3em] uppercase">{loading ? lang.loading : lang.ctaButton}</span>
             </Button>
           </div>
         </div>
