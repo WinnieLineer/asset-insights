@@ -75,7 +75,6 @@ const CURRENCY_SYMBOLS: Record<Currency, string> = {
 const translations = {
   en: {
     title: 'ASSET INSIGHTS PRO',
-    subtitle: 'PROFESSIONAL TRACKING',
     syncMarket: 'Sync',
     totalValue: 'PORTFOLIO NET VALUE',
     addAsset: 'ADD POSITION',
@@ -83,9 +82,7 @@ const translations = {
     holdings: 'QUANTITY',
     valuation: 'VALUATION',
     unitPrice: 'UNIT PRICE',
-    dashboard: 'PORTFOLIO DASHBOARD',
-    activePositions: 'Holdings',
-    closedPositions: 'History',
+    dashboard: 'ASSET OVERVIEW & ANALYSIS',
     change: 'Daily Change',
     editAsset: 'EDIT POSITION',
     cancel: 'Cancel',
@@ -98,13 +95,9 @@ const translations = {
     days90: '90 Days',
     days180: '180 Days',
     days365: '365 Days',
-    customRange: 'Custom',
-    startDate: 'Start',
-    endDate: 'End',
     int1d: 'Daily',
     int1wk: 'Weekly',
     int1mo: 'Monthly',
-    assetDeleted: 'Asset removed.',
     dataUpdated: 'Market data synced.',
     acqDate: 'Acquired',
     posEndDate: 'Closed',
@@ -113,16 +106,10 @@ const translations = {
     importSuccess: 'Data imported successfully.',
     exitReorder: 'DONE',
     reorderHint: 'REORDER MODE ACTIVE: Use W for Width and H for Height.',
-    categoryNames: {
-      Stock: 'Equity',
-      Crypto: 'Crypto',
-      Bank: 'Other',
-      Savings: 'Deposit'
-    }
+    categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit' }
   },
   zh: {
     title: 'ASSET INSIGHTS PRO',
-    subtitle: '專業資產追蹤',
     syncMarket: '同步',
     totalValue: '投資組合總淨值',
     addAsset: '新增資產部位',
@@ -131,8 +118,6 @@ const translations = {
     valuation: '帳面價值',
     unitPrice: '單位價值',
     dashboard: '資產部位概覽與分析',
-    activePositions: '當前持有',
-    closedPositions: '歷史結清',
     change: '今日漲跌',
     editAsset: '編輯部位資訊',
     cancel: '取消',
@@ -145,29 +130,18 @@ const translations = {
     days90: '90 天',
     days180: '180 天',
     days365: '365 天',
-    customRange: '自定義範圍',
-    startDate: '起始日期',
-    endDate: '結束日期',
     int1d: '日線',
     int1wk: '週線',
     int1mo: '月線',
-    assetDeleted: '資產已移除',
     dataUpdated: '市場數據已更新',
     acqDate: '持有日期',
     posEndDate: '結清日期',
-    movedToClosed: '資產已移至歷史結清',
-    movedToClosedDesc: '結清日期已生效，已移動至歷史分頁。',
     exportData: '匯出資料',
     importData: '匯入資料',
     importSuccess: '資產資料已成功匯入。',
     exitReorder: '完成調整',
     reorderHint: '已進入佈局調整模式：可使用 W 調整寬度，H 調整高度。',
-    categoryNames: {
-      Stock: '股票',
-      Crypto: '加密貨幣',
-      Bank: '其他資產',
-      Savings: '存款'
-    }
+    categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款' }
   }
 };
 
@@ -187,8 +161,6 @@ export default function AssetInsightsPage() {
   const [editDate, setEditDate] = useState<string>('');
   const [editEndDate, setEditEndDate] = useState<string>('');
   const [trackingDays, setTrackingDays] = useState<string>("30");
-  const [customStartDate, setCustomStartDate] = useState<string>("");
-  const [customEndDate, setCustomEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [interval, setInterval] = useState<string>("1d");
   const [marketTimeline, setMarketTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -201,7 +173,7 @@ export default function AssetInsightsPage() {
     historicalTrend: { width: 12, height: 500 },
     allocation: { width: 12, height: 500 },
     list: { width: 12, height: 600 },
-    ai: { width: 12, height: 620 },
+    ai: { width: 12, height: 650 },
     addAsset: { width: 12, height: 600 }
   });
 
@@ -221,13 +193,7 @@ export default function AssetInsightsPage() {
     setLoading(true);
     try {
       let p2 = Math.floor(Date.now() / 1000);
-      let p1;
-      if (trackingDays === 'custom') {
-        p1 = customStartDate ? Math.floor(new Date(customStartDate).getTime() / 1000) : p2 - (30 * 24 * 60 * 60);
-        p2 = customEndDate ? Math.floor(new Date(customEndDate).getTime() / 1000) : p2;
-      } else {
-        p1 = p2 - (parseInt(trackingDays) * 24 * 60 * 60);
-      }
+      let p1 = p2 - (parseInt(trackingDays) * 24 * 60 * 60);
 
       const { marketData: newData, historicalTimeline } = await fetchMarketData(
         currentAssets, 
@@ -243,7 +209,7 @@ export default function AssetInsightsPage() {
     } finally {
       setLoading(false);
     }
-  }, [mounted, trackingDays, customStartDate, customEndDate, interval, t.dataUpdated, loading, toast]);
+  }, [mounted, trackingDays, interval, t.dataUpdated, loading, toast]);
 
   useEffect(() => {
     setMounted(true);
@@ -259,7 +225,7 @@ export default function AssetInsightsPage() {
     if (mounted && assets.length > 0) {
       updateAllData(assets);
     }
-  }, [mounted, trackingDays, customStartDate, customEndDate, interval, assets.length]);
+  }, [mounted, trackingDays, interval, assets.length]);
 
   useEffect(() => {
     if (mounted) {
@@ -276,6 +242,7 @@ export default function AssetInsightsPage() {
     const displayRate = marketData.rates[displayCurrency] || 1;
     const todayStr = new Date().toISOString().split('T')[0];
 
+    // Forward fill logic for historical data
     const processedAssets = assets.map(asset => {
       const marketInfo = marketData.assetMarketPrices[asset.id];
       const nativePrice = marketInfo?.price || 0;
@@ -375,7 +342,6 @@ export default function AssetInsightsPage() {
     return { 
       processedAssets, 
       activeAssets: processedAssets.filter(a => !a.isClosed),
-      closedAssets: processedAssets.filter(a => a.isClosed),
       totalTWD, 
       totalDisplay: totalTWD * (displayRate / rateTWD), 
       allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ name, value: value * (displayRate / rateTWD) })),
@@ -442,7 +408,7 @@ export default function AssetInsightsPage() {
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'inc')}><Maximize2 className="w-5 h-5" /></Button>
         <div className="w-px h-6 bg-white/20 mx-1" />
         <span className="text-[14px] font-black uppercase tracking-widest px-1 opacity-60">H</span>
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'dec')}><ChevronUp className="w-5 h-5" /></Button>
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'dec')}><ChevronDown className="w-5 h-5 rotate-180" /></Button>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'inc')}><ChevronDown className="w-5 h-5" /></Button>
       </div>
     );
@@ -470,8 +436,8 @@ export default function AssetInsightsPage() {
                   <div className="pro-label">
                     <Globe className="w-5 h-5" /> {t.totalValue}
                   </div>
-                  <div className="flex items-baseline gap-4 sm:gap-6 font-black tracking-tighter uppercase leading-tight text-3xl xl:text-5xl">
-                    <span className="text-slate-200 font-medium text-xl sm:text-2xl xl:text-3xl">{CURRENCY_SYMBOLS[displayCurrency]}</span>
+                  <div className="pro-title">
+                    <span className="text-slate-200 font-medium text-[0.6em] mr-4">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                     <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                     {loading && <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-slate-200 ml-4 sm:ml-6" />}
                   </div>
@@ -495,9 +461,9 @@ export default function AssetInsightsPage() {
             {controls}
             <section className="bg-slate-50/80 backdrop-blur-md p-6 sm:p-8 border border-slate-100 rounded-2xl grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 shadow-inner h-full content-center">
               <div className="md:col-span-3 space-y-2">
-                <Label className="text-[14px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
+                <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
-                  <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-xs sm:text-sm rounded-xl border-2 border-slate-200 focus:ring-black focus:border-black"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[13px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="30">{t.days30}</SelectItem>
                     <SelectItem value="90">{t.days90}</SelectItem>
@@ -507,9 +473,9 @@ export default function AssetInsightsPage() {
                 </Select>
               </div>
               <div className="md:col-span-3 space-y-2">
-                <Label className="text-[14px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Clock className="w-4 h-4" /> {t.interval}</Label>
+                <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Clock className="w-4 h-4" /> {t.interval}</Label>
                 <Select value={interval} onValueChange={setInterval}>
-                  <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-xs sm:text-sm rounded-xl border-2 border-slate-200 focus:ring-black focus:border-black"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[13px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1d">{t.int1d}</SelectItem>
                     <SelectItem value="1wk">{t.int1wk}</SelectItem>
@@ -518,8 +484,8 @@ export default function AssetInsightsPage() {
                 </Select>
               </div>
               <div className="md:col-span-6 flex items-end gap-3 sm:gap-4">
-                <Button variant="outline" onClick={handleExport} className="flex-1 h-10 sm:h-11 font-black text-[14px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black"><Download className="w-4 h-4" /> {t.exportData}</Button>
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 sm:h-11 font-black text-[14px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black"><Upload className="w-4 h-4" /> {t.importData}</Button>
+                <Button variant="outline" onClick={handleExport} className="flex-1 h-10 sm:h-11 font-black text-[11px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black transition-all"><Download className="w-4 h-4" /> {t.exportData}</Button>
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 sm:h-11 font-black text-[11px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black transition-all"><Upload className="w-4 h-4" /> {t.importData}</Button>
                 <input type="file" ref={fileInputRef} onChange={(e) => {
                    const file = e.target.files?.[0]; if (!file) return;
                    const reader = new FileReader(); reader.onload = (event) => {
@@ -560,7 +526,7 @@ export default function AssetInsightsPage() {
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <Card className="modern-card bg-white h-full flex flex-col">
+            <Card className="modern-card bg-white h-full flex flex-col overflow-hidden">
               <div className="px-6 sm:px-10 py-6 border-b border-slate-50 shrink-0">
                 <CardTitle className="pro-label">
                   <BarChart3 className="w-6 h-6" /> {t.dashboard}
@@ -570,11 +536,11 @@ export default function AssetInsightsPage() {
                 <Table className="min-w-[800px]">
                   <TableHeader className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md">
                     <TableRow className="hover:bg-transparent border-slate-100">
-                      <TableHead className="px-6 sm:px-10 h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.assetName}</TableHead>
-                      <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.holdings}</TableHead>
-                      <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.unitPrice}</TableHead>
-                      <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.change}</TableHead>
-                      <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest text-right pr-6 sm:pr-10">{t.valuation}</TableHead>
+                      <TableHead className="px-6 sm:px-10 h-14 text-[11px] font-black text-slate-500 uppercase tracking-widest">{t.assetName}</TableHead>
+                      <TableHead className="h-14 text-[11px] font-black text-slate-500 uppercase tracking-widest">{t.holdings}</TableHead>
+                      <TableHead className="h-14 text-[11px] font-black text-slate-500 uppercase tracking-widest">{t.unitPrice}</TableHead>
+                      <TableHead className="h-14 text-[11px] font-black text-slate-500 uppercase tracking-widest">{t.change}</TableHead>
+                      <TableHead className="h-14 text-[11px] font-black text-slate-500 uppercase tracking-widest text-right pr-6 sm:pr-10">{t.valuation}</TableHead>
                       <TableHead className="w-[80px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -582,22 +548,22 @@ export default function AssetInsightsPage() {
                     {assetCalculations.activeAssets.map((asset: any) => (
                       <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
                         <TableCell className="px-6 sm:px-10 py-6">
-                          <div className="font-black text-[16px] text-slate-900">{asset.name}</div>
-                          <div className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
+                          <div className="font-black text-[15px] text-slate-900">{asset.name}</div>
+                          <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
                         </TableCell>
-                        <TableCell><span className="text-[16px] font-black text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
-                        <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[14px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[16px] font-black text-slate-700">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></div></TableCell>
+                        <TableCell><span className="text-[15px] font-black text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
+                        <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[11px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[15px] font-black text-slate-700">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></div></TableCell>
                         <TableCell>
                           {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
-                            <div className={cn("flex items-center gap-2 font-black text-[14px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                            <div className={cn("flex items-center gap-2 font-black text-[13px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
                               {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                               <span>{asset.dayChangePercent.toFixed(1)}%</span>
                             </div>
                           ) : <span className="text-slate-200">—</span>}
                         </TableCell>
                         <TableCell className="text-right pr-6 sm:pr-10">
-                          <div className="font-black text-lg sm:text-xl">
-                            <span className="text-slate-300 text-[14px] mr-1 sm:mr-2">{CURRENCY_SYMBOLS[displayCurrency]}</span>
+                          <div className="font-black text-lg">
+                            <span className="text-slate-300 text-[11px] mr-1 sm:mr-2">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                             {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </div>
                         </TableCell>
@@ -626,13 +592,13 @@ export default function AssetInsightsPage() {
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <Card className="modern-card bg-white h-full flex flex-col">
+            <Card className="modern-card bg-white h-full flex flex-col overflow-hidden">
               <CardHeader className="px-6 sm:px-10 py-6 border-b border-slate-50 shrink-0">
                 <CardTitle className="pro-label">
                   <Plus className="w-6 h-6" /> {t.addAsset}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 sm:p-10 flex-1 overflow-auto">
+              <CardContent className="p-6 sm:p-10 flex-1 overflow-auto no-scrollbar">
                 <AssetForm language={language} onAdd={(a) => { const newAsset = { ...a, id: crypto.randomUUID() }; setAssets(prev => [...prev, newAsset]); updateAllData([...assets, newAsset]); }} />
               </CardContent>
             </Card>
@@ -645,29 +611,28 @@ export default function AssetInsightsPage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-white text-black pb-24 font-sans overflow-x-hidden" onMouseDown={handleMouseDown}>
+    <div className="min-h-screen bg-white text-black pb-24 overflow-x-hidden" onMouseDown={handleMouseDown}>
       <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl h-12">
         <div className="max-w-[1900px] mx-auto px-4 sm:px-10 h-full flex items-center justify-between gap-4 overflow-hidden">
           <div className="flex items-center gap-3 shrink-0">
             <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-4 h-4 text-white" /></div>
-            <h1 className="text-[14px] font-black tracking-tighter uppercase leading-none hidden xs:block">{t.title}</h1>
+            <h1 className="text-[12px] font-black tracking-tighter uppercase leading-none hidden xs:block">{t.title}</h1>
           </div>
           
           <div className="flex-1 flex items-center gap-4 overflow-hidden">
-            <div className="flex items-center gap-4 px-4 border-l border-slate-100 overflow-x-auto no-scrollbar">
-               <span className="text-[14px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap shrink-0">
+            <div className="flex items-center gap-6 px-4 border-l border-slate-100 overflow-x-auto no-scrollbar">
+               <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap shrink-0">
                  {t.exchangeRate.replace('[CUR]', displayCurrency)}
                </span>
-               <div className="flex items-center gap-5">
+               <div className="flex items-center gap-6">
                  {Object.entries(marketData.rates).filter(([cur]) => cur !== displayCurrency).map(([cur, rate]) => {
                    const baseRate = marketData.rates[displayCurrency] || 1;
-                   const targetRate = rate;
-                   const relativeRate = targetRate / baseRate;
+                   const relativeRate = rate / baseRate;
                    return (
                      <div key={cur} className="flex items-center gap-2 whitespace-nowrap">
-                       <span className="text-[14px] font-black text-slate-900">{cur}</span>
-                       <ArrowRightLeft className="w-3 h-3 text-slate-200" />
-                       <span className="text-[14px] font-black text-emerald-600">
+                       <span className="text-[11px] font-black text-slate-900">{cur}</span>
+                       <ArrowRightLeft className="w-3 h-3 text-slate-300" />
+                       <span className="text-[11px] font-black text-emerald-600">
                          {relativeRate < 0.1 ? relativeRate.toFixed(4) : relativeRate.toFixed(2)}
                        </span>
                      </div>
@@ -679,16 +644,16 @@ export default function AssetInsightsPage() {
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {isReordering ? (
-              <Button onClick={() => setIsReordering(false)} className="h-7 bg-black text-white px-4 font-black text-[14px] uppercase tracking-[0.2em] gap-1 rounded-full shadow-lg"><Check className="w-4 h-4" /> {t.exitReorder}</Button>
+              <Button onClick={() => setIsReordering(false)} className="h-7 bg-black text-white px-4 font-black text-[12px] uppercase tracking-[0.2em] gap-1 rounded-full shadow-lg"><Check className="w-4 h-4" /> {t.exitReorder}</Button>
             ) : (
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="flex bg-slate-100 p-0.5 rounded-md">
-                  <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-6 px-2 font-black text-[14px]">繁</Button>
-                  <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-6 px-2 font-black text-[14px]">EN</Button>
+                  <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-6 px-2 font-black text-[11px]">繁</Button>
+                  <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-6 px-2 font-black text-[11px]">EN</Button>
                 </div>
                 <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)} className="hidden sm:block">
                   <TabsList className="h-7 bg-slate-100 p-0.5 rounded-md">
-                    {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<TabsTrigger key={cur} value={cur} className="text-[14px] font-black uppercase px-2 h-6">{cur}</TabsTrigger>))}
+                    {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<TabsTrigger key={cur} value={cur} className="text-[11px] font-black uppercase px-2 h-6">{cur}</TabsTrigger>))}
                   </TabsList>
                 </Tabs>
               </div>
@@ -704,10 +669,10 @@ export default function AssetInsightsPage() {
       </main>
 
       {isReordering && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[150] animate-bounce px-4 w-full sm:w-auto">
-          <div className="bg-black text-white px-6 py-4 rounded-2xl shadow-2xl border border-white/10 flex items-center justify-center gap-4 text-center">
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[150] px-4 w-full sm:w-auto">
+          <div className="bg-black text-white px-8 py-5 rounded-2xl shadow-2xl border border-white/10 flex items-center justify-center gap-6 text-center animate-bounce">
             <Info className="w-5 h-5 text-emerald-400 shrink-0" />
-            <span className="text-[14px] font-black uppercase tracking-[0.2em]">{t.reorderHint}</span>
+            <span className="text-[13px] font-black uppercase tracking-[0.2em]">{t.reorderHint}</span>
           </div>
         </div>
       )}
@@ -716,19 +681,19 @@ export default function AssetInsightsPage() {
         <DialogContent className="max-w-[95vw] sm:max-w-[480px] bg-white rounded-3xl p-6 sm:p-10">
           <DialogHeader><DialogTitle className="text-xl sm:text-2xl font-black uppercase tracking-tight flex items-center gap-4"><Edit2 className="w-5 h-5 text-primary" /> {t.editAsset}</DialogTitle></DialogHeader>
           <div className="grid gap-6 py-6">
-            <div className="space-y-2"><Label className="text-[14px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label><div className="p-4 bg-slate-50 rounded-xl font-black text-sm text-slate-900 border border-slate-100">{editingAsset?.name}</div></div>
-            <div className="space-y-2"><Label htmlFor="amount" className="text-[14px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label><Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-10 font-black text-base border-2 border-slate-300 rounded-xl" /></div>
+            <div className="space-y-2"><Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label><div className="p-4 bg-slate-50 rounded-xl font-black text-sm text-slate-900 border border-slate-100">{editingAsset?.name}</div></div>
+            <div className="space-y-2"><Label htmlFor="amount" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label><Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-10 font-black text-base border-2 border-slate-300 rounded-xl" /></div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label className="text-[14px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-10 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
-              <div className="space-y-2"><Label className="text-[14px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-10 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
+              <div className="space-y-2"><Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-10 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
+              <div className="space-y-2"><Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-10 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
             </div>
           </div>
           <DialogFooter className="flex flex-row gap-3 mt-4">
-            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-black h-11 flex-1 rounded-xl text-[14px] uppercase tracking-[0.2em]">{t.cancel}</Button>
+            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-black h-11 flex-1 rounded-xl text-[12px] uppercase tracking-[0.2em]">{t.cancel}</Button>
             <Button onClick={() => {
               const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, amount: editAmount, acquisitionDate: editDate, endDate: editEndDate || undefined } : a);
               setAssets(updated); setEditingAsset(null); updateAllData(updated);
-            }} className="bg-black text-white font-black h-11 flex-1 rounded-xl text-[14px] uppercase tracking-[0.2em] shadow-xl">{t.saveChanges}</Button>
+            }} className="bg-black text-white font-black h-11 flex-1 rounded-xl text-[12px] uppercase tracking-[0.2em] shadow-xl">{t.saveChanges}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

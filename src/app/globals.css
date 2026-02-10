@@ -24,6 +24,7 @@
     --input: 0 0% 89.8%;
     --ring: 0 0% 3.9%;
     --radius: 0.75rem;
+    --app-main-font: 'Inter', sans-serif;
   }
 }
 
@@ -33,17 +34,21 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: var(--app-main-font);
   }
 }
 
 @layer components {
+  /* 統一 14px 專業標籤類別 */
   .pro-label {
     @apply text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-4;
+    font-family: var(--app-main-font);
   }
   
+  /* 統一專業大標題類別 */
   .pro-title {
-    @apply text-xl sm:text-2xl xl:text-3xl font-black tracking-tighter uppercase leading-tight;
+    @apply text-3xl sm:text-4xl xl:text-5xl font-black tracking-tighter uppercase leading-tight;
+    font-family: var(--app-main-font);
   }
 
   .modern-card {

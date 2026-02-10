@@ -37,7 +37,7 @@ interface AITipCardProps {
 
 const t = {
   en: {
-    title: 'GEMINI PORTFOLIO AUDIT',
+    title: 'GEMINI ASSET POSITION ANALYSIS',
     desc: 'ADVANCED PORTFOLIO INTELLIGENCE POWERED BY GEMINI 2.0 FLASH.',
     analysis: 'Strategic Position Review',
     risk: 'Portfolio Risk Index',
@@ -78,11 +78,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
     
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
-      toast({
-        variant: 'destructive',
-        title: 'Configuration Error',
-        description: lang.noApiKey
-      });
+      toast({ variant: 'destructive', title: 'Configuration Error', description: lang.noApiKey });
       return;
     }
 
@@ -117,26 +113,11 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
     try {
       const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent", {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey 
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: promptText
-                }
-              ]
-            }
-          ]
-        })
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+        body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
       });
 
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`API returned ${response.status}`);
 
       const data = await response.json();
       const rawText = data.candidates[0].content.parts[0].text;
@@ -163,19 +144,16 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-10">
           <div className="space-y-4">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-black rounded-lg shrink-0 shadow-lg">
-                <Brain className="w-6 h-6 text-white" />
-              </div>
+              <div className="p-3 bg-black rounded-lg shrink-0 shadow-lg"><Brain className="w-6 h-6 text-white" /></div>
               <CardTitle className="pro-label">{lang.title}</CardTitle>
             </div>
-            <div className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.desc}</div>
+            <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.desc}</div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 flex-1 max-w-xl w-full">
             <div className="w-full space-y-2">
-              <label className="text-[14px] font-black text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-3 ml-1">
-                <MessageSquare className="w-4 h-4" />
-                {lang.instructionLabel}
+              <label className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-3 ml-1">
+                <MessageSquare className="w-4 h-4" /> {lang.instructionLabel}
               </label>
               <Textarea 
                 placeholder={lang.instructionPlaceholder}
@@ -190,30 +168,26 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
               disabled={loading || assets.length === 0}
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin mr-3" /> : <Sparkles className="w-5 h-5 mr-3" />}
-              <span className="text-[14px] tracking-[0.3em] uppercase">{loading ? lang.loading : lang.ctaButton}</span>
+              <span className="text-[12px] tracking-[0.3em] uppercase">{loading ? lang.loading : lang.ctaButton}</span>
             </Button>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent className="p-6 sm:p-10 flex-1 overflow-auto">
+      <CardContent className="p-6 sm:p-10 flex-1 overflow-auto no-scrollbar">
         {insight ? (
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 animate-fade-in">
             <div className="xl:col-span-5 space-y-10">
               <div className="space-y-5">
-                <h4 className="pro-label">
-                  <Target className="w-4 h-4" />
-                  {lang.answer}
-                </h4>
-                <div className="text-[16px] font-black text-zinc-900 leading-relaxed border-l-[6px] border-black pl-8 py-4 bg-zinc-50 rounded-r-xl shadow-sm">
+                <h4 className="pro-label"><Target className="w-4 h-4" /> {lang.answer}</h4>
+                <div className="text-[15px] font-black text-zinc-900 leading-relaxed border-l-[6px] border-black pl-8 py-4 bg-zinc-50 rounded-r-xl shadow-sm">
                   {insight.answer}
                 </div>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="bg-white p-6 rounded-2xl border-2 border-zinc-100 shadow-xl">
                   <h4 className="pro-label mb-5">{lang.risk}</h4>
-                  <Badge className={cn("text-[14px] font-black py-2 px-5 border-none uppercase tracking-[0.2em] rounded-full", getRiskColor(insight.riskLevel))}>
+                  <Badge className={cn("text-[12px] font-black py-2 px-5 border-none uppercase tracking-[0.2em] rounded-full", getRiskColor(insight.riskLevel))}>
                     {insight.riskLevel}
                   </Badge>
                 </div>
@@ -226,30 +200,20 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
                 </div>
               </div>
             </div>
-
             <div className="xl:col-span-7 space-y-10">
               <div className="space-y-5">
-                <h4 className="pro-label">
-                  <ShieldCheck className="w-4 h-4" />
-                  {lang.analysis}
-                </h4>
-                <p className="text-[15px] font-bold text-zinc-600 leading-loose bg-zinc-50/30 p-6 rounded-2xl border border-zinc-50">
+                <h4 className="pro-label"><ShieldCheck className="w-4 h-4" /> {lang.analysis}</h4>
+                <p className="text-[14px] font-bold text-zinc-600 leading-loose bg-zinc-50/30 p-6 rounded-2xl border border-zinc-50">
                   {insight.analysis}
                 </p>
               </div>
-
               <div className="space-y-6">
-                <h4 className="pro-label">
-                  <Cpu className="w-4 h-4" />
-                  {lang.recommendations}
-                </h4>
+                <h4 className="pro-label"><Cpu className="w-4 h-4" /> {lang.recommendations}</h4>
                 <div className="grid gap-3">
                   {insight.recommendations.map((rec: string, i: number) => (
                     <div key={i} className="flex items-center gap-5 p-4 bg-white border-2 border-zinc-100 rounded-xl hover:border-black transition-all group shadow-sm">
-                      <div className="w-7 h-7 rounded bg-black text-white flex items-center justify-center shrink-0 font-black text-[13px] group-hover:scale-110 transition-transform">
-                        {i + 1}
-                      </div>
-                      <span className="text-[14px] font-black text-zinc-700">{rec}</span>
+                      <div className="w-7 h-7 rounded bg-black text-white flex items-center justify-center shrink-0 font-black text-[13px] group-hover:scale-110 transition-transform">{i + 1}</div>
+                      <span className="text-[13px] font-black text-zinc-700">{rec}</span>
                     </div>
                   ))}
                 </div>

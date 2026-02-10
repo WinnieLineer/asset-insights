@@ -35,18 +35,8 @@ const t = {
     date: 'Acquisition Date',
     endDate: 'Closure Date',
     submit: 'Add to Portfolio',
-    categories: {
-      Stock: 'Equity',
-      Crypto: 'Crypto',
-      Savings: 'Deposit',
-      Bank: 'Other'
-    },
-    errors: {
-      nameTooShort: 'Min 2 characters',
-      invalidAmount: 'Positive number required',
-      required: 'Required',
-      tickerRequired: 'Ticker symbol is required'
-    }
+    categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other' },
+    errors: { nameTooShort: 'Min 2 characters', invalidAmount: 'Positive number required', required: 'Required', tickerRequired: 'Ticker symbol is required' }
   },
   zh: {
     name: '資產名稱',
@@ -59,18 +49,8 @@ const t = {
     date: '買入日期',
     endDate: '結清日期 (選填)',
     submit: '新增部位',
-    categories: {
-      Stock: '股票',
-      Crypto: '加密貨幣',
-      Savings: '存款',
-      Bank: '其他資產'
-    },
-    errors: {
-      nameTooShort: '至少 2 個字',
-      invalidAmount: '請輸入有效的正數',
-      required: '必填',
-      tickerRequired: '此類別必須填寫代號'
-    }
+    categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產' },
+    errors: { nameTooShort: '至少 2 個字', invalidAmount: '請輸入有效的正數', required: '必填', tickerRequired: '此類別必須填寫代號' }
   }
 };
 
@@ -91,26 +71,15 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
-    if ((data.category === 'Stock' || data.category === 'Crypto') && (!data.symbol || data.symbol.trim() === '')) {
-      return false;
-    }
+    if ((data.category === 'Stock' || data.category === 'Crypto') && (!data.symbol || data.symbol.trim() === '')) return false;
     return true;
-  }, {
-    message: lang.errors.tickerRequired,
-    path: ['symbol'],
-  }), [lang]);
-
-  const today = new Date().toISOString().split('T')[0];
+  }, { message: lang.errors.tickerRequired, path: ['symbol'] }), [lang]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { 
-      name: '', 
-      symbol: '', 
-      category: 'Stock', 
-      amount: 0, 
-      currency: 'TWD',
-      acquisitionDate: today,
+      name: '', symbol: '', category: 'Stock', amount: 0, currency: 'TWD',
+      acquisitionDate: new Date().toISOString().split('T')[0],
       endDate: ''
     },
   });
@@ -135,18 +104,17 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
       <form onSubmit={form.handleSubmit((v) => { onAdd(v as Omit<Asset, 'id'>); form.reset({ ...form.getValues(), name: '', symbol: '', amount: 0 }); })} className="space-y-4">
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.name}</FormLabel>
+            <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.name}</FormLabel>
             <FormControl>
               <Input placeholder={lang.namePlaceholder} {...field} className="bg-slate-50 border-2 border-slate-200 h-11 text-sm font-bold focus:ring-black focus:border-black rounded-lg" />
             </FormControl>
             <FormMessage className="text-xs" />
           </FormItem>
         )} />
-        
         {hasTicker && (
           <FormField control={form.control} name="symbol" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.symbol}</FormLabel>
+              <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.symbol}</FormLabel>
               <FormControl>
                 <Input placeholder={lang.symbolPlaceholder} {...field} className="bg-slate-50 border-2 border-slate-200 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg" />
               </FormControl>
@@ -154,83 +122,50 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
             </FormItem>
           )} />
         )}
-
         <div className="grid grid-cols-2 gap-3">
           <FormField control={form.control} name="category" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.category}</FormLabel>
+              <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.category}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold focus:ring-black focus:border-black rounded-lg">
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
+                <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
                 <SelectContent>
-                  <SelectItem value="Stock" className="text-sm font-bold">{lang.categories.Stock}</SelectItem>
-                  <SelectItem value="Crypto" className="text-sm font-bold">{lang.categories.Crypto}</SelectItem>
-                  <SelectItem value="Savings" className="text-sm font-bold">{lang.categories.Savings}</SelectItem>
-                  <SelectItem value="Bank" className="text-sm font-bold">{lang.categories.Bank}</SelectItem>
+                  {['Stock', 'Crypto', 'Savings', 'Bank'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{lang.categories[c as keyof typeof lang.categories]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </FormItem>
           )} />
-          
           <FormField control={form.control} name="currency" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.currency}</FormLabel>
+              <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.currency}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value} disabled={category === 'Crypto'}>
-                <FormControl>
-                  <SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold focus:ring-black focus:border-black rounded-lg">
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="TWD" className="text-sm font-bold">TWD</SelectItem>
-                  <SelectItem value="USD" className="text-sm font-bold">USD</SelectItem>
-                  <SelectItem value="CNY" className="text-sm font-bold">CNY</SelectItem>
-                  <SelectItem value="SGD" className="text-sm font-bold">SGD</SelectItem>
-                </SelectContent>
+                <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
+                <SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{c}</SelectItem>)}</SelectContent>
               </Select>
             </FormItem>
           )} />
         </div>
-
-        <div className="grid grid-cols-1 gap-3">
-          <FormField control={form.control} name="amount" render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.amount}</FormLabel>
-              <FormControl>
-                <Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-11 font-bold bg-slate-50 border-2 border-slate-200 text-sm focus:ring-black focus:border-black rounded-lg" />
-              </FormControl>
-              <FormMessage className="text-xs" />
-            </FormItem>
-          )} />
-        </div>
-
+        <FormField control={form.control} name="amount" render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.amount}</FormLabel>
+            <FormControl><Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-11 font-bold bg-slate-50 border-2 border-slate-200 text-sm rounded-lg" /></FormControl>
+            <FormMessage className="text-xs" />
+          </FormItem>
+        )} />
         <div className="grid grid-cols-2 gap-3">
           <FormField control={form.control} name="acquisitionDate" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.date}</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} className="h-11 font-bold bg-slate-50 border-2 border-slate-200 text-sm focus:ring-black focus:border-black rounded-lg" />
-              </FormControl>
-              <FormMessage className="text-xs" />
+              <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.date}</FormLabel>
+              <FormControl><Input type="date" {...field} className="h-11 font-bold bg-slate-50 border-2 border-slate-200 text-sm rounded-lg" /></FormControl>
             </FormItem>
           )} />
           <FormField control={form.control} name="endDate" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.endDate}</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} value={field.value || ''} className="h-11 font-bold bg-slate-50 border-2 border-slate-200 text-sm focus:ring-black focus:border-black rounded-lg" />
-              </FormControl>
-              <FormMessage className="text-xs" />
+              <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.endDate}</FormLabel>
+              <FormControl><Input type="date" {...field} value={field.value || ''} className="h-11 font-bold bg-slate-50 border-2 border-slate-200 text-sm rounded-lg" /></FormControl>
             </FormItem>
           )} />
         </div>
-        
-        <Button type="submit" className="w-full h-11 bg-black hover:bg-slate-800 text-white font-bold rounded-lg text-sm uppercase tracking-widest shadow-md transition-all active:scale-[0.98] mt-2">
-          {lang.submit}
-        </Button>
+        <Button type="submit" className="w-full h-11 bg-black hover:bg-slate-800 text-white font-bold rounded-lg text-sm uppercase tracking-widest shadow-md transition-all active:scale-[0.98] mt-2">{lang.submit}</Button>
       </form>
     </Form>
   );
