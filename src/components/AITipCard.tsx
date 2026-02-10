@@ -147,17 +147,17 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
               <div className="p-3 bg-black rounded-lg shrink-0 shadow-lg"><Brain className="w-6 h-6 text-white" /></div>
               <h3 className="pro-label">{lang.title}</h3>
             </div>
-            <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.desc}</div>
+            <div className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.desc}</div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 flex-1 max-w-xl w-full">
             <div className="w-full space-y-2">
-              <label className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-3 ml-1">
+              <label className="text-[14px] font-black text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-3 ml-1">
                 <MessageSquare className="w-4 h-4" /> {lang.instructionLabel}
               </label>
               <Textarea 
                 placeholder={lang.instructionPlaceholder}
-                className="text-sm min-h-[60px] bg-zinc-900 text-zinc-100 border-2 border-zinc-800 focus:ring-black focus:border-zinc-700 rounded-xl p-4 font-bold placeholder:text-zinc-600"
+                className="text-sm min-h-[60px] bg-zinc-900 text-zinc-100 border-2 border-zinc-800 focus:ring-black focus:border-zinc-700 rounded-xl p-4 font-bold placeholder:text-zinc-600 transition-all shadow-inner"
                 value={userQuestion}
                 onChange={(e) => setUserQuestion(e.target.value)}
               />
