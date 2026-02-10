@@ -10,9 +10,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const ASSET_COLORS: Record<string, string> = {
   'Stock': '#000000',   
-  'Crypto': '#3730a3',  
+  'Crypto': '#312e81',  
   'Bank': '#064e3b',    
-  'Savings': '#92400e'  
+  'Savings': '#78350f'  
 };
 
 const SYMBOLS: Record<Currency, string> = { TWD: 'NT$', USD: '$', CNY: '¥', SGD: 'S$' };
@@ -82,7 +82,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   return (
     <div className="modern-card p-10 border-slate-100 bg-white relative shadow-3xl rounded-2xl h-full flex flex-col overflow-hidden">
       <div className="w-full mb-8 flex items-center justify-between shrink-0">
-        <h3 className="text-[10px] xl:text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">{lang.trend}</h3>
+        <h3 className="pro-label">{lang.trend}</h3>
       </div>
       <div className="w-full flex-1" style={{ height: height ? `${height - 140}px` : '400px' }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -94,7 +94,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               if (active && payload?.length) {
                 return (
                   <div className="bg-white border-2 border-slate-100 p-8 rounded-2xl shadow-3xl z-[1000] min-w-[280px] pointer-events-none ring-12 ring-black/5">
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em] mb-5 border-b border-slate-50 pb-3">{label}</p>
+                    <p className="text-[14px] font-black text-slate-300 uppercase tracking-[0.5em] mb-5 border-b border-slate-50 pb-3">{label}</p>
                     <div className="space-y-4">
                       {payload.map((p: any, i: number) => {
                         if (p.dataKey === 'totalValue' || !p.value) return null;
@@ -103,9 +103,9 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                           <div key={i} className={`flex justify-between items-center gap-10 transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-15'}`}>
                             <div className="flex items-center gap-4">
                               <div className="w-4 h-4 rounded-full" style={{ backgroundColor: ASSET_COLORS[p.name] || '#ccc' }} />
-                              <span className="text-[13px] font-black text-slate-600 uppercase tracking-widest">{lang.categories[p.name] || p.name}</span>
+                              <span className="text-[14px] font-black text-slate-600 uppercase tracking-widest">{lang.categories[p.name] || p.name}</span>
                             </div>
-                            <span className="text-lg font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                            <span className="text-xl font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                           </div>
                         );
                       })}
@@ -136,7 +136,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                       onMouseLeave={() => setActiveCategory(null)}
                     >
                       <div className="w-4 h-4 rounded-full transition-transform" style={{ backgroundColor: ASSET_COLORS[entry.value] || entry.color }} />
-                      <span className="text-[13px] font-black text-slate-400 uppercase tracking-[0.35em]">{lang.categories[entry.value] || entry.value}</span>
+                      <span className="text-[14px] font-black text-slate-400 uppercase tracking-[0.35em]">{lang.categories[entry.value] || entry.value}</span>
                     </div>
                   ))}
                 </div>
@@ -182,7 +182,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
   return (
     <div className="modern-card p-10 flex flex-col items-center border-slate-100 bg-white relative shadow-3xl rounded-2xl h-full overflow-hidden">
       <div className="w-full mb-8 text-left shrink-0">
-        <h3 className="text-[10px] xl:text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">{lang.allocation}</h3>
+        <h3 className="pro-label">{lang.allocation}</h3>
       </div>
       <div className="flex-1 w-full relative" style={{ height: height ? `${height - 140}px` : '400px' }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -216,7 +216,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
               if (active && payload?.length) {
                 return (
                   <div className="bg-white border-2 border-slate-100 p-6 rounded-xl shadow-3xl z-[1000] min-w-[200px] pointer-events-none ring-10 ring-black/5">
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em] mb-2">{lang.categories[payload[0].name] || payload[0].name}</p>
+                    <p className="text-[14px] font-black text-slate-300 uppercase tracking-[0.5em] mb-2">{lang.categories[payload[0].name] || payload[0].name}</p>
                     <p className="text-3xl font-black text-black">{symbol}{Number(payload[0].value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                   </div>
                 );
@@ -227,7 +227,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
         </ResponsiveContainer>
         {activeIndex === null && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none mt-4">
-            <p className="text-[10px] font-black text-slate-200 uppercase tracking-[0.5em]">{lang.total}</p>
+            <p className="text-[14px] font-black text-slate-200 uppercase tracking-[0.5em]">{lang.total}</p>
             <p className="text-4xl xl:text-5xl font-black text-slate-100 tracking-tighter">100%</p>
           </div>
         )}

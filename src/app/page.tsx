@@ -83,7 +83,7 @@ const translations = {
     holdings: 'QUANTITY',
     valuation: 'VALUATION',
     unitPrice: 'UNIT PRICE',
-    dashboard: 'PORTFOLIO INSIGHTS',
+    dashboard: 'PORTFOLIO DASHBOARD',
     activePositions: 'Holdings',
     closedPositions: 'History',
     change: 'Daily Change',
@@ -91,7 +91,7 @@ const translations = {
     cancel: 'Cancel',
     saveChanges: 'Save',
     fetching: 'Syncing...',
-    exchangeRate: 'RATES',
+    exchangeRate: 'LIVE RATES (1 [CUR])',
     baseRange: 'TRACKING RANGE',
     interval: 'INTERVAL',
     days30: '30 Days',
@@ -113,7 +113,6 @@ const translations = {
     importSuccess: 'Data imported successfully.',
     exitReorder: 'DONE',
     reorderHint: 'REORDER MODE ACTIVE: Use W for Width and H for Height.',
-    liveRates: 'LIVE RATES (1 [CUR])',
     categoryNames: {
       Stock: 'Equity',
       Crypto: 'Crypto',
@@ -139,7 +138,7 @@ const translations = {
     cancel: '取消',
     saveChanges: '儲存',
     fetching: '同步中',
-    exchangeRate: '即時匯率',
+    exchangeRate: '即時匯率 (1 [CUR])',
     baseRange: '追蹤時間區間',
     interval: '資料頻率',
     days30: '30 天',
@@ -163,7 +162,6 @@ const translations = {
     importSuccess: '資產資料已成功匯入。',
     exitReorder: '完成調整',
     reorderHint: '已進入佈局調整模式：可使用 W 調整寬度，H 調整高度。',
-    liveRates: '即時匯率 (1 [CUR])',
     categoryNames: {
       Stock: '股票',
       Crypto: '加密貨幣',
@@ -439,11 +437,11 @@ export default function AssetInsightsPage() {
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'up')} disabled={index === 0}><ChevronUp className="w-5 h-5" /></Button>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'down')} disabled={index === sections.length - 1}><ChevronDown className="w-5 h-5" /></Button>
         <div className="w-px h-6 bg-white/20 mx-1" />
-        <span className="text-[11px] font-black uppercase tracking-widest px-1 opacity-60">W</span>
+        <span className="text-[14px] font-black uppercase tracking-widest px-1 opacity-60">W</span>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'dec')}><Minimize2 className="w-5 h-5" /></Button>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'inc')}><Maximize2 className="w-5 h-5" /></Button>
         <div className="w-px h-6 bg-white/20 mx-1" />
-        <span className="text-[11px] font-black uppercase tracking-widest px-1 opacity-60">H</span>
+        <span className="text-[14px] font-black uppercase tracking-widest px-1 opacity-60">H</span>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'dec')}><ChevronUp className="w-5 h-5" /></Button>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'inc')}><ChevronDown className="w-5 h-5" /></Button>
       </div>
@@ -472,7 +470,7 @@ export default function AssetInsightsPage() {
                   <div className="pro-label">
                     <Globe className="w-5 h-5" /> {t.totalValue}
                   </div>
-                  <div className="pro-title flex items-baseline gap-4 sm:gap-6">
+                  <div className="flex items-baseline gap-4 sm:gap-6 font-black tracking-tighter uppercase leading-tight text-3xl xl:text-5xl">
                     <span className="text-slate-200 font-medium text-xl sm:text-2xl xl:text-3xl">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                     <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                     {loading && <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-slate-200 ml-4 sm:ml-6" />}
@@ -485,7 +483,7 @@ export default function AssetInsightsPage() {
               <div className="lg:col-span-3">
                 <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[120px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-4 rounded-2xl shadow-xl transition-all active:scale-95">
                   <RefreshCw className={cn("w-8 h-8", loading && "animate-spin")} />
-                  <span className="text-[11px] tracking-[0.4em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
+                  <span className="text-[14px] tracking-[0.4em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
                 </Button>
               </div>
             </section>
@@ -497,7 +495,7 @@ export default function AssetInsightsPage() {
             {controls}
             <section className="bg-slate-50/80 backdrop-blur-md p-6 sm:p-8 border border-slate-100 rounded-2xl grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 shadow-inner h-full content-center">
               <div className="md:col-span-3 space-y-2">
-                <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
+                <Label className="text-[14px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
                   <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-xs sm:text-sm rounded-xl border-2 border-slate-200 focus:ring-black focus:border-black"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -509,7 +507,7 @@ export default function AssetInsightsPage() {
                 </Select>
               </div>
               <div className="md:col-span-3 space-y-2">
-                <Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Clock className="w-4 h-4" /> {t.interval}</Label>
+                <Label className="text-[14px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 ml-1"><Clock className="w-4 h-4" /> {t.interval}</Label>
                 <Select value={interval} onValueChange={setInterval}>
                   <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-xs sm:text-sm rounded-xl border-2 border-slate-200 focus:ring-black focus:border-black"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -520,8 +518,8 @@ export default function AssetInsightsPage() {
                 </Select>
               </div>
               <div className="md:col-span-6 flex items-end gap-3 sm:gap-4">
-                <Button variant="outline" onClick={handleExport} className="flex-1 h-10 sm:h-11 font-black text-[11px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black"><Download className="w-4 h-4" /> {t.exportData}</Button>
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 sm:h-11 font-black text-[11px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black"><Upload className="w-4 h-4" /> {t.importData}</Button>
+                <Button variant="outline" onClick={handleExport} className="flex-1 h-10 sm:h-11 font-black text-[14px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black"><Download className="w-4 h-4" /> {t.exportData}</Button>
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 sm:h-11 font-black text-[14px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black"><Upload className="w-4 h-4" /> {t.importData}</Button>
                 <input type="file" ref={fileInputRef} onChange={(e) => {
                    const file = e.target.files?.[0]; if (!file) return;
                    const reader = new FileReader(); reader.onload = (event) => {
@@ -572,11 +570,11 @@ export default function AssetInsightsPage() {
                 <Table className="min-w-[800px]">
                   <TableHeader className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md">
                     <TableRow className="hover:bg-transparent border-slate-100">
-                      <TableHead className="px-6 sm:px-10 h-14 text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.assetName}</TableHead>
-                      <TableHead className="h-14 text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.holdings}</TableHead>
-                      <TableHead className="h-14 text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.unitPrice}</TableHead>
-                      <TableHead className="h-14 text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.change}</TableHead>
-                      <TableHead className="h-14 text-[12px] font-black text-slate-500 uppercase tracking-widest text-right pr-6 sm:pr-10">{t.valuation}</TableHead>
+                      <TableHead className="px-6 sm:px-10 h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.assetName}</TableHead>
+                      <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.holdings}</TableHead>
+                      <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.unitPrice}</TableHead>
+                      <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.change}</TableHead>
+                      <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest text-right pr-6 sm:pr-10">{t.valuation}</TableHead>
                       <TableHead className="w-[80px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -585,13 +583,13 @@ export default function AssetInsightsPage() {
                       <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
                         <TableCell className="px-6 sm:px-10 py-6">
                           <div className="font-black text-[16px] text-slate-900">{asset.name}</div>
-                          <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
+                          <div className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
                         </TableCell>
                         <TableCell><span className="text-[16px] font-black text-slate-700">{asset.amount.toLocaleString()}</span></TableCell>
-                        <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[11px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[16px] font-black text-slate-700">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></div></TableCell>
+                        <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[14px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[16px] font-black text-slate-700">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span></div></TableCell>
                         <TableCell>
                           {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
-                            <div className={cn("flex items-center gap-2 font-black text-[12px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                            <div className={cn("flex items-center gap-2 font-black text-[14px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
                               {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                               <span>{asset.dayChangePercent.toFixed(1)}%</span>
                             </div>
@@ -599,7 +597,7 @@ export default function AssetInsightsPage() {
                         </TableCell>
                         <TableCell className="text-right pr-6 sm:pr-10">
                           <div className="font-black text-lg sm:text-xl">
-                            <span className="text-slate-300 text-[12px] mr-1 sm:mr-2">{CURRENCY_SYMBOLS[displayCurrency]}</span>
+                            <span className="text-slate-300 text-[14px] mr-1 sm:mr-2">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                             {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </div>
                         </TableCell>
@@ -652,13 +650,13 @@ export default function AssetInsightsPage() {
         <div className="max-w-[1900px] mx-auto px-4 sm:px-10 h-full flex items-center justify-between gap-4 overflow-hidden">
           <div className="flex items-center gap-3 shrink-0">
             <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-4 h-4 text-white" /></div>
-            <h1 className="text-[12px] font-black tracking-tighter uppercase leading-none hidden xs:block">{t.title}</h1>
+            <h1 className="text-[14px] font-black tracking-tighter uppercase leading-none hidden xs:block">{t.title}</h1>
           </div>
           
           <div className="flex-1 flex items-center gap-4 overflow-hidden">
             <div className="flex items-center gap-4 px-4 border-l border-slate-100 overflow-x-auto no-scrollbar">
-               <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap shrink-0">
-                 {t.liveRates.replace('[CUR]', displayCurrency)}
+               <span className="text-[14px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap shrink-0">
+                 {t.exchangeRate.replace('[CUR]', displayCurrency)}
                </span>
                <div className="flex items-center gap-5">
                  {Object.entries(marketData.rates).filter(([cur]) => cur !== displayCurrency).map(([cur, rate]) => {
@@ -667,9 +665,9 @@ export default function AssetInsightsPage() {
                    const relativeRate = targetRate / baseRate;
                    return (
                      <div key={cur} className="flex items-center gap-2 whitespace-nowrap">
-                       <span className="text-[11px] font-black text-slate-900">{cur}</span>
+                       <span className="text-[14px] font-black text-slate-900">{cur}</span>
                        <ArrowRightLeft className="w-3 h-3 text-slate-200" />
-                       <span className="text-[11px] font-black text-emerald-600">
+                       <span className="text-[14px] font-black text-emerald-600">
                          {relativeRate < 0.1 ? relativeRate.toFixed(4) : relativeRate.toFixed(2)}
                        </span>
                      </div>
@@ -681,16 +679,16 @@ export default function AssetInsightsPage() {
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {isReordering ? (
-              <Button onClick={() => setIsReordering(false)} className="h-7 bg-black text-white px-4 font-black text-[11px] uppercase tracking-[0.2em] gap-1 rounded-full shadow-lg"><Check className="w-4 h-4" /> {t.exitReorder}</Button>
+              <Button onClick={() => setIsReordering(false)} className="h-7 bg-black text-white px-4 font-black text-[14px] uppercase tracking-[0.2em] gap-1 rounded-full shadow-lg"><Check className="w-4 h-4" /> {t.exitReorder}</Button>
             ) : (
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="flex bg-slate-100 p-0.5 rounded-md">
-                  <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-6 px-2 font-black text-[11px]">繁</Button>
-                  <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-6 px-2 font-black text-[11px]">EN</Button>
+                  <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-6 px-2 font-black text-[14px]">繁</Button>
+                  <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-6 px-2 font-black text-[14px]">EN</Button>
                 </div>
                 <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)} className="hidden sm:block">
                   <TabsList className="h-7 bg-slate-100 p-0.5 rounded-md">
-                    {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<TabsTrigger key={cur} value={cur} className="text-[11px] font-black uppercase px-2 h-6">{cur}</TabsTrigger>))}
+                    {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<TabsTrigger key={cur} value={cur} className="text-[14px] font-black uppercase px-2 h-6">{cur}</TabsTrigger>))}
                   </TabsList>
                 </Tabs>
               </div>
@@ -709,7 +707,7 @@ export default function AssetInsightsPage() {
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[150] animate-bounce px-4 w-full sm:w-auto">
           <div className="bg-black text-white px-6 py-4 rounded-2xl shadow-2xl border border-white/10 flex items-center justify-center gap-4 text-center">
             <Info className="w-5 h-5 text-emerald-400 shrink-0" />
-            <span className="text-[11px] font-black uppercase tracking-[0.2em]">{t.reorderHint}</span>
+            <span className="text-[14px] font-black uppercase tracking-[0.2em]">{t.reorderHint}</span>
           </div>
         </div>
       )}
@@ -718,19 +716,19 @@ export default function AssetInsightsPage() {
         <DialogContent className="max-w-[95vw] sm:max-w-[480px] bg-white rounded-3xl p-6 sm:p-10">
           <DialogHeader><DialogTitle className="text-xl sm:text-2xl font-black uppercase tracking-tight flex items-center gap-4"><Edit2 className="w-5 h-5 text-primary" /> {t.editAsset}</DialogTitle></DialogHeader>
           <div className="grid gap-6 py-6">
-            <div className="space-y-2"><Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label><div className="p-4 bg-slate-50 rounded-xl font-black text-sm text-slate-900 border border-slate-100">{editingAsset?.name}</div></div>
-            <div className="space-y-2"><Label htmlFor="amount" className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label><Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-10 font-black text-base border-2 border-slate-300 rounded-xl" /></div>
+            <div className="space-y-2"><Label className="text-[14px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.assetName}</Label><div className="p-4 bg-slate-50 rounded-xl font-black text-sm text-slate-900 border border-slate-100">{editingAsset?.name}</div></div>
+            <div className="space-y-2"><Label htmlFor="amount" className="text-[14px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.holdings}</Label><Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-10 font-black text-base border-2 border-slate-300 rounded-xl" /></div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-10 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
-              <div className="space-y-2"><Label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-10 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
+              <div className="space-y-2"><Label className="text-[14px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-10 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
+              <div className="space-y-2"><Label className="text-[14px] font-black text-slate-400 uppercase tracking-widest ml-1">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-10 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
             </div>
           </div>
           <DialogFooter className="flex flex-row gap-3 mt-4">
-            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-black h-11 flex-1 rounded-xl text-[11px] uppercase tracking-[0.2em]">{t.cancel}</Button>
+            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-black h-11 flex-1 rounded-xl text-[14px] uppercase tracking-[0.2em]">{t.cancel}</Button>
             <Button onClick={() => {
               const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, amount: editAmount, acquisitionDate: editDate, endDate: editEndDate || undefined } : a);
               setAssets(updated); setEditingAsset(null); updateAllData(updated);
-            }} className="bg-black text-white font-black h-11 flex-1 rounded-xl text-[11px] uppercase tracking-[0.2em] shadow-xl">{t.saveChanges}</Button>
+            }} className="bg-black text-white font-black h-11 flex-1 rounded-xl text-[14px] uppercase tracking-[0.2em] shadow-xl">{t.saveChanges}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

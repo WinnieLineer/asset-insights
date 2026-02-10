@@ -135,7 +135,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
       <form onSubmit={form.handleSubmit((v) => { onAdd(v as Omit<Asset, 'id'>); form.reset({ ...form.getValues(), name: '', symbol: '', amount: 0 }); })} className="space-y-4">
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
-            <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.name}</FormLabel>
+            <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.name}</FormLabel>
             <FormControl>
               <Input placeholder={lang.namePlaceholder} {...field} className="bg-slate-50 border-2 border-slate-200 h-11 text-sm font-bold focus:ring-black focus:border-black rounded-lg" />
             </FormControl>
@@ -146,7 +146,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
         {hasTicker && (
           <FormField control={form.control} name="symbol" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.symbol}</FormLabel>
+              <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.symbol}</FormLabel>
               <FormControl>
                 <Input placeholder={lang.symbolPlaceholder} {...field} className="bg-slate-50 border-2 border-slate-200 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg" />
               </FormControl>
@@ -158,7 +158,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
         <div className="grid grid-cols-2 gap-3">
           <FormField control={form.control} name="category" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.category}</FormLabel>
+              <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.category}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold focus:ring-black focus:border-black rounded-lg">
@@ -177,7 +177,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
           
           <FormField control={form.control} name="currency" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.currency}</FormLabel>
+              <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.currency}</FormLabel>
               <Select onValueChange={field.onChange} value={field.value} disabled={category === 'Crypto'}>
                 <FormControl>
                   <SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold focus:ring-black focus:border-black rounded-lg">
@@ -198,7 +198,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
         <div className="grid grid-cols-1 gap-3">
           <FormField control={form.control} name="amount" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.amount}</FormLabel>
+              <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.amount}</FormLabel>
               <FormControl>
                 <Input type="number" step="any" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-11 font-bold bg-slate-50 border-2 border-slate-200 text-sm focus:ring-black focus:border-black rounded-lg" />
               </FormControl>
@@ -210,7 +210,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
         <div className="grid grid-cols-2 gap-3">
           <FormField control={form.control} name="acquisitionDate" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.date}</FormLabel>
+              <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.date}</FormLabel>
               <FormControl>
                 <Input type="date" {...field} className="h-11 font-bold bg-slate-50 border-2 border-slate-200 text-sm focus:ring-black focus:border-black rounded-lg" />
               </FormControl>
@@ -219,7 +219,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
           )} />
           <FormField control={form.control} name="endDate" render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{lang.endDate}</FormLabel>
+              <FormLabel className="text-[14px] font-bold text-slate-500 uppercase tracking-widest">{lang.endDate}</FormLabel>
               <FormControl>
                 <Input type="date" {...field} value={field.value || ''} className="h-11 font-bold bg-slate-50 border-2 border-slate-200 text-sm focus:ring-black focus:border-black rounded-lg" />
               </FormControl>

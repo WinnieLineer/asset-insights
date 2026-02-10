@@ -39,11 +39,11 @@
 
 @layer components {
   .pro-label {
-    @apply text-[11px] xl:text-[12px] font-black text-slate-400 uppercase tracking-[0.4em] flex items-center gap-4;
+    @apply text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-4;
   }
   
   .pro-title {
-    @apply text-2xl sm:text-3xl xl:text-5xl font-black tracking-tighter uppercase leading-tight;
+    @apply text-xl sm:text-2xl xl:text-3xl font-black tracking-tighter uppercase leading-tight;
   }
 
   .modern-card {
@@ -64,7 +64,7 @@
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 14px;
 }
 ::-webkit-scrollbar-track {
   @apply bg-transparent;
