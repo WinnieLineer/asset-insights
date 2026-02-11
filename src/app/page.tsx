@@ -428,7 +428,7 @@ export default function AssetInsightsPage() {
       config.width === 12 && "xl:col-span-12"
     );
 
-    const wrapperStyle = { minHeight: `300px`, height: isDesktop ? `${config.height}px` : 'auto' };
+    const wrapperStyle = { minHeight: isDesktop ? `${config.height}px` : 'auto', height: isDesktop ? `${config.height}px` : 'auto' };
 
     switch (id) {
       case 'summary':
@@ -464,8 +464,8 @@ export default function AssetInsightsPage() {
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <section className="bg-slate-50/80 backdrop-blur-md p-6 sm:p-8 border border-slate-100 rounded-2xl grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 shadow-inner h-full content-center">
-              <div className="md:col-span-2 lg:col-span-1 space-y-2">
+            <section className="bg-slate-50/80 backdrop-blur-md p-6 sm:p-8 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-end gap-4 sm:gap-6 shadow-inner h-full">
+              <div className="w-full md:w-32 lg:w-32 space-y-2 shrink-0">
                 <Label className="pro-label flex items-center gap-2 ml-1 mb-2"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
                   <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
@@ -477,7 +477,7 @@ export default function AssetInsightsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="md:col-span-2 lg:col-span-1 space-y-2">
+              <div className="w-full md:w-32 lg:w-32 space-y-2 shrink-0">
                 <Label className="pro-label flex items-center gap-2 ml-1 mb-2"><Clock className="w-4 h-4" /> {t.interval}</Label>
                 <Select value={interval} onValueChange={setInterval}>
                   <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
@@ -488,7 +488,7 @@ export default function AssetInsightsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="md:col-span-8 lg:col-span-10 flex items-end gap-3 sm:gap-4">
+              <div className="flex-1 flex items-center gap-3 sm:gap-4 w-full">
                 <Button variant="outline" onClick={handleExport} className="flex-1 h-10 sm:h-11 font-black text-[14px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black transition-all"><Download className="w-4 h-4" /> {t.exportData}</Button>
                 <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 sm:h-11 font-black text-[14px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black transition-all"><Upload className="w-4 h-4" /> {t.importData}</Button>
                 <input type="file" ref={fileInputRef} onChange={(e) => {

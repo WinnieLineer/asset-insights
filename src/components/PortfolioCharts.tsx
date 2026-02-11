@@ -105,7 +105,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ASSET_COLORS[p.name] || '#ccc' }} />
                               <span className="text-[13px] font-black text-slate-600 uppercase tracking-widest">{lang.categories[p.name] || p.name}</span>
                             </div>
-                            <span className="text-xl font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                            <span className="text-xl font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 5 })}</span>
                           </div>
                         );
                       })}
@@ -157,36 +157,38 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
       <div className="w-full mb-6 text-left shrink-0">
         <h3 className="pro-label">{lang.allocation}</h3>
       </div>
-      <div className="flex-1 w-full relative min-h-[300px]" style={{ height: '100%' }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie 
-              activeIndex={activeIndex ?? undefined} activeShape={renderActiveShape} data={filteredData} cx="50%" cy="50%" 
-              innerRadius="55%" outerRadius="80%" paddingAngle={4} 
-              dataKey="value" stroke="transparent" onMouseEnter={(_, index) => setActiveIndex(index)} onMouseLeave={() => setActiveIndex(null)} 
-              label={(props) => renderCustomLabel({ ...props, symbol, langCategories: lang.categories })} labelLine={false}
-            >
-              {filteredData.map((entry: any, i: number) => (
-                <Cell key={i} fill={ASSET_COLORS[entry.name] || '#ccc'} opacity={activeIndex === null || activeIndex === i ? 1 : 0.2} className="transition-opacity duration-300 outline-none" />
-              ))}
-            </Pie>
-            <RechartsTooltip content={({ active, payload }) => {
-              if (active && payload?.length) {
-                return (
-                  <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xl z-[1000] min-w-[180px] pointer-events-none">
-                    <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em] mb-1">{lang.categories[payload[0].name] || payload[0].name}</p>
-                    <p className="text-2xl font-black text-black">{symbol}{Number(payload[0].value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                  </div>
-                );
-              }
-              return null;
-            }} />
-          </PieChart>
-        </ResponsiveContainer>
+      <div className="flex-1 w-full relative min-h-[300px] flex items-center justify-center">
+        <div className="absolute inset-0 z-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie 
+                activeIndex={activeIndex ?? undefined} activeShape={renderActiveShape} data={filteredData} cx="50%" cy="50%" 
+                innerRadius="55%" outerRadius="80%" paddingAngle={4} 
+                dataKey="value" stroke="transparent" onMouseEnter={(_, index) => setActiveIndex(index)} onMouseLeave={() => setActiveIndex(null)} 
+                label={(props) => renderCustomLabel({ ...props, symbol, langCategories: lang.categories })} labelLine={false}
+              >
+                {filteredData.map((entry: any, i: number) => (
+                  <Cell key={i} fill={ASSET_COLORS[entry.name] || '#ccc'} opacity={activeIndex === null || activeIndex === i ? 1 : 0.2} className="transition-opacity duration-300 outline-none" />
+                ))}
+              </Pie>
+              <RechartsTooltip content={({ active, payload }) => {
+                if (active && payload?.length) {
+                  return (
+                    <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xl z-[1000] min-w-[180px] pointer-events-none">
+                      <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em] mb-1">{lang.categories[payload[0].name] || payload[0].name}</p>
+                      <p className="text-2xl font-black text-black">{symbol}{Number(payload[0].value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                    </div>
+                  );
+                }
+                return null;
+              }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
         {activeIndex === null && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <div className="z-10 flex flex-col items-center justify-center pointer-events-none">
             <p className="text-[12px] font-black text-slate-200 uppercase tracking-[0.4em]">TOTAL</p>
-            <p className="text-3xl font-black text-slate-100 tracking-tighter">100%</p>
+            <p className="text-3xl font-black text-black tracking-tighter">100%</p>
           </div>
         )}
       </div>
