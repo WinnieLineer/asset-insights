@@ -41,7 +41,7 @@
 @layer components {
   /* 統一 14px 專業標籤類別 */
   .pro-label {
-    @apply text-[16px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-4;
+    @apply text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-4;
     font-family: var(--app-main-font);
   }
   

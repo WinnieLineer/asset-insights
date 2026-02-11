@@ -152,7 +152,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 flex-1 max-w-xl w-full">
             <div className="w-full space-y-2">
-              <label className="text-[14px] font-black text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-3 ml-1">
+              <label className="pro-label tracking-[0.2em] flex items-center gap-3 ml-1 mb-2">
                 <MessageSquare className="w-4 h-4" /> {lang.instructionLabel}
               </label>
               <Textarea 

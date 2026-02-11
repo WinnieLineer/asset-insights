@@ -8,11 +8,12 @@ import {
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
+// 低飽和度專業配色
 const ASSET_COLORS: Record<string, string> = {
-  'Stock': '#000000',   
-  'Crypto': '#4f46e5',  
-  'Bank': '#10b981',    
-  'Savings': '#f59e0b'  
+  'Stock': '#1e293b',   // Muted Slate 800
+  'Crypto': '#4338ca',  // Muted Indigo 700
+  'Bank': '#065f46',    // Muted Emerald 800
+  'Savings': '#78350f'  // Muted Amber 900
 };
 
 const SYMBOLS: Record<Currency, string> = { TWD: 'NT$', USD: '$', CNY: '¥', SGD: 'S$' };
