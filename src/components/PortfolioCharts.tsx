@@ -185,7 +185,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
           </PieChart>
         </ResponsiveContainer>
         {activeIndex === null && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none mt-4">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
             <p className="text-[13px] font-black text-slate-200 uppercase tracking-[0.5em]">TOTAL</p>
             <p className="text-4xl xl:text-5xl font-black text-slate-100 tracking-tighter">100%</p>
           </div>

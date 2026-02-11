@@ -467,7 +467,7 @@ export default function AssetInsightsPage() {
               <div className="md:col-span-3 space-y-2">
                 <Label className="pro-label flex items-center gap-2 ml-1 mb-2"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
-                  <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[13px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="30">{t.days30}</SelectItem>
                     <SelectItem value="90">{t.days90}</SelectItem>
@@ -479,7 +479,7 @@ export default function AssetInsightsPage() {
               <div className="md:col-span-3 space-y-2">
                 <Label className="pro-label flex items-center gap-2 ml-1 mb-2"><Clock className="w-4 h-4" /> {t.interval}</Label>
                 <Select value={interval} onValueChange={setInterval}>
-                  <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[13px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1d">{t.int1d}</SelectItem>
                     <SelectItem value="1wk">{t.int1wk}</SelectItem>
@@ -629,9 +629,6 @@ export default function AssetInsightsPage() {
                           </TableCell>
                         </TableRow>
                       ))}
-                      {assetCalculations.closedAssets.length === 0 && (
-                        <TableRow><TableCell colSpan={5} className="h-32 text-center text-[14px] font-black text-slate-300 uppercase tracking-widest">目前無結清部位</TableCell></TableRow>
-                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -674,7 +671,7 @@ export default function AssetInsightsPage() {
         <div className="max-w-[1900px] mx-auto px-4 sm:px-10 h-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 overflow-hidden">
           <div className="flex items-center gap-3 shrink-0">
             <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-4 h-4 text-white" /></div>
-            <h1 className="text-[12px] font-black tracking-tighter uppercase leading-none">{t.title}</h1>
+            <h1 className="text-[14px] font-black tracking-tighter uppercase leading-none">{t.title}</h1>
           </div>
           
           <div className="flex-1 flex items-center gap-4 overflow-hidden">
@@ -730,7 +727,7 @@ export default function AssetInsightsPage() {
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[150] px-4 w-full sm:w-auto">
           <div className="bg-black text-white px-8 py-5 rounded-2xl shadow-2xl border border-white/10 flex items-center justify-center gap-6 text-center animate-bounce">
             <Info className="w-5 h-5 text-emerald-400 shrink-0" />
-            <span className="text-[13px] font-black uppercase tracking-[0.2em]">{t.reorderHint}</span>
+            <span className="text-[14px] font-black uppercase tracking-[0.2em]">{t.reorderHint}</span>
           </div>
         </div>
       )}
@@ -740,18 +737,18 @@ export default function AssetInsightsPage() {
           <DialogHeader><DialogTitle className="text-xl sm:text-2xl font-black uppercase tracking-tight flex items-center gap-4"><Edit2 className="w-5 h-5 text-primary" /> {t.editAsset}</DialogTitle></DialogHeader>
           <div className="grid gap-6 py-6">
             <div className="space-y-2"><Label className="pro-label ml-1 mb-1">{t.assetName}</Label><div className="p-4 bg-slate-50 rounded-xl font-black text-sm text-slate-900 border border-slate-100">{editingAsset?.name}</div></div>
-            <div className="space-y-2"><Label htmlFor="amount" className="pro-label ml-1 mb-1">{t.holdings}</Label><Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-10 font-black text-base border-2 border-slate-300 rounded-xl" /></div>
+            <div className="space-y-2"><Label htmlFor="amount" className="pro-label ml-1 mb-1">{t.holdings}</Label><Input id="amount" type="number" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-11 font-black text-base border-2 border-slate-300 rounded-xl" /></div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label className="pro-label ml-1 mb-1">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-10 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
-              <div className="space-y-2"><Label className="pro-label ml-1 mb-1">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-10 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
+              <div className="space-y-2"><Label className="pro-label ml-1 mb-1">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-11 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
+              <div className="space-y-2"><Label className="pro-label ml-1 mb-1">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-11 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
             </div>
           </div>
           <DialogFooter className="flex flex-row gap-3 mt-4">
-            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-black h-11 flex-1 rounded-xl text-[12px] uppercase tracking-[0.2em]">{t.cancel}</Button>
+            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="font-black h-11 flex-1 rounded-xl text-[14px] uppercase tracking-[0.2em]">{t.cancel}</Button>
             <Button onClick={() => {
               const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, amount: editAmount, acquisitionDate: editDate, endDate: editEndDate || undefined } : a);
               setAssets(updated); setEditingAsset(null); updateAllData(updated);
-            }} className="bg-black text-white font-black h-11 flex-1 rounded-xl text-[12px] uppercase tracking-[0.2em] shadow-xl">{t.saveChanges}</Button>
+            }} className="bg-black text-white font-black h-11 flex-1 rounded-xl text-[14px] uppercase tracking-[0.2em] shadow-xl">{t.saveChanges}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
