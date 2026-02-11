@@ -99,6 +99,8 @@ const translations = {
     days90: '90 Days',
     days180: '180 Days',
     days365: '365 Days',
+    maxRange: 'Max',
+    customRange: 'Custom',
     int1d: 'Daily',
     int1wk: 'Weekly',
     int1mo: 'Monthly',
@@ -135,6 +137,8 @@ const translations = {
     days90: '90 天',
     days180: '180 天',
     days365: '365 天',
+    maxRange: '最長',
+    customRange: '自定義',
     int1d: '日線',
     int1wk: '週線',
     int1mo: '月線',
@@ -171,6 +175,8 @@ export default function AssetInsightsPage() {
   const [editDate, setEditDate] = useState<string>('');
   const [editEndDate, setEditEndDate] = useState<string>('');
   const [trackingDays, setTrackingDays] = useState<string>("30");
+  const [customStartDate, setCustomStartDate] = useState<string>(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+  const [customEndDate, setCustomEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [interval, setInterval] = useState<string>("1d");
   const [marketTimeline, setMarketTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -208,7 +214,16 @@ export default function AssetInsightsPage() {
     setLoading(true);
     try {
       let p2 = Math.floor(Date.now() / 1000);
-      let p1 = p2 - (parseInt(trackingDays) * 24 * 60 * 60);
+      let p1: number;
+
+      if (trackingDays === 'max') {
+        p1 = 0;
+      } else if (trackingDays === 'custom') {
+        p1 = Math.floor(new Date(customStartDate).getTime() / 1000);
+        p2 = Math.floor(new Date(customEndDate).getTime() / 1000);
+      } else {
+        p1 = p2 - (parseInt(trackingDays) * 24 * 60 * 60);
+      }
 
       const { marketData: newData, historicalTimeline } = await fetchMarketData(
         currentAssets, 
@@ -224,7 +239,7 @@ export default function AssetInsightsPage() {
     } finally {
       setLoading(false);
     }
-  }, [mounted, trackingDays, interval, t.dataUpdated, loading, toast]);
+  }, [mounted, trackingDays, customStartDate, customEndDate, interval, t.dataUpdated, loading, toast]);
 
   useEffect(() => {
     setMounted(true);
@@ -240,7 +255,7 @@ export default function AssetInsightsPage() {
     if (mounted && assets.length > 0) {
       updateAllData(assets);
     }
-  }, [mounted, trackingDays, interval, assets.length]);
+  }, [mounted, trackingDays, interval, customStartDate, customEndDate, assets.length]);
 
   useEffect(() => {
     if (mounted) {
@@ -509,20 +524,31 @@ export default function AssetInsightsPage() {
             <section className="bg-slate-50/80 backdrop-blur-md p-6 sm:p-8 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-end gap-4 sm:gap-6 shadow-inner h-full">
               <div className="shrink-0 space-y-2">
                 <Label className="pro-label flex items-center gap-2 ml-1 mb-2 whitespace-nowrap"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
-                <Select value={trackingDays} onValueChange={setTrackingDays}>
-                  <SelectTrigger className="w-32 h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="30">{t.days30}</SelectItem>
-                    <SelectItem value="90">{t.days90}</SelectItem>
-                    <SelectItem value="180">{t.days180}</SelectItem>
-                    <SelectItem value="365">{t.days365}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <Select value={trackingDays} onValueChange={setTrackingDays}>
+                    <SelectTrigger className="w-28 h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30">{t.days30}</SelectItem>
+                      <SelectItem value="90">{t.days90}</SelectItem>
+                      <SelectItem value="180">{t.days180}</SelectItem>
+                      <SelectItem value="365">{t.days365}</SelectItem>
+                      <SelectItem value="max">{t.maxRange}</SelectItem>
+                      <SelectItem value="custom">{t.customRange}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {trackingDays === 'custom' && (
+                    <div className="flex items-center gap-2 animate-fade-in">
+                      <Input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="w-32 h-10 sm:h-11 font-black text-[12px] rounded-xl border-2 border-slate-300" />
+                      <span className="font-black text-slate-300">-</span>
+                      <Input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="w-32 h-10 sm:h-11 font-black text-[12px] rounded-xl border-2 border-slate-300" />
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="shrink-0 space-y-2">
                 <Label className="pro-label flex items-center gap-2 ml-1 mb-2 whitespace-nowrap"><Clock className="w-4 h-4" /> {t.interval}</Label>
                 <Select value={interval} onValueChange={setInterval}>
-                  <SelectTrigger className="w-32 h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-28 h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1d">{t.int1d}</SelectItem>
                     <SelectItem value="1wk">{t.int1wk}</SelectItem>
