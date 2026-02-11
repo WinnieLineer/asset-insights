@@ -463,7 +463,7 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <section className="bg-slate-50/80 backdrop-blur-md p-6 sm:p-8 border border-slate-100 rounded-2xl grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 shadow-inner h-full content-center">
-              <div className="md:col-span-3 space-y-2">
+              <div className="md:col-span-2 space-y-2">
                 <Label className="pro-label flex items-center gap-2 ml-1 mb-2"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
                   <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
@@ -475,7 +475,7 @@ export default function AssetInsightsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="md:col-span-3 space-y-2">
+              <div className="md:col-span-2 space-y-2">
                 <Label className="pro-label flex items-center gap-2 ml-1 mb-2"><Clock className="w-4 h-4" /> {t.interval}</Label>
                 <Select value={interval} onValueChange={setInterval}>
                   <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
@@ -486,7 +486,7 @@ export default function AssetInsightsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="md:col-span-6 flex items-end gap-3 sm:gap-4">
+              <div className="md:col-span-8 flex items-end gap-3 sm:gap-4">
                 <Button variant="outline" onClick={handleExport} className="flex-1 h-10 sm:h-11 font-black text-[14px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black transition-all"><Download className="w-4 h-4" /> {t.exportData}</Button>
                 <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 sm:h-11 font-black text-[14px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black transition-all"><Upload className="w-4 h-4" /> {t.importData}</Button>
                 <input type="file" ref={fileInputRef} onChange={(e) => {
@@ -716,7 +716,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-32 sm:pt-40 xl:pt-48 pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-24 sm:pt-28 xl:pt-32 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>
