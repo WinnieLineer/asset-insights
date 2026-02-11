@@ -416,6 +416,8 @@ export default function AssetInsightsPage() {
       </div>
     );
 
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1280;
+
     const commonClass = cn(
       "relative transition-all duration-300",
       isReordering && "ring-4 ring-black ring-offset-2 rounded-2xl z-[105] shadow-2xl scale-[0.98]",
@@ -426,7 +428,7 @@ export default function AssetInsightsPage() {
       config.width === 12 && "xl:col-span-12"
     );
 
-    const wrapperStyle = { minHeight: `300px`, height: typeof window !== 'undefined' && window.innerWidth >= 1280 ? `${config.height}px` : 'auto' };
+    const wrapperStyle = { minHeight: `300px`, height: isDesktop ? `${config.height}px` : 'auto' };
 
     switch (id) {
       case 'summary':
@@ -687,7 +689,7 @@ export default function AssetInsightsPage() {
                        <span className="text-[14px] font-black text-slate-900">{cur}</span>
                        <ArrowRightLeft className="w-3 h-3 text-slate-300" />
                        <span className="text-[14px] font-black text-emerald-600">
-                         {relativeRate < 0.1 ? relativeRate.toFixed(4) : relativeRate.toFixed(2)}
+                         {relativeRate < 0.1 ? relativeRate.toFixed(4) : relativeRate.toFixed(5)}
                        </span>
                      </div>
                    );
