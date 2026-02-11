@@ -465,7 +465,7 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <section className="bg-slate-50/80 backdrop-blur-md p-6 sm:p-8 border border-slate-100 rounded-2xl grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6 shadow-inner h-full content-center">
-              <div className="md:col-span-2 space-y-2">
+              <div className="md:col-span-2 lg:col-span-1 space-y-2">
                 <Label className="pro-label flex items-center gap-2 ml-1 mb-2"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
                   <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
@@ -477,7 +477,7 @@ export default function AssetInsightsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="md:col-span-2 space-y-2">
+              <div className="md:col-span-2 lg:col-span-1 space-y-2">
                 <Label className="pro-label flex items-center gap-2 ml-1 mb-2"><Clock className="w-4 h-4" /> {t.interval}</Label>
                 <Select value={interval} onValueChange={setInterval}>
                   <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
@@ -488,7 +488,7 @@ export default function AssetInsightsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="md:col-span-8 flex items-end gap-3 sm:gap-4">
+              <div className="md:col-span-8 lg:col-span-10 flex items-end gap-3 sm:gap-4">
                 <Button variant="outline" onClick={handleExport} className="flex-1 h-10 sm:h-11 font-black text-[14px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black transition-all"><Download className="w-4 h-4" /> {t.exportData}</Button>
                 <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 sm:h-11 font-black text-[14px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black transition-all"><Upload className="w-4 h-4" /> {t.importData}</Button>
                 <input type="file" ref={fileInputRef} onChange={(e) => {
@@ -558,7 +558,7 @@ export default function AssetInsightsPage() {
                             <div className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
                           </TableCell>
                           <TableCell><span className="text-[15px] font-black text-slate-700">{asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</span></TableCell>
-                          <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[14px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[15px] font-black text-slate-700">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 5, minimumFractionDigits: 2 })}</span></div></TableCell>
+                          <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[14px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[15px] font-black text-slate-700">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 5 })}</span></div></TableCell>
                           <TableCell>
                             {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
                               <div className={cn("flex items-center gap-2 font-black text-[13px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
@@ -718,7 +718,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-24 sm:pt-28 xl:pt-32 pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-24 sm:pt-28 xl:pt-28 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>
