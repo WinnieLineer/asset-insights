@@ -217,7 +217,12 @@ export default function AssetInsightsPage() {
       let p1: number;
 
       if (trackingDays === 'max') {
-        p1 = 0;
+        if (currentAssets.length > 0) {
+          const dates = currentAssets.map(a => new Date(a.acquisitionDate).getTime());
+          p1 = Math.floor(Math.min(...dates) / 1000);
+        } else {
+          p1 = Math.floor(Date.now() / 1000) - (365 * 24 * 60 * 60);
+        }
       } else if (trackingDays === 'custom') {
         p1 = Math.floor(new Date(customStartDate).getTime() / 1000);
         p2 = Math.floor(new Date(customEndDate).getTime() / 1000);
@@ -359,8 +364,8 @@ export default function AssetInsightsPage() {
       if (pointTotalTWD > 0) {
         const item = { 
           timestamp: point.timestamp, 
-          displayDate: dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-          fullDate: dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+          displayDate: dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+          shortDate: dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
           totalValue: pointTotalTWD * (displayRate / rateTWD) 
         };
         Object.entries(categories).forEach(([cat, val]) => { 
@@ -862,4 +867,3 @@ export default function AssetInsightsPage() {
     </div>
   );
 }
-

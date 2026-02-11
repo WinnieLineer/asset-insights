@@ -94,7 +94,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 20 }}>
             <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#94a3b8', fontWeight: 800 }} dy={10} />
+            <XAxis dataKey="shortDate" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#94a3b8', fontWeight: 800 }} dy={10} />
             <YAxis 
               axisLine={false} 
               tickLine={false} 
@@ -104,7 +104,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
             />
             <RechartsTooltip cursor={{ fill: '#f8fafc', opacity: 0.8 }} content={({ active, payload, label }) => {
               if (active && payload?.length) {
-                const fullDate = payload[0].payload.fullDate || label;
+                const fullDate = payload[0].payload.displayDate || label;
                 return (
                   <div className="bg-white border border-slate-100 p-6 rounded-xl shadow-xl z-[1000] min-w-[240px] pointer-events-none">
                     <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em] mb-4 border-b border-slate-50 pb-2">{fullDate}</p>
