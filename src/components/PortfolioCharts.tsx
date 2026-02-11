@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -8,7 +9,6 @@ import {
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// 低飽和度專業金融配色
 const ASSET_COLORS: Record<string, string> = {
   'Stock': '#1e293b',   // Muted Slate
   'Crypto': '#3730a3',  // Muted Indigo
@@ -75,12 +75,10 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   
   if (loading && historicalData.length === 0) return <Skeleton className="w-full h-full rounded-2xl" />;
 
-  // 只列出在當前數據集中總價值大於 0 的類別
   const activeCategoriesInHistory = Array.from(new Set(
     historicalData.flatMap((d: any) => Object.keys(d).filter(k => ASSET_COLORS[k] && d[k] > 0))
   )) as AssetCategory[];
 
-  // 格式化數字以防擋到：超過一千顯示 k，超過百萬顯示 m
   const formatYAxis = (v: number) => {
     if (v >= 1000000) return `${symbol}${(v / 1000000).toFixed(1)}m`;
     if (v >= 1000) return `${symbol}${(v / 1000).toFixed(0)}k`;
@@ -106,9 +104,10 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
             />
             <RechartsTooltip cursor={{ fill: '#f8fafc', opacity: 0.8 }} content={({ active, payload, label }) => {
               if (active && payload?.length) {
+                const fullDate = payload[0].payload.fullDate || label;
                 return (
                   <div className="bg-white border border-slate-100 p-6 rounded-xl shadow-xl z-[1000] min-w-[240px] pointer-events-none">
-                    <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em] mb-4 border-b border-slate-50 pb-2">{label}</p>
+                    <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em] mb-4 border-b border-slate-50 pb-2">{fullDate}</p>
                     <div className="space-y-3">
                       {payload.map((p: any, i: number) => {
                         if (p.dataKey === 'totalValue' || !p.value) return null;
