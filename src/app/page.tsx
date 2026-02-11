@@ -30,7 +30,10 @@ import {
   Plus,
   ArrowRightLeft,
   Info,
-  History
+  History,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { 
   Card, 
@@ -152,6 +155,11 @@ interface LayoutConfig {
   height: number;
 }
 
+interface SortConfig {
+  key: string;
+  direction: 'asc' | 'desc' | null;
+}
+
 export default function AssetInsightsPage() {
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
@@ -167,6 +175,10 @@ export default function AssetInsightsPage() {
   const [marketTimeline, setMarketTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
+  
+  // Sorting State
+  const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
+  const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
   
   const [sections, setSections] = useState<string[]>(['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'closedList', 'ai', 'addAsset']);
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
@@ -352,6 +364,36 @@ export default function AssetInsightsPage() {
     };
   }, [assets, marketData, displayCurrency, marketTimeline]);
 
+  // Helper for Sorting
+  const getSortedItems = useCallback((items: any[], config: SortConfig) => {
+    if (!config.direction) return items;
+    return [...items].sort((a, b) => {
+      let aVal = a[config.key];
+      let bVal = b[config.key];
+      if (typeof aVal === 'string') { aVal = aVal.toLowerCase(); bVal = bVal.toLowerCase(); }
+      if (aVal < bVal) return config.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return config.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, []);
+
+  const sortedActiveAssets = useMemo(() => getSortedItems(assetCalculations.activeAssets, activeSort), [assetCalculations.activeAssets, activeSort, getSortedItems]);
+  const sortedClosedAssets = useMemo(() => getSortedItems(assetCalculations.closedAssets, closedSort), [assetCalculations.closedAssets, closedSort, getSortedItems]);
+
+  const requestSort = (list: 'active' | 'closed', key: string) => {
+    const setter = list === 'active' ? setActiveSort : setClosedSort;
+    const current = list === 'active' ? activeSort : closedSort;
+    let direction: 'asc' | 'desc' | null = 'asc';
+    if (current.key === key && current.direction === 'asc') direction = 'desc';
+    else if (current.key === key && current.direction === 'desc') direction = null;
+    setter({ key, direction });
+  };
+
+  const SortIcon = ({ config, columnKey }: { config: SortConfig, columnKey: string }) => {
+    if (config.key !== columnKey || !config.direction) return <ArrowUpDown className="w-3 h-3 ml-2 opacity-20" />;
+    return config.direction === 'asc' ? <ArrowUp className="w-3 h-3 ml-2 text-black" /> : <ArrowDown className="w-3 h-3 ml-2 text-black" />;
+  };
+
   const moveSection = (index: number, direction: 'up' | 'down') => {
     const newSections = [...sections];
     const target = direction === 'up' ? index - 1 : index + 1;
@@ -377,7 +419,7 @@ export default function AssetInsightsPage() {
   };
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
-    if ((e.target as HTMLElement).closest('button, input, select, [role="tab"], .recharts-surface, .lucide, textarea')) return;
+    if ((e.target as HTMLElement).closest('button, input, select, [role="tab"], .recharts-surface, .lucide, textarea, th')) return;
     const cleanup = () => {
       if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
       window.removeEventListener('mouseup', cleanup);
@@ -542,23 +584,43 @@ export default function AssetInsightsPage() {
                   <Table className="min-w-[800px]">
                     <TableHeader className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md">
                       <TableRow className="hover:bg-transparent border-slate-100">
-                        <TableHead className="px-6 sm:px-10 h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.assetName}</TableHead>
-                        <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.holdings}</TableHead>
-                        <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.unitPrice}</TableHead>
-                        <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.change}</TableHead>
-                        <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest text-right pr-6 sm:pr-10">{t.valuation}</TableHead>
+                        <TableHead className="px-6 sm:px-10 h-14 cursor-pointer select-none group" onClick={() => requestSort('active', 'name')}>
+                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                            {t.assetName} <SortIcon config={activeSort} columnKey="name" />
+                          </div>
+                        </TableHead>
+                        <TableHead className="h-14 cursor-pointer select-none group" onClick={() => requestSort('active', 'amount')}>
+                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                            {t.holdings} <SortIcon config={activeSort} columnKey="amount" />
+                          </div>
+                        </TableHead>
+                        <TableHead className="h-14 cursor-pointer select-none group" onClick={() => requestSort('active', 'priceInDisplay')}>
+                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                            {t.unitPrice} <SortIcon config={activeSort} columnKey="priceInDisplay" />
+                          </div>
+                        </TableHead>
+                        <TableHead className="h-14 cursor-pointer select-none group" onClick={() => requestSort('active', 'dayChangePercent')}>
+                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                            {t.change} <SortIcon config={activeSort} columnKey="dayChangePercent" />
+                          </div>
+                        </TableHead>
+                        <TableHead className="h-14 cursor-pointer select-none group pr-6 sm:pr-10" onClick={() => requestSort('active', 'valueInDisplay')}>
+                          <div className="flex items-center justify-end text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                            {t.valuation} <SortIcon config={activeSort} columnKey="valueInDisplay" />
+                          </div>
+                        </TableHead>
                         <TableHead className="w-[80px]"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {assetCalculations.activeAssets.map((asset: any) => (
+                      {sortedActiveAssets.map((asset: any) => (
                         <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
                           <TableCell className="px-6 sm:px-10 py-6">
                             <div className="font-black text-[15px] text-slate-900">{asset.name}</div>
                             <div className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
                           </TableCell>
-                          <TableCell><span className="text-[15px] font-black text-slate-700">{asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</span></TableCell>
-                          <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[14px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[15px] font-black text-slate-700">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 5 })}</span></div></TableCell>
+                          <TableCell><span className="text-[15px] font-black text-slate-700">{asset.amount.toLocaleString(undefined, { minimumFractionDigits: 5, maximumFractionDigits: 5 })}</span></TableCell>
+                          <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[14px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[15px] font-black text-slate-700">{asset.priceInDisplay.toLocaleString(undefined, { minimumFractionDigits: 5, maximumFractionDigits: 5 })}</span></div></TableCell>
                           <TableCell>
                             {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
                               <div className={cn("flex items-center gap-2 font-black text-[13px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
@@ -603,21 +665,37 @@ export default function AssetInsightsPage() {
                   <Table className="min-w-[800px]">
                     <TableHeader className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md">
                       <TableRow className="hover:bg-transparent border-slate-100">
-                        <TableHead className="px-6 sm:px-10 h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.assetName}</TableHead>
-                        <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.holdings}</TableHead>
-                        <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest">{t.acqDate}</TableHead>
-                        <TableHead className="h-14 text-[14px] font-black text-slate-500 uppercase tracking-widest text-right pr-6 sm:pr-10">{t.posEndDate}</TableHead>
+                        <TableHead className="px-6 sm:px-10 h-14 cursor-pointer select-none group" onClick={() => requestSort('closed', 'name')}>
+                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                            {t.assetName} <SortIcon config={closedSort} columnKey="name" />
+                          </div>
+                        </TableHead>
+                        <TableHead className="h-14 cursor-pointer select-none group" onClick={() => requestSort('closed', 'amount')}>
+                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                            {t.holdings} <SortIcon config={closedSort} columnKey="amount" />
+                          </div>
+                        </TableHead>
+                        <TableHead className="h-14 cursor-pointer select-none group" onClick={() => requestSort('closed', 'acquisitionDate')}>
+                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                            {t.acqDate} <SortIcon config={closedSort} columnKey="acquisitionDate" />
+                          </div>
+                        </TableHead>
+                        <TableHead className="h-14 cursor-pointer select-none group pr-6 sm:pr-10" onClick={() => requestSort('closed', 'endDate')}>
+                          <div className="flex items-center justify-end text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                            {t.posEndDate} <SortIcon config={closedSort} columnKey="endDate" />
+                          </div>
+                        </TableHead>
                         <TableHead className="w-[80px]"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {assetCalculations.closedAssets.map((asset: any) => (
+                      {sortedClosedAssets.map((asset: any) => (
                         <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
                           <TableCell className="px-6 sm:px-10 py-6">
                             <div className="font-black text-[15px] text-slate-400 line-through decoration-2">{asset.name}</div>
                             <div className="text-[14px] font-black text-slate-300 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
                           </TableCell>
-                          <TableCell><span className="text-[15px] font-black text-slate-400">{asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</span></TableCell>
+                          <TableCell><span className="text-[15px] font-black text-slate-400">{asset.amount.toLocaleString(undefined, { minimumFractionDigits: 5, maximumFractionDigits: 5 })}</span></TableCell>
                           <TableCell><span className="text-[14px] font-black text-slate-400">{asset.acquisitionDate}</span></TableCell>
                           <TableCell className="text-right pr-6 sm:pr-10">
                             <div className="font-black text-[14px] text-slate-500">{asset.endDate}</div>
