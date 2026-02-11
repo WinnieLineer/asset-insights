@@ -465,10 +465,10 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <section className="bg-slate-50/80 backdrop-blur-md p-6 sm:p-8 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-end gap-4 sm:gap-6 shadow-inner h-full">
-              <div className="w-full md:w-32 lg:w-32 space-y-2 shrink-0">
-                <Label className="pro-label flex items-center gap-2 ml-1 mb-2"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
+              <div className="shrink-0 space-y-2">
+                <Label className="pro-label flex items-center gap-2 ml-1 mb-2 whitespace-nowrap"><Calendar className="w-4 h-4" /> {t.baseRange}</Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
-                  <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-32 h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="30">{t.days30}</SelectItem>
                     <SelectItem value="90">{t.days90}</SelectItem>
@@ -477,10 +477,10 @@ export default function AssetInsightsPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="w-full md:w-32 lg:w-32 space-y-2 shrink-0">
-                <Label className="pro-label flex items-center gap-2 ml-1 mb-2"><Clock className="w-4 h-4" /> {t.interval}</Label>
+              <div className="shrink-0 space-y-2">
+                <Label className="pro-label flex items-center gap-2 ml-1 mb-2 whitespace-nowrap"><Clock className="w-4 h-4" /> {t.interval}</Label>
                 <Select value={interval} onValueChange={setInterval}>
-                  <SelectTrigger className="h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-32 h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 focus:ring-black focus:border-black shadow-sm transition-all"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1d">{t.int1d}</SelectItem>
                     <SelectItem value="1wk">{t.int1wk}</SelectItem>
@@ -727,7 +727,6 @@ export default function AssetInsightsPage() {
       {isReordering && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[150] px-4 w-full sm:w-auto">
           <div className="bg-black text-white px-8 py-5 rounded-2xl shadow-2xl border border-white/10 flex items-center justify-center gap-6 text-center animate-bounce">
-            <Info className="w-5 h-5 text-emerald-400 shrink-0" />
             <span className="text-[14px] font-black uppercase tracking-[0.2em]">{t.reorderHint}</span>
           </div>
         </div>

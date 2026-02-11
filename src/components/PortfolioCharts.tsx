@@ -75,8 +75,9 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   
   if (loading && historicalData.length === 0) return <Skeleton className="w-full h-full rounded-2xl" />;
 
+  // 只列出在當前數據集中總價值大於 0 的類別
   const activeCategoriesInHistory = Array.from(new Set(
-    historicalData.flatMap((d: any) => Object.keys(d).filter(k => ASSET_COLORS[k]))
+    historicalData.flatMap((d: any) => Object.keys(d).filter(k => ASSET_COLORS[k] && d[k] > 0))
   )) as AssetCategory[];
 
   return (
@@ -123,12 +124,16 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ paddingBottom: '20px' }} 
               content={({ payload }) => (
                 <div className="flex flex-wrap justify-end gap-x-6 gap-y-2">
-                  {payload?.map((entry: any, index: number) => (
-                    <div key={index} className={`flex items-center gap-2 cursor-pointer transition-all duration-200 ${(!activeCategory || activeCategory === entry.value) ? 'opacity-100' : 'opacity-20'}`} onMouseEnter={() => setActiveCategory(entry.value)} onMouseLeave={() => setActiveCategory(null)}>
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ASSET_COLORS[entry.value] || entry.color }} />
-                      <span className="text-[12px] font-black text-slate-400 uppercase tracking-[0.3em]">{lang.categories[entry.value] || entry.value}</span>
-                    </div>
-                  ))}
+                  {payload?.map((entry: any, index: number) => {
+                    // 只顯示在該區間內有價值的類別
+                    if (!activeCategoriesInHistory.includes(entry.value)) return null;
+                    return (
+                      <div key={index} className={`flex items-center gap-2 cursor-pointer transition-all duration-200 ${(!activeCategory || activeCategory === entry.value) ? 'opacity-100' : 'opacity-20'}`} onMouseEnter={() => setActiveCategory(entry.value)} onMouseLeave={() => setActiveCategory(null)}>
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ASSET_COLORS[entry.value] || entry.color }} />
+                        <span className="text-[12px] font-black text-slate-400 uppercase tracking-[0.3em]">{lang.categories[entry.value] || entry.value}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               )} 
             />
@@ -158,7 +163,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
         <h3 className="pro-label">{lang.allocation}</h3>
       </div>
       <div className="flex-1 w-full relative min-h-[300px] flex items-center justify-center">
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie 
@@ -186,7 +191,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
           </ResponsiveContainer>
         </div>
         {activeIndex === null && (
-          <div className="z-10 flex flex-col items-center justify-center pointer-events-none">
+          <div className="z-10 flex flex-col items-center justify-center pointer-events-none text-center">
             <p className="text-[12px] font-black text-slate-200 uppercase tracking-[0.4em]">TOTAL</p>
             <p className="text-3xl font-black text-black tracking-tighter">100%</p>
           </div>
