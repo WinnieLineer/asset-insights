@@ -85,7 +85,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
     setLoading(true);
     
     const portfolioSummary = assets.map(a => 
-      `${a.name} (${a.symbol || a.category}): ${a.amount} ${a.currency}, Value: ${a.valueInTWD.toFixed(0)} TWD`
+      `${a.name} (${a.symbol || a.category}): ${a.amount.toFixed(5)} ${a.currency}, Value: ${a.valueInTWD.toFixed(0)} TWD`
     ).join('\n');
 
     const promptText = `

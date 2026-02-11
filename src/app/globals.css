@@ -39,13 +39,13 @@
 }
 
 @layer components {
-  /* 核心 14px 專業標籤：統一全站所有區塊標題 */
+  /* 核心 14px 專業標籤：統一全站所有卡片標題 */
   .pro-label {
     @apply text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-4;
     font-family: var(--app-main-font);
   }
   
-  /* 專業核心大標題 (總淨值數字等) */
+  /* 專業大標題：用於總淨值數字與 AI 標題背景 */
   .pro-title {
     @apply text-3xl sm:text-4xl xl:text-5xl font-black tracking-tighter uppercase leading-tight;
     font-family: var(--app-main-font);

@@ -62,8 +62,8 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   return (
     <g>
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#e2e8f0" strokeWidth={1} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={12} fontWeight={800} className="uppercase tracking-widest">{langCategories[name] || name}</text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={12} textAnchor={textAnchor} fill="#94a3b8" fontSize={11} fontWeight={600}>{`${(percent * 100).toFixed(1)}%`}</text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={14} fontWeight={800} className="uppercase tracking-widest">{langCategories[name] || name}</text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={12} textAnchor={textAnchor} fill="#94a3b8" fontSize={12} fontWeight={600}>{`${(percent * 100).toFixed(1)}%`}</text>
     </g>
   );
 };
@@ -88,8 +88,8 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
             <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8', fontWeight: 800 }} dy={10} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#cbd5e1', fontWeight: 700 }} tickFormatter={(v) => `${symbol}${(v/1000).toFixed(0)}k`} />
+            <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#94a3b8', fontWeight: 800 }} dy={10} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#cbd5e1', fontWeight: 700 }} tickFormatter={(v) => `${symbol}${(v/1000).toFixed(0)}k`} />
             <RechartsTooltip cursor={{ fill: '#f8fafc', opacity: 0.8 }} content={({ active, payload, label }) => {
               if (active && payload?.length) {
                 return (
@@ -103,14 +103,14 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                           <div key={i} className={`flex justify-between items-center gap-6 transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-15'}`}>
                             <div className="flex items-center gap-3">
                               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ASSET_COLORS[p.name] || '#ccc' }} />
-                              <span className="text-[12px] font-black text-slate-600 uppercase tracking-widest">{lang.categories[p.name] || p.name}</span>
+                              <span className="text-[13px] font-black text-slate-600 uppercase tracking-widest">{lang.categories[p.name] || p.name}</span>
                             </div>
-                            <span className="text-lg font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                            <span className="text-xl font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                           </div>
                         );
                       })}
                       <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
-                        <span className="text-[12px] font-black text-black uppercase tracking-[0.4em]">{lang.total}</span>
+                        <span className="text-[13px] font-black text-black uppercase tracking-[0.4em]">{lang.total}</span>
                         <span className="text-2xl font-black text-black">{symbol}{Number(payload.find((p:any)=>p.dataKey==='totalValue')?.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                       </div>
                     </div>
@@ -126,7 +126,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                   {payload?.map((entry: any, index: number) => (
                     <div key={index} className={`flex items-center gap-2 cursor-pointer transition-all duration-200 ${(!activeCategory || activeCategory === entry.value) ? 'opacity-100' : 'opacity-20'}`} onMouseEnter={() => setActiveCategory(entry.value)} onMouseLeave={() => setActiveCategory(null)}>
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ASSET_COLORS[entry.value] || entry.color }} />
-                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">{lang.categories[entry.value] || entry.value}</span>
+                      <span className="text-[12px] font-black text-slate-400 uppercase tracking-[0.3em]">{lang.categories[entry.value] || entry.value}</span>
                     </div>
                   ))}
                 </div>
@@ -174,7 +174,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
               if (active && payload?.length) {
                 return (
                   <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xl z-[1000] min-w-[180px] pointer-events-none">
-                    <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.4em] mb-1">{lang.categories[payload[0].name] || payload[0].name}</p>
+                    <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em] mb-1">{lang.categories[payload[0].name] || payload[0].name}</p>
                     <p className="text-2xl font-black text-black">{symbol}{Number(payload[0].value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                   </div>
                 );
@@ -184,8 +184,8 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
           </PieChart>
         </ResponsiveContainer>
         {activeIndex === null && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none flex flex-col items-center justify-center">
-            <p className="text-[11px] font-black text-slate-200 uppercase tracking-[0.4em]">TOTAL</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <p className="text-[12px] font-black text-slate-200 uppercase tracking-[0.4em]">TOTAL</p>
             <p className="text-3xl font-black text-slate-100 tracking-tighter">100%</p>
           </div>
         )}
