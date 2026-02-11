@@ -36,7 +36,6 @@ import {
   Card, 
   CardContent, 
   CardHeader, 
-  CardTitle,
 } from '@/components/ui/card';
 import { 
   Table, 
@@ -412,8 +411,8 @@ export default function AssetInsightsPage() {
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'inc')}><Maximize2 className="w-5 h-5" /></Button>
         <div className="w-px h-6 bg-white/20 mx-1" />
         <span className="text-[14px] font-black uppercase tracking-widest px-1 opacity-60">H</span>
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'dec')}><ChevronDown className="w-5 h-5 rotate-180" /></Button>
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'inc')}><ChevronDown className="w-5 h-5" /></Button>
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'dec')}><ChevronUp className="w-5 h-5 rotate-180" /></Button>
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'inc')}><ChevronUp className="w-5 h-5" /></Button>
       </div>
     );
 
@@ -427,7 +426,8 @@ export default function AssetInsightsPage() {
       config.width === 12 && "xl:col-span-12"
     );
 
-    const wrapperStyle = { height: `${config.height}px` };
+    // 手機端 (小於 xl) 使用自動高度以防堆疊內容重疊
+    const wrapperStyle = { minHeight: `300px`, height: typeof window !== 'undefined' && window.innerWidth >= 1280 ? `${config.height}px` : 'auto' };
 
     switch (id) {
       case 'summary':
@@ -435,8 +435,8 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-              <Card className="lg:col-span-9 modern-card p-6 sm:p-10 relative overflow-hidden bg-white flex flex-col justify-center">
-                <div className="space-y-6 z-20 relative">
+              <Card className="lg:col-span-9 modern-card p-6 sm:p-10 relative overflow-hidden bg-white flex flex-col justify-center min-h-[200px]">
+                <div className="space-y-6 z-20 relative text-left">
                   <div className="pro-label">
                     <Globe className="w-5 h-5" /> {t.totalValue}
                   </div>
@@ -451,7 +451,7 @@ export default function AssetInsightsPage() {
                 </div>
               </Card>
               <div className="lg:col-span-3">
-                <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[120px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-4 rounded-2xl shadow-xl transition-all active:scale-95">
+                <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[120px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-4 rounded-2xl shadow-xl transition-all active:scale-95 py-10">
                   <RefreshCw className={cn("w-8 h-8", loading && "animate-spin")} />
                   <span className="text-[14px] tracking-[0.4em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
                 </Button>
@@ -667,7 +667,7 @@ export default function AssetInsightsPage() {
 
   return (
     <div className="min-h-screen bg-white text-black pb-24 overflow-x-hidden" onMouseDown={handleMouseDown}>
-      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl h-auto py-2 sm:h-12 sm:py-0">
+      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl h-auto py-2 sm:h-auto sm:py-3">
         <div className="max-w-[1900px] mx-auto px-4 sm:px-10 h-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 overflow-hidden">
           <div className="flex items-center gap-3 shrink-0">
             <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-4 h-4 text-white" /></div>
@@ -675,7 +675,7 @@ export default function AssetInsightsPage() {
           </div>
           
           <div className="flex-1 flex items-center gap-4 overflow-hidden">
-            <div className="flex items-center gap-6 px-0 sm:px-4 border-l-0 sm:border-l border-slate-100 overflow-x-auto no-scrollbar w-full sm:w-auto">
+            <div className="flex items-center gap-6 px-0 sm:px-4 border-l-0 sm:border-l border-slate-100 overflow-x-auto no-scrollbar w-full sm:w-auto pb-1 sm:pb-0">
                <span className="text-[14px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap shrink-0">
                  {t.exchangeRate.replace('[CUR]', displayCurrency)}
                </span>
@@ -717,8 +717,8 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-24 sm:pt-28 xl:pt-32">
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-10 items-start">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-32 sm:pt-40 xl:pt-48 pb-20">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>
       </main>

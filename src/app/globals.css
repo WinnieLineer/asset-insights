@@ -39,13 +39,13 @@
 }
 
 @layer components {
-  /* 統一 14px 專業標籤類別 */
+  /* 核心 14px 專業標籤：統一全站所有區塊標題 */
   .pro-label {
     @apply text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-4;
     font-family: var(--app-main-font);
   }
   
-  /* 統一專業大標題類別 */
+  /* 專業核心大標題 (總淨值數字等) */
   .pro-title {
     @apply text-3xl sm:text-4xl xl:text-5xl font-black tracking-tighter uppercase leading-tight;
     font-family: var(--app-main-font);
@@ -53,10 +53,6 @@
 
   .modern-card {
     @apply bg-card border border-slate-200/60 shadow-sm transition-all duration-300 hover:shadow-md rounded-2xl;
-  }
-
-  .glass-nav {
-    @apply bg-white/80 backdrop-blur-xl border-b border-slate-100 sticky top-0 z-50;
   }
 
   .no-scrollbar::-webkit-scrollbar {
