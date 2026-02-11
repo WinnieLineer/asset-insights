@@ -80,6 +80,13 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
     historicalData.flatMap((d: any) => Object.keys(d).filter(k => ASSET_COLORS[k] && d[k] > 0))
   )) as AssetCategory[];
 
+  // 格式化數字以防擋到：超過一千顯示 k，超過百萬顯示 m
+  const formatYAxis = (v: number) => {
+    if (v >= 1000000) return `${symbol}${(v / 1000000).toFixed(1)}m`;
+    if (v >= 1000) return `${symbol}${(v / 1000).toFixed(0)}k`;
+    return `${symbol}${v}`;
+  };
+
   return (
     <div className="modern-card p-6 sm:p-8 border-slate-100 bg-white relative shadow-sm rounded-2xl h-full flex flex-col overflow-hidden">
       <div className="w-full mb-6 flex items-center justify-between shrink-0">
@@ -87,10 +94,16 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
       </div>
       <div className="w-full flex-1 min-h-[300px]" style={{ height: '100%' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+          <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 20 }}>
             <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="displayDate" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#94a3b8', fontWeight: 800 }} dy={10} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#cbd5e1', fontWeight: 700 }} tickFormatter={(v) => `${symbol}${(v/1000).toFixed(0)}k`} />
+            <YAxis 
+              axisLine={false} 
+              tickLine={false} 
+              width={70}
+              tick={{ fontSize: 13, fill: '#cbd5e1', fontWeight: 700 }} 
+              tickFormatter={formatYAxis} 
+            />
             <RechartsTooltip cursor={{ fill: '#f8fafc', opacity: 0.8 }} content={({ active, payload, label }) => {
               if (active && payload?.length) {
                 return (
@@ -125,7 +138,6 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               content={({ payload }) => (
                 <div className="flex flex-wrap justify-end gap-x-6 gap-y-2">
                   {payload?.map((entry: any, index: number) => {
-                    // 只顯示在該區間內有價值的類別
                     if (!activeCategoriesInHistory.includes(entry.value)) return null;
                     return (
                       <div key={index} className={`flex items-center gap-2 cursor-pointer transition-all duration-200 ${(!activeCategory || activeCategory === entry.value) ? 'opacity-100' : 'opacity-20'}`} onMouseEnter={() => setActiveCategory(entry.value)} onMouseLeave={() => setActiveCategory(null)}>
@@ -138,9 +150,28 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               )} 
             />
             {activeCategoriesInHistory.map((cat) => (
-              <Bar key={cat} dataKey={cat} stackId="a" fill={ASSET_COLORS[cat]} barSize={16} opacity={(!activeCategory || activeCategory === cat) ? 1 : 0.15} className="transition-opacity duration-300" />
+              <Bar 
+                key={cat} 
+                dataKey={cat} 
+                stackId="a" 
+                fill={ASSET_COLORS[cat]} 
+                barSize={16} 
+                isAnimationActive={false}
+                opacity={(!activeCategory || activeCategory === cat) ? 1 : 0.15} 
+                className="transition-opacity duration-300" 
+              />
             ))}
-            <Line type="monotone" dataKey="totalValue" stroke="#000000" strokeWidth={4} dot={false} activeDot={{ r: 6, fill: '#000', stroke: '#fff', strokeWidth: 2 }} opacity={!activeCategory ? 1 : 0.1} className="transition-opacity duration-300" />
+            <Line 
+              type="monotone" 
+              dataKey="totalValue" 
+              stroke="#000000" 
+              strokeWidth={4} 
+              dot={false} 
+              isAnimationActive={false}
+              activeDot={{ r: 6, fill: '#000', stroke: '#fff', strokeWidth: 2 }} 
+              opacity={!activeCategory ? 1 : 0.1} 
+              className="transition-opacity duration-300" 
+            />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -191,7 +222,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
           </ResponsiveContainer>
         </div>
         {activeIndex === null && (
-          <div className="z-10 flex flex-col items-center justify-center pointer-events-none text-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
             <p className="text-[12px] font-black text-slate-200 uppercase tracking-[0.4em]">TOTAL</p>
             <p className="text-3xl font-black text-black tracking-tighter">100%</p>
           </div>
