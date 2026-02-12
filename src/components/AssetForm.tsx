@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useMemo } from 'react';
@@ -103,6 +104,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     if (parseFloat(e.target.value) === 0) {
       form.setValue('amount', undefined as any);
     }
+    e.target.select();
   };
 
   return (
