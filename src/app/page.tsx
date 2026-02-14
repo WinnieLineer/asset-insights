@@ -114,7 +114,7 @@ const translations = {
     importSuccess: 'Data imported successfully.',
     exitReorder: 'DONE',
     reorderHint: 'REORDER MODE ACTIVE',
-    lastUpdated: 'Updated',
+    lastUpdated: 'Last Updated',
     allCategories: 'All',
     categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index' }
   },
@@ -566,10 +566,10 @@ export default function AssetInsightsPage() {
                   <Wallet className="w-20 h-20 sm:w-28 sm:h-28 text-black" />
                 </div>
               </Card>
-              <div className="lg:col-span-3 flex flex-col items-center justify-center gap-2">
+              <div className="lg:col-span-3 flex flex-col items-center justify-center gap-2 py-4">
                 {lastUpdated && (
-                  <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest animate-fade-in text-center w-full mb-1">
-                    {t.lastUpdated}:<br/>{lastUpdated}
+                  <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] animate-fade-in text-center w-full mb-2">
+                    {t.lastUpdated}:<br/><span className="text-slate-600">{lastUpdated}</span>
                   </div>
                 )}
                 <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[120px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-4 rounded-2xl shadow-xl transition-all active:scale-95 py-8">
@@ -865,7 +865,7 @@ export default function AssetInsightsPage() {
 
   return (
     <div className="min-h-screen bg-white text-black pb-24 overflow-x-hidden" onMouseDown={handleMouseDown}>
-      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl h-auto py-2 sm:py-3">
+      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl h-auto py-2 sm:py-3 shadow-sm">
         <div className="max-w-[1900px] mx-auto px-4 sm:px-10 h-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 overflow-hidden">
           <div className="flex items-center gap-3 shrink-0">
             <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-4 h-4 text-white" /></div>
@@ -876,7 +876,7 @@ export default function AssetInsightsPage() {
           
           <div className="flex-1 flex items-center gap-4 overflow-hidden">
             <div className="flex items-center gap-6 px-0 sm:px-4 border-l-0 sm:border-l border-slate-100 overflow-x-auto no-scrollbar w-full sm:w-auto pb-1 sm:pb-0">
-               <span className="text-[14px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
+               <span className="text-[13px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
                  {t.exchangeRate.replace('[CUR]', displayCurrency)}
                </span>
                <div className="flex items-center gap-6">
@@ -917,8 +917,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      {/* Adjusted padding for more compact header-to-content spacing */}
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-12 pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-32 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>

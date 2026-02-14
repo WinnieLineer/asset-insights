@@ -47,7 +47,7 @@ const t = {
 };
 
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
-  if (!percent || percent < 0.015) return null;
+  if (!percent || percent < 0.01) return null; 
   
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
@@ -159,8 +159,8 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
               <Pie 
                 data={filteredData} 
                 cx="50%" cy="50%" 
-                innerRadius="68%" 
-                outerRadius="85%" 
+                innerRadius="75%" 
+                outerRadius="92%" 
                 paddingAngle={2} 
                 dataKey="value" 
                 stroke="none" 
@@ -179,14 +179,13 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                   />
                 ))}
               </Pie>
-              {/* Fixed: Use a standard div or a functional component that returns null to avoid Fragment prop error */}
               <Tooltip content={() => null} />
             </PieChart>
           </ResponsiveContainer>
         </div>
         
-        <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center max-w-[50%] z-20">
-          <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 line-clamp-1">
+        <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center max-w-[60%] z-20">
+          <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 line-clamp-1">
             {displayLabel}
           </p>
           <div className="flex items-baseline gap-1">
