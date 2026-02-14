@@ -55,7 +55,8 @@ const renderActiveShape = (props: any) => {
 
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
   const displayPercent = percent || 0;
-  if (displayPercent < 0.005) return null; 
+  if (displayPercent < 0.01) return null; // 隱藏小於 1% 的標籤防止重疊
+  
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
@@ -229,31 +230,30 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 ))}
               </Pie>
               <RechartsTooltip 
-                allowEscapeViewBox={{ x: true, y: true }}
+                position={{ y: 20 }} // 將提示框固定在上方邊緣避開中心
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    const quadrantX = coordinate.x > 300 ? -260 : 60;
-                    const quadrantY = coordinate.y > 200 ? -160 : 40;
-                    
+                    // 根據滑鼠 X 軸位置自動偏移提示框，避開中心卡片
+                    const quadrantX = coordinate.x > 300 ? -220 : 60;
                     const val = Number(payload[0].value);
                     const percentVal = totalValue > 0 ? ((val / totalValue) * 100).toFixed(1) : "0.0";
                     
                     return (
                       <div 
-                        className="bg-white border border-slate-100 p-5 rounded-2xl shadow-2xl z-[1000] min-w-[220px] pointer-events-none animate-in fade-in zoom-in-95 duration-200"
+                        className="bg-white border border-slate-100 p-5 rounded-2xl shadow-2xl z-[1000] min-w-[200px] pointer-events-none animate-in fade-in zoom-in-95 duration-200"
                         style={{
                           position: 'absolute',
-                          left: coordinate.x + quadrantX,
-                          top: coordinate.y + quadrantY,
+                          left: quadrantX,
+                          top: 0,
                         }}
                       >
                         <div className="flex justify-between items-center mb-2">
-                          <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em]">{lang.categories[payload[0].name as keyof typeof lang.categories] || payload[0].name}</p>
-                          <span className="text-[12px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                          <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.4em]">{lang.categories[payload[0].name as keyof typeof lang.categories] || payload[0].name}</p>
+                          <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
                             {percentVal}%
                           </span>
                         </div>
-                        <p className="text-2xl font-black text-black leading-tight">{symbol}{val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                        <p className="text-xl font-black text-black leading-tight">{symbol}{val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                       </div>
                     );
                   }
