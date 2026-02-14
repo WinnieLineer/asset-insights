@@ -143,7 +143,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
       } finally {
         setIsSearching(false);
       }
-    }, 300);
+    }, 400);
 
     return () => clearTimeout(timer);
   }, [symbolValue, hasTicker]);

@@ -52,11 +52,12 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
+  // 增加位移量，給文字更多空間
   const sx = cx + (outerRadius + 5) * cos;
   const sy = cy + (outerRadius + 5) * sin;
-  const mx = cx + (outerRadius + 20) * cos;
-  const my = cy + (outerRadius + 20) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 15;
+  const mx = cx + (outerRadius + 25) * cos;
+  const my = cy + (outerRadius + 25) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 20;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
@@ -93,13 +94,13 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
       </div>
       <div className="w-full flex-1 min-h-[300px]" style={{ height: '100%' }}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 20 }}>
+          <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 30 }}>
             <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="shortDate" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#94a3b8', fontWeight: 800 }} dy={10} />
             <YAxis 
               axisLine={false} 
               tickLine={false} 
-              width={70}
+              width={80}
               tick={{ fontSize: 13, fill: '#cbd5e1', fontWeight: 700 }} 
               tickFormatter={formatYAxis} 
             />
@@ -200,7 +201,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
             <PieChart>
               <Pie 
                 activeIndex={activeIndex ?? undefined} activeShape={renderActiveShape} data={filteredData} cx="50%" cy="50%" 
-                innerRadius="55%" outerRadius="80%" paddingAngle={4} 
+                innerRadius="55%" outerRadius="70%" paddingAngle={4} 
                 dataKey="value" stroke="transparent" onMouseEnter={(_, index) => setActiveIndex(index)} onMouseLeave={() => setActiveIndex(null)} 
                 label={(props) => renderCustomLabel({ ...props, symbol, langCategories: lang.categories })} labelLine={false}
               >
@@ -210,19 +211,25 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
               </Pie>
               <RechartsTooltip 
                 allowEscapeViewBox={{ x: true, y: true }}
-                coordinate={{ x: 0, y: 0 }} 
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    const isLeft = coordinate.x < (window.innerWidth / 2); 
+                    // 智慧避讓：計算與中心點的相對位置
+                    // 容器寬高通常在 ResponsiveContainer 下是 100%，這裡假設基準點為圖表中心
+                    // 我們將提示框推向外側，絕不擋到中心文字
+                    const offsetX = coordinate.x > 300 ? -220 : 40;
+                    const offsetY = coordinate.y > 300 ? -120 : 20;
+                    
                     const percentVal = totalValue > 0 ? (Number(payload[0].value) / totalValue * 100).toFixed(1) : "0.0";
                     
                     return (
                       <div 
-                        className={cn(
-                          "bg-white border border-slate-100 p-4 rounded-xl shadow-xl z-[1000] min-w-[180px] pointer-events-none transition-transform duration-200",
-                          coordinate.x > 300 ? "-translate-x-[110%]" : "translate-x-4",
-                          coordinate.y > 300 ? "-translate-y-[110%]" : "translate-y-4"
-                        )}
+                        className="bg-white border border-slate-100 p-4 rounded-xl shadow-xl z-[1000] min-w-[200px] pointer-events-none"
+                        style={{
+                          position: 'absolute',
+                          left: coordinate.x + offsetX,
+                          top: coordinate.y + offsetY,
+                          transition: 'all 0.1s ease-out'
+                        }}
                       >
                         <div className="flex justify-between items-start mb-1">
                           <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em]">{lang.categories[payload[0].name] || payload[0].name}</p>
