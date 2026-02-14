@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import {
-  PieChart, Pie, Cell, ResponsiveContainer, Sector,
+  PieChart, Pie, Cell, ResponsiveContainer,
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
   Tooltip
 } from 'recharts';
@@ -41,7 +41,7 @@ const t = {
   zh: { 
     allocation: '當前資產配置比例', 
     trend: '歷史資產演變走勢', 
-    total: '總計', 
+    total: '投資組合總計', 
     categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款', 'ETF': 'ETF', 'Option': '選擇權', 'Fund': '基金', 'Index': '指數' }
   }
 };
@@ -55,9 +55,9 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   
   const sx = cx + (outerRadius + 2) * cos;
   const sy = cy + (outerRadius + 2) * sin;
-  const mx = cx + (outerRadius + 20) * cos;
-  const my = cy + (outerRadius + 20) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 12;
+  const mx = cx + (outerRadius + 18) * cos;
+  const my = cy + (outerRadius + 18) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 10;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
@@ -152,14 +152,14 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
       <div className="w-full mb-6 text-left shrink-0">
         <h3 className="pro-label">{lang.allocation}</h3>
       </div>
-      <div className="flex-1 w-full relative flex items-center justify-center">
+      <div className="flex-1 w-full relative flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie 
                 data={filteredData} 
                 cx="50%" cy="50%" 
-                innerRadius="50%" outerRadius="70%" paddingAngle={4} 
+                innerRadius="50%" outerRadius="70%" paddingAngle={2} 
                 dataKey="value" stroke="none" 
                 onMouseEnter={(_, index) => setActiveIndex(index)} 
                 onMouseLeave={() => setActiveIndex(null)} 
@@ -176,21 +176,20 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                   />
                 ))}
               </Pie>
-              <Tooltip content={<></>} />
+              <Tooltip content={() => null} />
             </PieChart>
           </ResponsiveContainer>
         </div>
         
-        {/* 中心區域：乾淨且數據分明 */}
-        <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center">
-          <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">
+        <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center max-w-[40%]">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 line-clamp-1">
             {displayLabel}
           </p>
-          <div className="flex items-baseline gap-1">
-             <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tighter leading-none">{displayPercent}</span>
-             <span className="text-[14px] font-black text-slate-400">%</span>
+          <div className="flex items-baseline gap-0.5">
+             <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter leading-none">{displayPercent}</span>
+             <span className="text-[12px] font-black text-slate-400">%</span>
           </div>
-          <div className="mt-3 text-[11px] font-black text-white bg-slate-900 px-4 py-1 rounded-full shadow-lg border border-white/10">
+          <div className="mt-2 text-[10px] font-black text-white bg-slate-900 px-3 py-1 rounded-full shadow-lg border border-white/10 whitespace-nowrap">
             {symbol}{displayValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </div>
         </div>

@@ -174,7 +174,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     else if (rawType.includes('FUND') || rawType.includes('基金')) targetCat = 'Fund';
     else if (rawType.includes('INDEX') || rawType.includes('指數')) targetCat = 'Index';
     else if (rawType.includes('OPTION') || rawType.includes('選擇權')) targetCat = 'Option';
-    else if (rawType.includes('EQUITY') || rawType.includes('權益')) targetCat = 'Stock';
+    else if (rawType.includes('EQUITY') || rawType.includes('權益') || rawType.includes('股票')) targetCat = 'Stock';
     else if (s.typeDisp) targetCat = s.typeDisp;
 
     form.setValue('category', targetCat);
@@ -224,7 +224,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                       {lang.categories[c as keyof typeof lang.categories] || c}
                     </SelectItem>
                   ))}
-                  {/* 修復空白問題：動態渲染不在清單中的類別 */}
                   {field.value && !PREDEFINED_CATEGORIES.includes(field.value) && field.value !== 'CUSTOM_ENTRY' && (
                     <SelectItem value={field.value} className="text-sm font-bold">{field.value}</SelectItem>
                   )}
