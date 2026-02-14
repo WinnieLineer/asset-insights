@@ -92,11 +92,26 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { 
-      name: '', symbol: '', category: 'Stock', amount: 0, currency: 'TWD',
+      name: '', 
+      symbol: '', 
+      category: 'Stock', 
+      amount: 0, 
+      currency: 'TWD',
       acquisitionDate: new Date().toISOString().split('T')[0],
       endDate: ''
     },
   });
+
+  // Load last used values on mount
+  useEffect(() => {
+    const lastCategory = localStorage.getItem('last_asset_category') as AssetCategory;
+    const lastCurrency = localStorage.getItem('last_asset_currency') as Currency;
+    const lastDate = localStorage.getItem('last_asset_date');
+
+    if (lastCategory) form.setValue('category', lastCategory);
+    if (lastCurrency) form.setValue('currency', lastCurrency);
+    if (lastDate) form.setValue('acquisitionDate', lastDate);
+  }, [form]);
 
   const category = form.watch('category');
   const symbolValue = form.watch('symbol');
@@ -167,9 +182,25 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     setShowSuggestions(false);
   };
 
+  const onSubmit = (v: z.infer<typeof formSchema>) => {
+    // Save last used values for convenience
+    localStorage.setItem('last_asset_category', v.category);
+    localStorage.setItem('last_asset_currency', v.currency);
+    localStorage.setItem('last_asset_date', v.acquisitionDate);
+
+    onAdd(v as Omit<Asset, 'id'>);
+    form.reset({
+      ...v,
+      name: '',
+      symbol: '',
+      amount: 0,
+      endDate: ''
+    });
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit((v) => { onAdd(v as Omit<Asset, 'id'>); form.reset({ ...form.getValues(), name: '', symbol: '', amount: 0 }); })} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         
         <FormField control={form.control} name="category" render={({ field }) => (
           <FormItem>

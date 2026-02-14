@@ -205,11 +205,27 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                   <Cell key={i} fill={ASSET_COLORS[entry.name] || '#ccc'} opacity={activeIndex === null || activeIndex === i ? 1 : 0.2} className="transition-opacity duration-300 outline-none" />
                 ))}
               </Pie>
-              <RechartsTooltip content={({ active, payload }) => {
-                if (active && payload?.length) {
+              <RechartsTooltip coordinate={{ x: 0, y: 0 }} content={({ active, payload, coordinate }) => {
+                if (active && payload?.length && coordinate) {
+                  // Determine quadrant to avoid blocking the center (50%, 50%)
+                  // If on left side, shift left. If on top side, shift up.
+                  const isLeft = coordinate.x < 150; // Approximated relative to container center
+                  const isTop = coordinate.y < 150;
+                  
                   return (
-                    <div className="bg-white border border-slate-100 p-4 rounded-xl shadow-xl z-[1000] min-w-[180px] pointer-events-none">
-                      <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em] mb-1">{lang.categories[payload[0].name] || payload[0].name}</p>
+                    <div 
+                      className={cn(
+                        "bg-white border border-slate-100 p-4 rounded-xl shadow-xl z-[1000] min-w-[200px] pointer-events-none transition-transform duration-200",
+                        isLeft ? "-translate-x-full" : "translate-x-4",
+                        isTop ? "-translate-y-full" : "translate-y-4"
+                      )}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em]">{lang.categories[payload[0].name] || payload[0].name}</p>
+                        <span className="text-[12px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                          {(payload[0].payload.percent * 100).toFixed(1)}%
+                        </span>
+                      </div>
                       <p className="text-2xl font-black text-black">{symbol}{Number(payload[0].value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                     </div>
                   );

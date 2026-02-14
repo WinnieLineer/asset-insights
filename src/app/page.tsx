@@ -212,6 +212,44 @@ export default function AssetInsightsPage() {
 
   const t = translations[language];
 
+  // Load persistent states
+  useEffect(() => {
+    setMounted(true);
+    const savedAssets = localStorage.getItem('assets');
+    if (savedAssets) setAssets(JSON.parse(savedAssets));
+    
+    const savedSections = localStorage.getItem('sections');
+    if (savedSections) setSections(JSON.parse(savedSections));
+    
+    const savedConfigs = localStorage.getItem('layoutConfigs');
+    if (savedConfigs) setLayoutConfigs(JSON.parse(savedConfigs));
+
+    const savedLang = localStorage.getItem('pref_language');
+    if (savedLang) setLanguage(savedLang as 'en' | 'zh');
+
+    const savedCurrency = localStorage.getItem('pref_currency');
+    if (savedCurrency) setDisplayCurrency(savedCurrency as Currency);
+
+    const savedTracking = localStorage.getItem('pref_trackingDays');
+    if (savedTracking) setTrackingDays(savedTracking);
+
+    const savedInterval = localStorage.getItem('pref_interval');
+    if (savedInterval) setInterval(savedInterval);
+  }, []);
+
+  // Save persistent states
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('assets', JSON.stringify(assets));
+      localStorage.setItem('sections', JSON.stringify(sections));
+      localStorage.setItem('layoutConfigs', JSON.stringify(layoutConfigs));
+      localStorage.setItem('pref_language', language);
+      localStorage.setItem('pref_currency', displayCurrency);
+      localStorage.setItem('pref_trackingDays', trackingDays);
+      localStorage.setItem('pref_interval', interval);
+    }
+  }, [assets, sections, layoutConfigs, language, displayCurrency, trackingDays, interval, mounted]);
+
   const updateAllData = useCallback(async (currentAssets: Asset[]) => {
     if (!mounted || loading) return;
     setLoading(true);
@@ -250,28 +288,10 @@ export default function AssetInsightsPage() {
   }, [mounted, trackingDays, customStartDate, customEndDate, interval, t.dataUpdated, loading, toast]);
 
   useEffect(() => {
-    setMounted(true);
-    const savedAssets = localStorage.getItem('assets');
-    if (savedAssets) setAssets(JSON.parse(savedAssets));
-    const savedSections = localStorage.getItem('sections');
-    if (savedSections) setSections(JSON.parse(savedSections));
-    const savedConfigs = localStorage.getItem('layoutConfigs');
-    if (savedConfigs) setLayoutConfigs(JSON.parse(savedConfigs));
-  }, []);
-
-  useEffect(() => {
     if (mounted && assets.length > 0) {
       updateAllData(assets);
     }
   }, [mounted, trackingDays, interval, customStartDate, customEndDate, assets.length]);
-
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem('assets', JSON.stringify(assets));
-      localStorage.setItem('sections', JSON.stringify(sections));
-      localStorage.setItem('layoutConfigs', JSON.stringify(layoutConfigs));
-    }
-  }, [assets, sections, layoutConfigs, mounted]);
 
   const assetCalculations = useMemo(() => {
     let totalTWD = 0;
@@ -813,7 +833,7 @@ export default function AssetInsightsPage() {
                        <span className="text-[14px] font-black text-slate-900">{cur}</span>
                        <ArrowRightLeft className="w-3 h-3 text-slate-300" />
                        <span className="text-[14px] font-black text-emerald-600">
-                         {relativeRate.toFixed(5)}
+                         {relativeRate.toFixed(5).replace(/\.?0+$/, '')}
                        </span>
                      </div>
                    );
