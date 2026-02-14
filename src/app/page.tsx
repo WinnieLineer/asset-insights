@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -284,8 +285,11 @@ export default function AssetInsightsPage() {
       );
       setMarketData(newData);
       setMarketTimeline(historicalTimeline);
-      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setLastUpdated(now);
+      
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+      setLastUpdated(timestamp);
+      
       toast({ title: t.dataUpdated });
     } catch (error) {
       toast({ variant: 'destructive', title: '市場同步失敗' });
@@ -549,7 +553,12 @@ export default function AssetInsightsPage() {
                   <Wallet className="w-20 h-20 sm:w-28 sm:h-28 text-black" />
                 </div>
               </Card>
-              <div className="lg:col-span-3">
+              <div className="lg:col-span-3 flex flex-col items-center justify-center">
+                {lastUpdated && (
+                  <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 animate-fade-in">
+                    {t.lastUpdated}: {lastUpdated}
+                  </div>
+                )}
                 <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[120px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-4 rounded-2xl shadow-xl transition-all active:scale-95 py-10">
                   <RefreshCw className={cn("w-8 h-8", loading && "animate-spin")} />
                   <span className="text-[14px] tracking-[0.4em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
@@ -825,7 +834,6 @@ export default function AssetInsightsPage() {
             <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-4 h-4 text-white" /></div>
             <div className="flex flex-col">
               <h1 className="text-[14px] font-black tracking-tighter uppercase leading-tight">{t.title}</h1>
-              {lastUpdated && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.lastUpdated}: {lastUpdated}</span>}
             </div>
           </div>
           
@@ -891,7 +899,7 @@ export default function AssetInsightsPage() {
                 step="any" 
                 value={editAmount} 
                 onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} 
-                onFocus={(e) => e.target.select()} 
+                onFocus={(e) => (e.target as HTMLInputElement).select()} 
                 className="h-11 font-black text-base border-2 border-slate-300 rounded-xl" 
               />
             </div>
