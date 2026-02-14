@@ -553,13 +553,13 @@ export default function AssetInsightsPage() {
                   <Wallet className="w-20 h-20 sm:w-28 sm:h-28 text-black" />
                 </div>
               </Card>
-              <div className="lg:col-span-3 flex flex-col items-center justify-center">
+              <div className="lg:col-span-3 flex flex-col items-center justify-center gap-2">
                 {lastUpdated && (
-                  <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-3 animate-fade-in">
+                  <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest animate-fade-in">
                     {t.lastUpdated}: {lastUpdated}
                   </div>
                 )}
-                <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[120px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-4 rounded-2xl shadow-xl transition-all active:scale-95 py-10">
+                <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[120px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-4 rounded-2xl shadow-xl transition-all active:scale-95 py-8">
                   <RefreshCw className={cn("w-8 h-8", loading && "animate-spin")} />
                   <span className="text-[14px] tracking-[0.4em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
                 </Button>
@@ -880,7 +880,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-24 sm:pt-20 xl:pt-20 pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-16 sm:pt-20 xl:pt-20 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>

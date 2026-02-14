@@ -40,7 +40,13 @@ const t = {
     endDate: 'Closure Date',
     submit: 'Add to Portfolio',
     categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other' },
-    errors: { nameTooShort: 'Min 2 characters', invalidAmount: 'Positive number required', required: 'Required', tickerRequired: 'Ticker symbol is required' }
+    errors: { 
+      nameTooShort: 'Min 2 characters', 
+      invalidAmount: 'Positive number required', 
+      required: 'Required', 
+      tickerRequired: 'Ticker symbol is required',
+      invalidTicker: 'Invalid ticker symbol'
+    }
   },
   zh: {
     name: '資產名稱',
@@ -54,7 +60,13 @@ const t = {
     endDate: '結清日期 (選填)',
     submit: '新增部位',
     categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產' },
-    errors: { nameTooShort: '至少 2 個字', invalidAmount: '請輸入有效的正數', required: '必填', tickerRequired: '此類別必須填寫代號' }
+    errors: { 
+      nameTooShort: '至少 2 個字', 
+      invalidAmount: '請輸入有效的正數', 
+      required: '必填', 
+      tickerRequired: '此類別必須填寫代號',
+      invalidTicker: '查無此資產代碼，請重新輸入'
+    }
   }
 };
 
@@ -75,6 +87,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [tickerFound, setTickerFound] = useState<boolean | null>(null);
   const suggestionRef = useRef<HTMLDivElement>(null);
 
   const formSchema = useMemo(() => z.object({
@@ -88,7 +101,11 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   }).refine((data) => {
     if ((data.category === 'Stock' || data.category === 'Crypto') && (!data.symbol || data.symbol.trim() === '')) return false;
     return true;
-  }, { message: lang.errors.tickerRequired, path: ['symbol'] }), [lang]);
+  }, { message: lang.errors.tickerRequired, path: ['symbol'] })
+    .refine((data) => {
+      if ((data.category === 'Stock' || data.category === 'Crypto') && tickerFound === false) return false;
+      return true;
+    }, { message: lang.errors.invalidTicker, path: ['symbol'] }), [lang, tickerFound]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -103,7 +120,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     },
   });
 
-  // Load last used values on mount
   useEffect(() => {
     const lastCategory = localStorage.getItem('last_asset_category') as AssetCategory;
     const lastCurrency = localStorage.getItem('last_asset_currency') as Currency;
@@ -121,6 +137,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   useEffect(() => {
     if (!hasTicker || !symbolValue || symbolValue.length < 1) {
       setSuggestions([]);
+      setTickerFound(null);
       return;
     }
 
@@ -137,10 +154,12 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
             exchDisp: r.exchDisp,
             typeDisp: r.typeDisp
           })));
+          setTickerFound(results.length > 0);
           setShowSuggestions(true);
         }
       } catch (error) {
         console.error('Autocomplete error:', error);
+        setTickerFound(false);
       } finally {
         setIsSearching(false);
       }
@@ -180,11 +199,11 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const selectSuggestion = (s: Suggestion) => {
     form.setValue('symbol', s.symbol);
     form.setValue('name', s.name);
+    setTickerFound(true);
     setShowSuggestions(false);
   };
 
   const onSubmit = (v: z.infer<typeof formSchema>) => {
-    // Save last used values for convenience
     localStorage.setItem('last_asset_category', v.category);
     localStorage.setItem('last_asset_currency', v.currency);
     localStorage.setItem('last_asset_date', v.acquisitionDate);
@@ -197,6 +216,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
       amount: 0,
       endDate: ''
     });
+    setTickerFound(null);
   };
 
   return (
@@ -206,7 +226,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
         <FormField control={form.control} name="category" render={({ field }) => (
           <FormItem>
             <FormLabel className="pro-label text-slate-500">{lang.category}</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select onValueChange={(val) => { field.onChange(val); setTickerFound(null); }} value={field.value}>
               <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
               <SelectContent>
                 {['Stock', 'Crypto', 'Savings', 'Bank'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{lang.categories[c as keyof typeof lang.categories]}</SelectItem>)}
@@ -221,14 +241,17 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
               <FormLabel className="pro-label text-slate-500">{lang.symbol}</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex items-center">
                     {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : <Search className="w-4 h-4 text-slate-400" />}
                   </div>
                   <Input 
                     placeholder={lang.symbolPlaceholder} 
                     {...field} 
                     autoComplete="off"
-                    className="bg-slate-50 border-2 border-slate-200 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg pl-10 pr-4" 
+                    className={cn(
+                      "bg-slate-50 border-2 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg pl-10 pr-4 transition-colors",
+                      tickerFound === false ? "border-rose-300" : "border-slate-200"
+                    )} 
                   />
                 </div>
               </FormControl>
@@ -250,7 +273,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                   ))}
                 </div>
               )}
-              <FormMessage className="text-xs" />
+              <FormMessage className="text-xs font-bold text-rose-500" />
             </FormItem>
           )} />
         )}
@@ -310,7 +333,13 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
             </FormItem>
           )} />
         </div>
-        <Button type="submit" className="w-full h-11 bg-black hover:bg-slate-800 text-white font-bold rounded-lg text-sm uppercase tracking-widest shadow-md transition-all active:scale-[0.98] mt-2">{lang.submit}</Button>
+        <Button 
+          type="submit" 
+          disabled={hasTicker && tickerFound === false}
+          className="w-full h-11 bg-black hover:bg-slate-800 text-white font-bold rounded-lg text-sm uppercase tracking-widest shadow-md transition-all active:scale-[0.98] mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {lang.submit}
+        </Button>
       </form>
     </Form>
   );

@@ -45,23 +45,23 @@ const renderActiveShape = (props: any) => {
 };
 
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
-  if (percent < 0.01 || isNaN(percent)) return null; 
+  if (percent < 0.005 || isNaN(percent)) return null; 
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
   const sx = cx + (outerRadius + 5) * cos;
   const sy = cy + (outerRadius + 5) * sin;
-  const mx = cx + (outerRadius + 25) * cos;
-  const my = cy + (outerRadius + 25) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 20;
+  const mx = cx + (outerRadius + 20) * cos;
+  const my = cy + (outerRadius + 20) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 15;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
   return (
     <g>
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#e2e8f0" strokeWidth={1} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={14} fontWeight={800} className="uppercase tracking-widest">{langCategories[name] || name}</text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={12} textAnchor={textAnchor} fill="#94a3b8" fontSize={12} fontWeight={600}>{`${(percent * 100).toFixed(1)}%`}</text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={12} fontWeight={800} className="uppercase tracking-widest">{langCategories[name] || name}</text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={10} fontWeight={600}>{`${(percent * 100).toFixed(1)}%`}</text>
     </g>
   );
 };
@@ -139,7 +139,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                     return (
                       <div key={index} className={`flex items-center gap-2 cursor-pointer transition-all duration-200 ${(!activeCategory || activeCategory === entry.value) ? 'opacity-100' : 'opacity-20'}`} onMouseEnter={() => setActiveCategory(entry.value)} onMouseLeave={() => setActiveCategory(null)}>
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ASSET_COLORS[entry.value] || entry.color }} />
-                        <span className="text-[12px] font-black text-slate-400 uppercase tracking-[0.3em]">{lang.categories[entry.value] || entry.value}</span>
+                        <span className="text-[12px] font-black text-slate-400 uppercase tracking-with-3em">{lang.categories[entry.value] || entry.value}</span>
                       </div>
                     );
                   })}
@@ -200,7 +200,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 activeShape={renderActiveShape} 
                 data={filteredData} 
                 cx="50%" cy="50%" 
-                innerRadius="55%" outerRadius="70%" paddingAngle={4} 
+                innerRadius="50%" outerRadius="65%" paddingAngle={5} 
                 dataKey="value" stroke="transparent" 
                 onMouseEnter={(_, index) => setActiveIndex(index)} 
                 onMouseLeave={() => setActiveIndex(null)} 
@@ -209,34 +209,35 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 isAnimationActive={false}
               >
                 {filteredData.map((entry: any, i: number) => (
-                  <Cell key={i} fill={ASSET_COLORS[entry.name] || '#ccc'} opacity={activeIndex === null || activeIndex === i ? 1 : 0.2} className="transition-opacity duration-300 outline-none" />
+                  <Cell key={i} fill={ASSET_COLORS[entry.name] || '#ccc'} className="transition-all duration-300 outline-none" />
                 ))}
               </Pie>
               <RechartsTooltip 
                 allowEscapeViewBox={{ x: true, y: true }}
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    const offsetX = coordinate.x > 250 ? -220 : 40;
-                    const offsetY = coordinate.y > 200 ? -120 : 20;
-                    const percentVal = totalValue > 0 ? (Number(payload[0].value) / totalValue * 100).toFixed(1) : "0.0";
+                    // 智慧避讓演算法：確保提示框向外象限偏移，絕不擋到中心文字
+                    const offsetX = coordinate.x > 250 ? -240 : 40;
+                    const offsetY = coordinate.y > 200 ? -140 : 20;
+                    const val = Number(payload[0].value);
+                    const percentVal = totalValue > 0 ? ((val / totalValue) * 100).toFixed(1) : "0.0";
                     
                     return (
                       <div 
-                        className="bg-white border border-slate-100 p-4 rounded-xl shadow-xl z-[1000] min-w-[200px] pointer-events-none"
+                        className="bg-white border border-slate-100 p-5 rounded-2xl shadow-2xl z-[1000] min-w-[220px] pointer-events-none animate-in fade-in zoom-in-95 duration-200"
                         style={{
                           position: 'absolute',
                           left: coordinate.x + offsetX,
                           top: coordinate.y + offsetY,
-                          transition: 'all 0.1s ease-out'
                         }}
                       >
-                        <div className="flex justify-between items-start mb-1">
+                        <div className="flex justify-between items-center mb-2">
                           <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em]">{lang.categories[payload[0].name] || payload[0].name}</p>
                           <span className="text-[12px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
                             {percentVal}%
                           </span>
                         </div>
-                        <p className="text-2xl font-black text-black">{symbol}{Number(payload[0].value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                        <p className="text-2xl font-black text-black leading-tight">{symbol}{val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                       </div>
                     );
                   }
@@ -247,8 +248,8 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
           </ResponsiveContainer>
         </div>
         
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none text-center z-10">
-          <p className="text-[12px] font-black text-slate-200 uppercase tracking-[0.4em]">TOTAL</p>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none text-center z-10 bg-white/50 backdrop-blur-[2px] rounded-full p-4">
+          <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em]">TOTAL</p>
           <p className="text-3xl font-black text-black tracking-tighter">100%</p>
         </div>
       </div>
