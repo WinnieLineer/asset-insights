@@ -53,10 +53,12 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
   
-  const sx = cx + (outerRadius + 5) * cos;
-  const sy = cy + (outerRadius + 5) * sin;
-  const mx = cx + (outerRadius + 15) * cos;
-  const my = cy + (outerRadius + 15) * sin;
+  // Adjusted for mobile screens to avoid cutting off
+  const offset = typeof window !== 'undefined' && window.innerWidth < 768 ? 5 : 15;
+  const sx = cx + (outerRadius + 2) * cos;
+  const sy = cy + (outerRadius + 2) * sin;
+  const mx = cx + (outerRadius + offset) * cos;
+  const my = cy + (outerRadius + offset) * sin;
   const ex = mx + (cos >= 0 ? 1 : -1) * 8;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
@@ -64,10 +66,10 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   return (
     <g>
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#cbd5e1" strokeWidth={1} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={-2} textAnchor={textAnchor} fill="#64748b" fontSize={10} fontWeight={900} className="uppercase tracking-widest">
+      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={-2} textAnchor={textAnchor} fill="#64748b" fontSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 8 : 10} fontWeight={900} className="uppercase tracking-widest">
         {langCategories[name] || name}
       </text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={9} fontWeight={700}>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 8 : 9} fontWeight={700}>
         {`${(percent * 100).toFixed(1)}%`}
       </text>
     </g>
@@ -78,7 +80,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   const lang = t[language as keyof typeof t] || t.zh;
   const symbol = SYMBOLS[displayCurrency as Currency] || '$';
   
-  if (loading && historicalData.length === 0) return <Skeleton className="w-full h-full rounded-2xl" />;
+  if (loading && historicalData.length === 0) return <Skeleton className="w-full rounded-2xl" style={{ height: height || 250 }} />;
 
   const activeCategoriesInHistory = Array.from(new Set(
     historicalData.flatMap((d: any) => Object.keys(d).filter(k => !['timestamp', 'displayDate', 'shortDate', 'totalValue'].includes(k) && d[k] > 0))
@@ -91,11 +93,11 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   };
 
   return (
-    <div className="modern-card p-5 sm:p-6 border-slate-100 bg-white relative shadow-sm rounded-2xl h-full flex flex-col overflow-hidden" style={{ minHeight: height || 350 }}>
+    <div className="modern-card p-5 sm:p-6 border-slate-100 bg-white relative shadow-sm rounded-2xl h-full flex flex-col overflow-hidden" style={{ minHeight: '250px', height: height || 250 }}>
       <div className="w-full mb-4 flex items-center justify-between shrink-0">
         <h3 className="pro-label text-xs sm:text-sm">{lang.trend}</h3>
       </div>
-      <div className="w-full flex-1 min-h-[250px]">
+      <div className="w-full flex-1 min-h-[180px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 20 }}>
             <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" />
@@ -138,7 +140,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
   const lang = t[language as keyof typeof t] || t.zh;
   const symbol = SYMBOLS[displayCurrency as Currency] || '$';
 
-  if (loading && (!allocationData || allocationData.length === 0)) return <Skeleton className="w-full h-full rounded-2xl" />;
+  if (loading && (!allocationData || allocationData.length === 0)) return <Skeleton className="w-full rounded-2xl" style={{ height: height || 250 }} />;
 
   const filteredData = allocationData.filter((d: any) => d.value > 0);
   const totalValue = filteredData.reduce((acc: number, cur: any) => acc + cur.value, 0);
@@ -149,11 +151,11 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
   const displayValue = activeEntry ? activeEntry.value : totalValue;
 
   return (
-    <div className="modern-card p-5 sm:p-6 flex flex-col items-center border-slate-100 bg-white relative shadow-sm rounded-2xl h-full overflow-hidden" style={{ minHeight: height || 350 }}>
+    <div className="modern-card p-5 sm:p-6 flex flex-col items-center border-slate-100 bg-white relative shadow-sm rounded-2xl h-full overflow-hidden" style={{ minHeight: '250px', height: height || 250 }}>
       <div className="w-full mb-4 text-left shrink-0">
         <h3 className="pro-label text-xs sm:text-sm">{lang.allocation}</h3>
       </div>
-      <div className="flex-1 w-full relative flex items-center justify-center overflow-hidden min-h-[250px]">
+      <div className="flex-1 w-full relative flex items-center justify-center overflow-hidden min-h-[180px]">
         <div className="absolute inset-0 z-10">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -193,7 +195,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
              <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter leading-none">{displayPercent}</span>
              <span className="text-[12px] font-black text-slate-400">%</span>
           </div>
-          <div className="mt-2 text-[10px] font-black text-white bg-slate-900 px-3 py-1 rounded-full shadow-lg border border-white/10 whitespace-nowrap">
+          <div className="mt-2 text-[10px] font-black text-white bg-slate-900 px-3 py-1 rounded-full shadow-lg border border-white/10 whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
             {symbol}{displayValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </div>
         </div>

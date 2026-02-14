@@ -289,23 +289,25 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
 
         <div className="grid grid-cols-2 gap-3">
           <FormField control={form.control} name="currency" render={({ field }) => (
-            <FormItem>
+            <FormItem className={cn(!showTickerField ? "block" : "hidden")}>
               <FormLabel className="pro-label text-[10px] opacity-60">{lang.currency}</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value} disabled={showTickerField}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl><SelectTrigger className="h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
                 <SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-[13px] font-bold">{c}</SelectItem>)}</SelectContent>
               </Select>
             </FormItem>
           )} />
-          <FormField control={form.control} name="amount" render={({ field }) => (
-            <FormItem>
-              <FormLabel className="pro-label text-[10px] opacity-60">{lang.amount}</FormLabel>
-              <FormControl>
-                <Input type="number" step="any" {...field} onFocus={(e) => e.target.select()} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
+          <FormItem className={cn(!showTickerField ? "" : "col-span-2")}>
+            <FormField control={form.control} name="amount" render={({ field }) => (
+              <>
+                <FormLabel className="pro-label text-[10px] opacity-60">{lang.amount}</FormLabel>
+                <FormControl>
+                  <Input type="number" step="any" {...field} onFocus={(e) => e.target.select()} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" />
+                </FormControl>
+                <FormMessage />
+              </>
+            )} />
+          </FormItem>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

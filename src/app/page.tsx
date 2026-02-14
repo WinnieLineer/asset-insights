@@ -194,7 +194,7 @@ export default function AssetInsightsPage() {
   const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
   
-  const [sections, setSections] = useState<string[]>(['summary', 'controls', 'addAsset', 'historicalTrend', 'allocation', 'list', 'closedList', 'ai']);
+  const [sections, setSections] = useState<string[]>(['summary', 'addAsset', 'controls', 'historicalTrend', 'allocation', 'list', 'closedList', 'ai']);
   
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
     summary: { width: 12, height: 160 },
@@ -287,7 +287,6 @@ export default function AssetInsightsPage() {
       const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
       setLastUpdated(timestamp);
       
-      // Only show toast on desktop as requested
       if (typeof window !== 'undefined' && window.innerWidth > 768) {
         toast({ title: t.dataUpdated });
       }
@@ -314,11 +313,9 @@ export default function AssetInsightsPage() {
     const processedAssets = assets.map(asset => {
       const marketInfo = marketData.assetMarketPrices[asset.id];
       const nativePrice = marketInfo?.price || 0;
-      // Use API returned currency for market assets, fallback to manual for non-market
       const apiCurrency = marketInfo?.currency || asset.currency || 'TWD';
       const apiCurrencyRate = (marketData.rates[apiCurrency as Currency] || 1);
       
-      // Calculate TWD value based on the correct currency source
       let valueInTWD = 0;
       const isClosed = asset.endDate ? asset.endDate <= todayStr : false;
 
@@ -533,7 +530,7 @@ export default function AssetInsightsPage() {
     );
 
     const wrapperStyle = { 
-      minHeight: isDesktop ? `${config.height}px` : (['historicalTrend', 'allocation'].includes(id) ? '350px' : 'auto'), 
+      minHeight: isDesktop ? `${config.height}px` : (['historicalTrend', 'allocation'].includes(id) ? '250px' : 'auto'), 
       height: isDesktop ? `${config.height}px` : 'auto' 
     };
 
@@ -650,14 +647,14 @@ export default function AssetInsightsPage() {
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <HistoricalTrendChart language={language} historicalData={assetCalculations.chartData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? config.height : 350} />
+            <HistoricalTrendChart language={language} historicalData={assetCalculations.chartData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? config.height : 250} />
           </div>
         );
       case 'allocation':
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <AllocationPieChart language={language} allocationData={assetCalculations.allocationData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? config.height : 350} />
+            <AllocationPieChart language={language} allocationData={assetCalculations.allocationData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? config.height : 250} />
           </div>
         );
       case 'list':
