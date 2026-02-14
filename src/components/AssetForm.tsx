@@ -197,7 +197,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     } else if (typeDisp.includes('EQUITY') || typeDisp.includes('股票') || typeDisp.includes('權益')) {
       targetCat = 'Stock';
     } else if (typeDispRaw !== '') {
-      targetCat = typeDispRaw; // 可能是 基金、指數 等
+      targetCat = typeDispRaw; 
     }
 
     form.setValue('category', targetCat);

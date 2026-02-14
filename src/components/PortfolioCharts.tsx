@@ -55,13 +55,12 @@ const renderActiveShape = (props: any) => {
 
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
   const displayPercent = percent || 0;
-  if (displayPercent < 0.01) return null; // 隱藏小於 1% 的標籤防止重疊
+  if (displayPercent < 0.01) return null; 
   
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
   
-  const labelRadius = outerRadius + 25; 
   const sx = cx + (outerRadius + 5) * cos;
   const sy = cy + (outerRadius + 5) * sin;
   const mx = cx + (outerRadius + 15) * cos;
@@ -230,10 +229,9 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 ))}
               </Pie>
               <RechartsTooltip 
-                position={{ y: 20 }} // 將提示框固定在上方邊緣避開中心
+                position={{ y: 20 }} 
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    // 根據滑鼠 X 軸位置自動偏移提示框，避開中心卡片
                     const quadrantX = coordinate.x > 300 ? -220 : 60;
                     const val = Number(payload[0].value);
                     const percentVal = totalValue > 0 ? ((val / totalValue) * 100).toFixed(1) : "0.0";
