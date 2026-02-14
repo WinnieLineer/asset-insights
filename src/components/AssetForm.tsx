@@ -40,7 +40,7 @@ const t = {
     date: 'Acquisition Date',
     endDate: 'Closure Date',
     submit: 'Add to Portfolio',
-    categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Custom: 'Custom...' },
+    categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Custom: 'Custom...' },
     errors: { 
       nameTooShort: 'Min 2 characters', 
       invalidAmount: 'Positive number required', 
@@ -61,7 +61,7 @@ const t = {
     date: '持有日期',
     endDate: '結清日期 (選填)',
     submit: '新增部位',
-    categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產', ETF: 'ETF', Option: '選擇權', Fund: '基金', Custom: '自定義類別...' },
+    categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數', Custom: '自定義類別...' },
     errors: { 
       nameTooShort: '至少 2 個字', 
       invalidAmount: '請輸入有效的正數', 
@@ -84,7 +84,7 @@ interface Suggestion {
   typeDisp: string;
 }
 
-const PREDEFINED_CATEGORIES = ['Stock', 'ETF', 'Crypto', 'Option', 'Fund', 'Savings', 'Bank'];
+const PREDEFINED_CATEGORIES = ['Stock', 'ETF', 'Crypto', 'Fund', 'Index', 'Option', 'Savings', 'Bank'];
 
 export function AssetForm({ onAdd, language }: AssetFormProps) {
   const lang = t[language];
@@ -197,6 +197,8 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
       targetCat = 'Stock';
     } else if (typeDisp.includes('FUND') || typeDisp.includes('基金')) {
       targetCat = 'Fund';
+    } else if (typeDisp.includes('INDEX') || typeDisp.includes('指數')) {
+      targetCat = 'Index';
     } else if (typeDispRaw !== '') {
       targetCat = typeDispRaw; 
     }
@@ -249,7 +251,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                       {lang.categories[c as keyof typeof lang.categories] || c}
                     </SelectItem>
                   ))}
-                  {field.value && !PREDEFINED_CATEGORIES.includes(field.value) && (
+                  {field.value && !PREDEFINED_CATEGORIES.includes(field.value) && field.value !== 'CUSTOM_ENTRY' && (
                     <SelectItem value={field.value} className="text-sm font-bold">{field.value}</SelectItem>
                   )}
                   <SelectItem value="CUSTOM_ENTRY" className="text-sm font-black text-blue-600 border-t border-slate-100">

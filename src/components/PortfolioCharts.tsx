@@ -15,6 +15,7 @@ const getCategoryColor = (cat: string) => {
     'Crypto': '#3730a3',
     'Option': '#7c3aed',
     'Fund': '#2563eb',
+    'Index': '#4338ca',
     'Bank': '#064e3b',
     'Savings': '#78350f'
   };
@@ -34,13 +35,13 @@ const t = {
     allocation: 'CURRENT PORTFOLIO ALLOCATION', 
     trend: 'HISTORICAL ASSET EVOLUTION', 
     total: 'PORTFOLIO TOTAL', 
-    categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF', 'Option': 'Option', 'Fund': 'Fund' }
+    categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF', 'Option': 'Option', 'Fund': 'Fund', 'Index': 'Index' }
   },
   zh: { 
     allocation: '當前資產配置比例', 
     trend: '歷史資產演變走勢', 
     total: '投資組合總計', 
-    categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款', 'ETF': 'ETF', 'Option': '選擇權', 'Fund': '基金' }
+    categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款', 'ETF': 'ETF', 'Option': '選擇權', 'Fund': '基金', 'Index': '指數' }
   }
 };
 
@@ -49,14 +50,13 @@ const renderActiveShape = (props: any) => {
   return (
     <g>
       <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} />
-      <circle cx={cx} cy={cy} r={innerRadius - 10} fill={fill} opacity={0.05} />
+      <circle cx={cx} cy={cy} r={innerRadius - 8} fill={fill} opacity={0.1} />
     </g>
   );
 };
 
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
-  const displayPercent = percent || 0;
-  if (displayPercent < 0.005) return null; 
+  if (!percent || percent < 0.01) return null; 
   
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
@@ -64,20 +64,20 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   
   const sx = cx + (outerRadius + 5) * cos;
   const sy = cy + (outerRadius + 5) * sin;
-  const mx = cx + (outerRadius + 15) * cos;
-  const my = cy + (outerRadius + 15) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 12;
+  const mx = cx + (outerRadius + 20) * cos;
+  const my = cy + (outerRadius + 20) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 15;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
   return (
     <g>
-      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#e2e8f0" strokeWidth={1} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={11} fontWeight={800} className="uppercase tracking-widest">
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#cbd5e1" strokeWidth={1} fill="none" />
+      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={-4} textAnchor={textAnchor} fill="#475569" fontSize={11} fontWeight={800} className="uppercase tracking-widest">
         {langCategories[name] || name}
       </text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={9} fontWeight={600}>
-        {`${(displayPercent * 100).toFixed(1)}%`}
+      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={10} fontWeight={600}>
+        {`${(percent * 100).toFixed(1)}%`}
       </text>
     </g>
   );
@@ -195,6 +195,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
 
 export function AllocationPieChart({ allocationData, displayCurrency, language, loading, height }: any) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [activeEntry, setActiveEntry] = useState<any>(null);
   const lang = t[language as keyof typeof t] || t.zh;
   const symbol = SYMBOLS[displayCurrency as Currency] || '$';
 
@@ -202,6 +203,9 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
 
   const filteredData = allocationData.filter((d: any) => d.value > 0);
   const totalValue = filteredData.reduce((acc: number, cur: any) => acc + cur.value, 0);
+
+  const displayData = activeEntry || { name: 'TOTAL', value: totalValue, percent: 1.0 };
+  const percentStr = activeEntry ? ((activeEntry.value / totalValue) * 100).toFixed(1) : "100";
 
   return (
     <div className="modern-card p-6 sm:p-8 flex flex-col items-center border-slate-100 bg-white relative shadow-sm rounded-2xl h-full overflow-hidden">
@@ -217,10 +221,16 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 activeShape={renderActiveShape} 
                 data={filteredData} 
                 cx="50%" cy="50%" 
-                innerRadius="40%" outerRadius="55%" paddingAngle={5} 
+                innerRadius="40%" outerRadius="55%" paddingAngle={6} 
                 dataKey="value" stroke="transparent" 
-                onMouseEnter={(_, index) => setActiveIndex(index)} 
-                onMouseLeave={() => setActiveIndex(null)} 
+                onMouseEnter={(_, index) => {
+                  setActiveIndex(index);
+                  setActiveEntry(filteredData[index]);
+                }} 
+                onMouseLeave={() => {
+                  setActiveIndex(null);
+                  setActiveEntry(null);
+                }} 
                 label={(props) => renderCustomLabel({ ...props, symbol, langCategories: lang.categories })} 
                 labelLine={false}
                 isAnimationActive={false}
@@ -229,44 +239,22 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                   <Cell key={i} fill={getCategoryColor(entry.name)} className="transition-all duration-300 outline-none" />
                 ))}
               </Pie>
-              <RechartsTooltip 
-                content={({ active, payload, coordinate }) => {
-                  if (active && payload?.length && coordinate) {
-                    const isRightSide = coordinate.x > 250;
-                    const quadrantX = isRightSide ? coordinate.x - 220 : coordinate.x + 60;
-                    const val = Number(payload[0].value);
-                    const percentVal = totalValue > 0 ? ((val / totalValue) * 100).toFixed(1) : "0.0";
-                    
-                    return (
-                      <div 
-                        className="bg-white border border-slate-100 p-5 rounded-2xl shadow-2xl z-[1000] min-w-[200px] pointer-events-none animate-in fade-in zoom-in-95 duration-200"
-                        style={{
-                          position: 'absolute',
-                          left: quadrantX,
-                          top: coordinate.y - 40,
-                        }}
-                      >
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="text-[11px] font-black text-slate-300 uppercase tracking-[0.4em]">{lang.categories[payload[0].name as keyof typeof lang.categories] || payload[0].name}</p>
-                          <span className="text-[11px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
-                            {percentVal}%
-                          </span>
-                        </div>
-                        <p className="text-xl font-black text-black leading-tight">{symbol}{val.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                      </div>
-                    );
-                  }
-                  return null;
-                }} 
-              />
             </PieChart>
           </ResponsiveContainer>
         </div>
         
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none text-center z-10 bg-white/60 backdrop-blur-[4px] rounded-full w-32 h-32 shadow-inner border border-white/50">
-          <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] mb-1">TOTAL</p>
-          <p className="text-3xl font-black text-black tracking-tighter leading-none">100%</p>
-          <div className="mt-2 text-[10px] font-black text-slate-300 tracking-widest">{symbol}{totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+        {/* 中心區域：智慧顯示總計或當前懸停類別 */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none text-center z-10 bg-white rounded-full w-[38%] h-[38%] shadow-2xl border border-slate-50 transition-all duration-300 scale-110">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-1">
+            {activeEntry ? (lang.categories[activeEntry.name as keyof typeof lang.categories] || activeEntry.name) : 'TOTAL'}
+          </p>
+          <div className="flex items-baseline gap-1">
+             <span className="text-3xl font-black text-black tracking-tighter">{percentStr}</span>
+             <span className="text-sm font-black text-slate-400">%</span>
+          </div>
+          <div className="mt-1.5 text-[11px] font-black text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full shadow-inner border border-slate-200/50">
+            {symbol}{displayData.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </div>
         </div>
       </div>
     </div>
