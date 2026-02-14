@@ -27,7 +27,6 @@ export async function fetchMarketData(
   const assetMarketPrices: Record<string, PriceInfo> = {};
   const historicalTimeline: any[] = [];
 
-  // 1. Fetch Exchange Rates
   try {
     const erResponse = await fetch(EXCHANGE_RATE_API);
     if (erResponse.ok) {
@@ -41,7 +40,7 @@ export async function fetchMarketData(
     }
   } catch (e) { console.error('Rates fetch error:', e); }
 
-  const priceFetchingCategories = ['Stock', 'Crypto', 'ETF'];
+  const priceFetchingCategories = ['Stock', 'Crypto', 'ETF', 'Option'];
   const fetchableAssets = assets.filter(a => priceFetchingCategories.includes(a.category));
   
   if (fetchableAssets.length === 0) {
@@ -53,7 +52,6 @@ export async function fetchMarketData(
 
   const symbols = fetchableAssets.map(a => formatSymbol(a.symbol, a.category));
 
-  // 2. Fetch Combined Market Data (Current + Historical) via Proxy
   try {
     const url = `${BATCH_STOCK_PROXY_URL}?symbols=${encodeURIComponent(symbols.join(','))}&period1=${p1}&period2=${p2}&interval=${interval}`;
     const response = await fetch(url);

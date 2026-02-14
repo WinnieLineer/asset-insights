@@ -13,6 +13,7 @@ const ASSET_COLORS: Record<string, string> = {
   'Stock': '#1e293b',   // Muted Slate
   'ETF': '#0f172a',     // Deep Navy
   'Crypto': '#3730a3',  // Muted Indigo
+  'Option': '#7c3aed',  // Violet
   'Bank': '#064e3b',    // Muted Emerald
   'Savings': '#78350f'  // Muted Amber
 };
@@ -24,13 +25,13 @@ const t = {
     allocation: 'CURRENT PORTFOLIO ALLOCATION', 
     trend: 'HISTORICAL ASSET EVOLUTION', 
     total: 'PORTFOLIO TOTAL', 
-    categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF' }
+    categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF', 'Option': 'Option' }
   },
   zh: { 
     allocation: '當前資產配置比例', 
     trend: '歷史資產演變走勢', 
     total: '投資組合總計', 
-    categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款', 'ETF': 'ETF' }
+    categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款', 'ETF': 'ETF', 'Option': '選擇權' }
   }
 };
 
@@ -114,9 +115,9 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                           <div key={i} className={`flex justify-between items-center gap-6 transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-15'}`}>
                             <div className="flex items-center gap-3">
                               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ASSET_COLORS[p.name] || '#ccc' }} />
-                              <span className="text-[13px] font-black text-slate-600 uppercase tracking-widest">{lang.categories[p.name] || p.name}</span>
+                              <span className="text-[13px] font-black text-slate-600 uppercase tracking-widest">{lang.categories[p.name as keyof typeof lang.categories] || p.name}</span>
                             </div>
-                            <span className="text-xl font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 5 }).replace(/\.?0+$/, '')}</span>
+                            <span className="text-xl font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                           </div>
                         );
                       })}
@@ -139,7 +140,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                     return (
                       <div key={index} className={`flex items-center gap-2 cursor-pointer transition-all duration-200 ${(!activeCategory || activeCategory === entry.value) ? 'opacity-100' : 'opacity-20'}`} onMouseEnter={() => setActiveCategory(entry.value)} onMouseLeave={() => setActiveCategory(null)}>
                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ASSET_COLORS[entry.value] || entry.color }} />
-                        <span className="text-[12px] font-black text-slate-400 uppercase tracking-with-3em">{lang.categories[entry.value] || entry.value}</span>
+                        <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">{lang.categories[entry.value as keyof typeof lang.categories] || entry.value}</span>
                       </div>
                     );
                   })}
@@ -231,7 +232,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                         }}
                       >
                         <div className="flex justify-between items-center mb-2">
-                          <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em]">{lang.categories[payload[0].name] || payload[0].name}</p>
+                          <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em]">{lang.categories[payload[0].name as keyof typeof lang.categories] || payload[0].name}</p>
                           <span className="text-[12px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
                             {percentVal}%
                           </span>

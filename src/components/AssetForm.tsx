@@ -30,7 +30,7 @@ const AUTOCOMPLETE_API = 'https://script.google.com/macros/s/AKfycbyQ12dBnspvRGw
 const t = {
   en: {
     name: 'Asset Name',
-    namePlaceholder: 'e.g., DBS Global Fund',
+    namePlaceholder: 'e.g., Apple Inc.',
     symbol: 'Ticker / Symbol',
     symbolPlaceholder: 'Search BTC, AAPL, 2330...',
     category: 'Category',
@@ -39,7 +39,7 @@ const t = {
     date: 'Acquisition Date',
     endDate: 'Closure Date',
     submit: 'Add to Portfolio',
-    categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF' },
+    categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF', Option: 'Option' },
     errors: { 
       nameTooShort: 'Min 2 characters', 
       invalidAmount: 'Positive number required', 
@@ -59,7 +59,7 @@ const t = {
     date: '持有日期',
     endDate: '結清日期 (選填)',
     submit: '新增部位',
-    categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產', ETF: 'ETF' },
+    categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產', ETF: 'ETF', Option: '選擇權' },
     errors: { 
       nameTooShort: '至少 2 個字', 
       invalidAmount: '請輸入有效的正數', 
@@ -93,17 +93,19 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const formSchema = useMemo(() => z.object({
     name: z.string().min(2, { message: lang.errors.nameTooShort }),
     symbol: z.string().optional(),
-    category: z.enum(['Stock', 'Crypto', 'Bank', 'Savings', 'ETF']),
+    category: z.enum(['Stock', 'Crypto', 'Bank', 'Savings', 'ETF', 'Option']),
     amount: z.number({ invalid_type_error: lang.errors.invalidAmount }).min(0, { message: lang.errors.invalidAmount }),
     currency: z.enum(['TWD', 'USD', 'CNY', 'SGD']),
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
-    if ((data.category === 'Stock' || data.category === 'Crypto' || data.category === 'ETF') && (!data.symbol || data.symbol.trim() === '')) return false;
+    const tickerCats = ['Stock', 'Crypto', 'ETF', 'Option'];
+    if (tickerCats.includes(data.category) && (!data.symbol || data.symbol.trim() === '')) return false;
     return true;
   }, { message: lang.errors.tickerRequired, path: ['symbol'] })
     .refine((data) => {
-      if ((data.category === 'Stock' || data.category === 'Crypto' || data.category === 'ETF') && tickerFound === false) return false;
+      const tickerCats = ['Stock', 'Crypto', 'ETF', 'Option'];
+      if (tickerCats.includes(data.category) && tickerFound === false) return false;
       return true;
     }, { message: lang.errors.invalidTicker, path: ['symbol'] }), [lang, tickerFound]);
 
@@ -132,7 +134,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
 
   const category = form.watch('category');
   const symbolValue = form.watch('symbol');
-  const hasTicker = category === 'Stock' || category === 'Crypto' || category === 'ETF';
+  const hasTicker = ['Stock', 'Crypto', 'ETF', 'Option'].includes(category);
 
   useEffect(() => {
     if (!hasTicker || !symbolValue || symbolValue.length < 1) {
@@ -169,7 +171,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   }, [symbolValue, hasTicker]);
 
   useEffect(() => {
-    if (category === 'Stock' || category === 'ETF') {
+    if (category === 'Stock' || category === 'ETF' || category === 'Option') {
       const sym = (symbolValue || '').toUpperCase();
       if (/^\d+$/.test(sym) || sym.endsWith('.TW')) form.setValue('currency', 'TWD');
       else if (sym.endsWith('.SI')) form.setValue('currency', 'SGD');
@@ -180,9 +182,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   }, [category, symbolValue, form]);
 
   const handleAmountFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (parseFloat(e.target.value) === 0) {
-      form.setValue('amount', undefined as any);
-    }
     e.target.select();
   };
 
@@ -190,12 +189,13 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     form.setValue('symbol', s.symbol);
     form.setValue('name', s.name);
     
-    // 智慧類別映射
-    const typeDisp = s.typeDisp.toUpperCase();
+    const typeDisp = (s.typeDisp || '').toUpperCase();
     if (typeDisp.includes('ETF') || typeDisp.includes('交易所買賣基金')) {
       form.setValue('category', 'ETF');
     } else if (typeDisp.includes('CRYPTOCURRENCY') || typeDisp.includes('加密貨幣')) {
       form.setValue('category', 'Crypto');
+    } else if (typeDisp.includes('OPTION') || typeDisp.includes('選擇權')) {
+      form.setValue('category', 'Option');
     } else if (typeDisp.includes('EQUITY') || typeDisp.includes('股票')) {
       form.setValue('category', 'Stock');
     }
@@ -228,9 +228,9 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
           <FormItem>
             <FormLabel className="pro-label text-slate-500">{lang.category}</FormLabel>
             <Select onValueChange={(val) => { field.onChange(val); setTickerFound(null); }} value={field.value}>
-              <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
+              <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg transition-all focus:border-black"><SelectValue /></SelectTrigger></FormControl>
               <SelectContent>
-                {['Stock', 'ETF', 'Crypto', 'Savings', 'Bank'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{lang.categories[c as keyof typeof lang.categories]}</SelectItem>)}
+                {['Stock', 'ETF', 'Crypto', 'Option', 'Savings', 'Bank'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{lang.categories[c as keyof typeof lang.categories]}</SelectItem>)}
               </SelectContent>
             </Select>
           </FormItem>
@@ -250,8 +250,8 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                     {...field} 
                     autoComplete="off"
                     className={cn(
-                      "bg-slate-50 border-2 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg pl-10 pr-4 transition-colors",
-                      tickerFound === false ? "border-rose-300" : "border-slate-200"
+                      "bg-slate-50 border-2 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg pl-10 pr-4 transition-all",
+                      tickerFound === false ? "border-rose-400 bg-rose-50" : "border-slate-200"
                     )} 
                   />
                 </div>
