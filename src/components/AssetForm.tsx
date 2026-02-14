@@ -130,9 +130,9 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     },
   });
 
-  const category = form.watch('category');
+  const categoryValue = form.watch('category');
   const symbolValue = form.watch('symbol');
-  const showTickerField = !['Savings', 'Bank'].includes(category);
+  const showTickerField = !['Savings', 'Bank'].includes(categoryValue);
   
   useEffect(() => {
     if (!isManualTyping.current || !symbolValue || symbolValue.length < 1 || !showTickerField) {
@@ -177,7 +177,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
       else if (sym.endsWith('.SI')) form.setValue('currency', 'SGD');
       else if (sym) form.setValue('currency', 'USD');
     }
-  }, [category, symbolValue, form, showTickerField]);
+  }, [categoryValue, symbolValue, form, showTickerField]);
 
   const selectSuggestion = (s: Suggestion) => {
     isManualTyping.current = false;
