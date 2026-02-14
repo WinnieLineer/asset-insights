@@ -108,7 +108,7 @@ const translations = {
     importData: 'Import',
     importSuccess: 'Data imported successfully.',
     reorderHint: 'REORDER MODE ACTIVE',
-    layoutHint: 'Long press card area to adjust layout',
+    layoutHint: 'Hint: Long press card to adjust layout',
     lastUpdated: 'Last Updated',
     allCategories: 'All',
     categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index' }
@@ -191,7 +191,7 @@ export default function AssetInsightsPage() {
   const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
   
-  const [sections, setSections] = useState<string[]>(['summary', 'controls', 'addAsset', 'historicalTrend', 'allocation', 'list', 'closedList', 'ai']);
+  const [sections, setSections] = useState<string[]>(['summary', 'addAsset', 'controls', 'historicalTrend', 'allocation', 'list', 'closedList', 'ai']);
   
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
     summary: { width: 12, height: 160 },
@@ -284,7 +284,6 @@ export default function AssetInsightsPage() {
       const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
       setLastUpdated(timestamp);
       
-      // 網頁版顯示 Toast，手機版不顯示
       if (typeof window !== 'undefined' && window.innerWidth > 768) {
         toast({ title: t.dataUpdated });
       }
@@ -556,14 +555,14 @@ export default function AssetInsightsPage() {
                 <Button 
                   onClick={() => updateAllData(assets)} 
                   disabled={loading} 
-                  className="w-full min-h-[60px] md:h-full bg-slate-900 text-white hover:bg-black font-black flex flex-col items-center justify-center gap-1 rounded-2xl shadow-lg transition-all active:scale-95 py-4"
+                  className="w-full h-full bg-slate-900 text-white hover:bg-black font-black flex flex-col items-center justify-center gap-1 rounded-2xl shadow-lg transition-all active:scale-95 py-4 px-6"
                 >
                   <div className="flex items-center gap-3">
-                    <RefreshCw className={cn("w-5 h-5", loading && "animate-spin")} />
-                    <span className="text-[11px] tracking-[0.2em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
+                    <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                    <span className="text-[12px] tracking-[0.2em] uppercase font-black">{loading ? t.fetching : t.syncMarket}</span>
                   </div>
                   {lastUpdated && !loading && (
-                    <span className="text-[9px] opacity-60 font-medium uppercase tracking-widest mt-1">
+                    <span className="text-[10px] opacity-60 font-bold uppercase tracking-widest mt-1">
                       {lastUpdated}
                     </span>
                   )}
@@ -576,7 +575,7 @@ export default function AssetInsightsPage() {
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <section className="bg-slate-50/80 backdrop-blur-md p-3 sm:p-4 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-center gap-3 sm:gap-4 shadow-sm h-full">
+            <section className="bg-slate-50/80 backdrop-blur-md p-4 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-center gap-4 shadow-sm h-full">
               <div className="w-full md:w-auto flex items-center justify-between md:justify-start gap-3 flex-wrap sm:flex-nowrap">
                 <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
                   <Label className="pro-label text-[10px] whitespace-nowrap opacity-60 flex items-center gap-1">
@@ -626,7 +625,7 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <Card className="modern-card bg-white h-full flex flex-col overflow-hidden">
-              <CardHeader className="px-5 py-4 border-b border-slate-50 shrink-0">
+              <CardHeader className="px-5 py-3 border-b border-slate-50 shrink-0">
                 <h3 className="pro-label text-sm">
                   <Plus className="w-4 h-4" /> {t.addAsset}
                 </h3>
@@ -754,52 +753,66 @@ export default function AssetInsightsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/30 text-black pb-24 overflow-x-hidden" onMouseDown={handleMouseDown}>
-      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl shadow-sm">
-        <div className="max-w-[1900px] mx-auto px-4 sm:px-10 py-2 sm:py-3 flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-md"><Activity className="w-3.5 h-3.5 sm:w-4 h-4 text-white" /></div>
-              <h1 className="text-[12px] sm:text-[15px] font-black tracking-tighter uppercase leading-tight">{t.title}</h1>
+      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl shadow-sm h-auto md:h-14 flex items-center">
+        <div className="max-w-[1900px] mx-auto w-full px-4 sm:px-10 py-2 sm:py-0">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-6">
+            <div className="flex items-center gap-6 overflow-hidden">
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="w-6 h-6 sm:w-7 sm:h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-md"><Activity className="w-3.5 h-3.5 sm:w-4 h-4 text-white" /></div>
+                <h1 className="text-[12px] sm:text-[14px] font-black tracking-tighter uppercase leading-tight whitespace-nowrap">{t.title}</h1>
+              </div>
+              
+              <div className="hidden md:flex items-center gap-4 overflow-hidden border-l border-slate-100 pl-6 h-6">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap shrink-0">
+                  {t.exchangeRate.replace('[CUR]', displayCurrency)}
+                </span>
+                <div className="flex items-center gap-6 overflow-x-auto no-scrollbar scroll-smooth">
+                  {Object.entries(marketData.rates).filter(([cur]) => cur !== displayCurrency).map(([cur, rate]) => {
+                    const baseRate = marketData.rates[displayCurrency] || 1;
+                    const relativeRate = rate / baseRate;
+                    return (
+                      <div key={cur} className="flex items-center gap-1.5 whitespace-nowrap">
+                        <span className="text-[11px] font-black text-slate-900">{cur}</span>
+                        <ArrowRightLeft className="w-2 h-2 text-slate-300" />
+                        <span className="text-[11px] font-black text-emerald-600">
+                          {relativeRate.toFixed(4).replace(/\.?0+$/, '')}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
             
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex bg-slate-100 p-0.5 rounded-md">
-                <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[12px]">繁</Button>
-                <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[12px]">EN</Button>
+            <div className="flex items-center justify-between md:justify-end gap-2 sm:gap-4">
+              <div className="md:hidden flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                 {Object.entries(marketData.rates).slice(0, 3).map(([cur, rate]) => {
+                   const baseRate = marketData.rates[displayCurrency] || 1;
+                   return (
+                     <div key={cur} className="flex items-center gap-1 whitespace-nowrap bg-slate-100 px-2 py-0.5 rounded text-[9px] font-bold">
+                       <span>{cur}</span><span className="text-emerald-600">{(rate/baseRate).toFixed(3)}</span>
+                     </div>
+                   );
+                 })}
               </div>
-              <Select value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
-                <SelectTrigger className="h-6 sm:h-7 w-16 sm:w-20 bg-slate-100 border-none font-black text-[10px] sm:text-[12px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<SelectItem key={cur} value={cur}>{cur}</SelectItem>))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex bg-slate-100 p-0.5 rounded-md">
+                  <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[11px]">繁</Button>
+                  <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[11px]">EN</Button>
+                </div>
+                <Select value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
+                  <SelectTrigger className="h-6 sm:h-7 w-16 sm:w-20 bg-slate-100 border-none font-black text-[10px] sm:text-[11px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<SelectItem key={cur} value={cur}>{cur}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3 overflow-hidden border-t border-slate-50 pt-2">
-             <span className="text-[9px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap shrink-0">
-               {t.exchangeRate.replace('[CUR]', displayCurrency)}
-             </span>
-             <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar scroll-smooth">
-               {Object.entries(marketData.rates).filter(([cur]) => cur !== displayCurrency).map(([cur, rate]) => {
-                 const baseRate = marketData.rates[displayCurrency] || 1;
-                 const relativeRate = rate / baseRate;
-                 return (
-                   <div key={cur} className="flex items-center gap-1.5 whitespace-nowrap">
-                     <span className="text-[10px] sm:text-[13px] font-black text-slate-900">{cur}</span>
-                     <ArrowRightLeft className="w-2 h-2 text-slate-300" />
-                     <span className="text-[10px] sm:text-[13px] font-black text-emerald-600">
-                       {relativeRate.toFixed(4).replace(/\.?0+$/, '')}
-                     </span>
-                   </div>
-                 );
-               })}
-             </div>
           </div>
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-[105px] sm:pt-24 pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-[110px] md:pt-24 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-8 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>
@@ -812,11 +825,11 @@ export default function AssetInsightsPage() {
             <div className="space-y-1"><Label className="pro-label text-[10px]">{t.assetName}</Label><div className="p-3 bg-slate-50 rounded-lg font-black text-sm">{editingAsset?.name}</div></div>
             <div className="space-y-1">
               <Label htmlFor="amount" className="pro-label text-[10px]">{t.holdings}</Label>
-              <Input id="amount" type="number" step="any" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-10 font-black text-sm rounded-lg" />
+              <Input id="amount" type="number" step="any" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-9 font-black text-sm rounded-lg" />
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><Label className="pro-label text-[10px]">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-10 font-black text-xs rounded-lg" /></div>
-              <div className="space-y-1"><Label className="pro-label text-[10px]">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-10 font-black text-xs rounded-lg" /></div>
+              <div className="space-y-1"><Label className="pro-label text-[10px]">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div>
+              <div className="space-y-1"><Label className="pro-label text-[10px]">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div>
             </div>
           </div>
           <DialogFooter className="flex flex-row gap-3">
