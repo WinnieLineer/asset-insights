@@ -22,7 +22,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const AUTOCOMPLETE_API = 'https://script.google.com/macros/s/AKfycbyQ12dBnspvRGwcNRZmZw3sXon8tnmPTttJ2b5LDw_3G1Zw7aaM6OPe9dSLhPPv-xRL/exec?q=';
@@ -45,7 +45,7 @@ const t = {
       invalidAmount: 'Positive number required', 
       required: 'Required', 
       tickerRequired: 'Ticker symbol is required',
-      invalidTicker: 'Invalid ticker symbol'
+      invalidTicker: 'Ticker not found, please check symbol'
     }
   },
   zh: {
@@ -93,19 +93,20 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const formSchema = useMemo(() => z.object({
     name: z.string().min(2, { message: lang.errors.nameTooShort }),
     symbol: z.string().optional(),
-    category: z.enum(['Stock', 'Crypto', 'Bank', 'Savings', 'ETF', 'Option']),
+    category: z.string().min(1, { message: lang.errors.required }),
     amount: z.number({ invalid_type_error: lang.errors.invalidAmount }).min(0, { message: lang.errors.invalidAmount }),
     currency: z.enum(['TWD', 'USD', 'CNY', 'SGD']),
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
-    const tickerCats = ['Stock', 'Crypto', 'ETF', 'Option'];
-    if (tickerCats.includes(data.category) && (!data.symbol || data.symbol.trim() === '')) return false;
+    // 如果類別是預設的市場類別，則必須有代碼
+    const marketCats = ['Stock', 'Crypto', 'ETF', 'Option'];
+    if (marketCats.includes(data.category) && (!data.symbol || data.symbol.trim() === '')) return false;
     return true;
   }, { message: lang.errors.tickerRequired, path: ['symbol'] })
     .refine((data) => {
-      const tickerCats = ['Stock', 'Crypto', 'ETF', 'Option'];
-      if (tickerCats.includes(data.category) && tickerFound === false) return false;
+      // 如果有輸入代碼且搜尋無果，則報錯
+      if (data.symbol && data.symbol.trim() !== '' && tickerFound === false) return false;
       return true;
     }, { message: lang.errors.invalidTicker, path: ['symbol'] }), [lang, tickerFound]);
 
@@ -123,7 +124,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   });
 
   useEffect(() => {
-    const lastCategory = localStorage.getItem('last_asset_category') as AssetCategory;
+    const lastCategory = localStorage.getItem('last_asset_category');
     const lastCurrency = localStorage.getItem('last_asset_currency') as Currency;
     const lastDate = localStorage.getItem('last_asset_date');
 
@@ -134,10 +135,13 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
 
   const category = form.watch('category');
   const symbolValue = form.watch('symbol');
-  const hasTicker = ['Stock', 'Crypto', 'ETF', 'Option'].includes(category);
+  
+  // 市場資產類別定義
+  const marketCats = ['Stock', 'Crypto', 'ETF', 'Option'];
+  const isMarketAsset = marketCats.includes(category);
 
   useEffect(() => {
-    if (!hasTicker || !symbolValue || symbolValue.length < 1) {
+    if (!symbolValue || symbolValue.length < 1) {
       setSuggestions([]);
       setTickerFound(null);
       return;
@@ -168,38 +172,38 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [symbolValue, hasTicker]);
+  }, [symbolValue]);
 
   useEffect(() => {
-    if (category === 'Stock' || category === 'ETF' || category === 'Option') {
+    if (marketCats.includes(category)) {
       const sym = (symbolValue || '').toUpperCase();
       if (/^\d+$/.test(sym) || sym.endsWith('.TW')) form.setValue('currency', 'TWD');
       else if (sym.endsWith('.SI')) form.setValue('currency', 'SGD');
       else if (sym) form.setValue('currency', 'USD');
-    } else if (category === 'Crypto') {
-      form.setValue('currency', 'USD');
     }
   }, [category, symbolValue, form]);
-
-  const handleAmountFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.select();
-  };
 
   const selectSuggestion = (s: Suggestion) => {
     form.setValue('symbol', s.symbol);
     form.setValue('name', s.name);
     
+    // 智慧分類映射
     const typeDisp = (s.typeDisp || '').toUpperCase();
+    let targetCat = 'Stock';
     if (typeDisp.includes('ETF') || typeDisp.includes('交易所買賣基金')) {
-      form.setValue('category', 'ETF');
+      targetCat = 'ETF';
     } else if (typeDisp.includes('CRYPTOCURRENCY') || typeDisp.includes('加密貨幣')) {
-      form.setValue('category', 'Crypto');
+      targetCat = 'Crypto';
     } else if (typeDisp.includes('OPTION') || typeDisp.includes('選擇權')) {
-      form.setValue('category', 'Option');
+      targetCat = 'Option';
     } else if (typeDisp.includes('EQUITY') || typeDisp.includes('股票')) {
-      form.setValue('category', 'Stock');
+      targetCat = 'Stock';
+    } else if (s.typeDisp) {
+      // 如果 API 回傳了新的分類名稱且不在預設列表中，則直接使用 API 的分類
+      targetCat = s.typeDisp;
     }
 
+    form.setValue('category', targetCat);
     setTickerFound(true);
     setShowSuggestions(false);
   };
@@ -230,54 +234,60 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
             <Select onValueChange={(val) => { field.onChange(val); setTickerFound(null); }} value={field.value}>
               <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg transition-all focus:border-black"><SelectValue /></SelectTrigger></FormControl>
               <SelectContent>
-                {['Stock', 'ETF', 'Crypto', 'Option', 'Savings', 'Bank'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{lang.categories[c as keyof typeof lang.categories]}</SelectItem>)}
+                {['Stock', 'ETF', 'Crypto', 'Option', 'Savings', 'Bank'].map(c => (
+                  <SelectItem key={c} value={c} className="text-sm font-bold">
+                    {lang.categories[c as keyof typeof lang.categories] || c}
+                  </SelectItem>
+                ))}
+                {/* 顯示動態新增的類別 */}
+                {!['Stock', 'ETF', 'Crypto', 'Option', 'Savings', 'Bank'].includes(field.value) && (
+                  <SelectItem value={field.value} className="text-sm font-bold">{field.value}</SelectItem>
+                )}
               </SelectContent>
             </Select>
           </FormItem>
         )} />
 
-        {hasTicker && (
-          <FormField control={form.control} name="symbol" render={({ field }) => (
-            <FormItem className="relative">
-              <FormLabel className="pro-label text-slate-500">{lang.symbol}</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex items-center">
-                    {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : <Search className="w-4 h-4 text-slate-400" />}
-                  </div>
-                  <Input 
-                    placeholder={lang.symbolPlaceholder} 
-                    {...field} 
-                    autoComplete="off"
-                    className={cn(
-                      "bg-slate-50 border-2 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg pl-10 pr-4 transition-all",
-                      tickerFound === false ? "border-rose-400 bg-rose-50" : "border-slate-200"
-                    )} 
-                  />
+        <FormField control={form.control} name="symbol" render={({ field }) => (
+          <FormItem className="relative">
+            <FormLabel className="pro-label text-slate-500">{lang.symbol}</FormLabel>
+            <FormControl>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex items-center">
+                  {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : <Search className="w-4 h-4 text-slate-400" />}
                 </div>
-              </FormControl>
-              
-              {showSuggestions && suggestions.length > 0 && (
-                <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border-2 border-slate-200 rounded-xl shadow-2xl max-h-[280px] overflow-auto no-scrollbar animate-fade-in">
-                  {suggestions.map((s, idx) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => selectSuggestion(s)}
-                      className="p-4 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors"
-                    >
-                      <div className="font-black text-sm text-slate-900 leading-tight">{s.name}</div>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-[12px] font-black text-blue-600 tracking-wider uppercase">{s.symbol}</span>
-                        <span className="text-[11px] font-bold text-slate-400">{s.typeDisp}-{s.exchDisp}</span>
-                      </div>
+                <Input 
+                  placeholder={lang.symbolPlaceholder} 
+                  {...field} 
+                  autoComplete="off"
+                  className={cn(
+                    "bg-slate-50 border-2 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg pl-10 pr-4 transition-colors",
+                    tickerFound === false ? "border-rose-300 bg-rose-50" : "border-slate-200"
+                  )} 
+                />
+              </div>
+            </FormControl>
+            
+            {showSuggestions && suggestions.length > 0 && (
+              <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border-2 border-slate-200 rounded-xl shadow-2xl max-h-[280px] overflow-auto no-scrollbar animate-fade-in">
+                {suggestions.map((s, idx) => (
+                  <div 
+                    key={idx} 
+                    onClick={() => selectSuggestion(s)}
+                    className="p-4 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors"
+                  >
+                    <div className="font-black text-sm text-slate-900 leading-tight">{s.name}</div>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[12px] font-black text-blue-600 tracking-wider uppercase">{s.symbol}</span>
+                      <span className="text-[11px] font-bold text-slate-400">{s.typeDisp}-{s.exchDisp}</span>
                     </div>
-                  ))}
-                </div>
-              )}
-              <FormMessage className="text-xs font-bold text-rose-500" />
-            </FormItem>
-          )} />
-        )}
+                  </div>
+                ))}
+              </div>
+            )}
+            <FormMessage className="text-xs font-bold text-rose-500" />
+          </FormItem>
+        )} />
 
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
@@ -290,17 +300,15 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
         )} />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {!hasTicker && (
-            <FormField control={form.control} name="currency" render={({ field }) => (
-              <FormItem>
-                <FormLabel className="pro-label text-slate-500">{lang.currency}</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
-                  <SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </FormItem>
-            )} />
-          )}
+          <FormField control={form.control} name="currency" render={({ field }) => (
+            <FormItem>
+              <FormLabel className="pro-label text-slate-500">{lang.currency}</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
+                <SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{c}</SelectItem>)}</SelectContent>
+              </Select>
+            </FormItem>
+          )} />
         </div>
 
         <FormField control={form.control} name="amount" render={({ field }) => (
@@ -311,7 +319,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                 type="number" 
                 step="any" 
                 {...field} 
-                onFocus={handleAmountFocus}
+                onFocus={(e) => e.target.select()}
                 onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
                 className="h-11 font-bold bg-slate-50 border-2 border-slate-200 text-sm rounded-lg" 
               />
@@ -334,9 +342,10 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
             </FormItem>
           )} />
         </div>
+        
         <Button 
           type="submit" 
-          disabled={hasTicker && tickerFound === false}
+          disabled={tickerFound === false}
           className="w-full h-11 bg-black hover:bg-slate-800 text-white font-bold rounded-lg text-sm uppercase tracking-widest shadow-md transition-all active:scale-[0.98] mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {lang.submit}

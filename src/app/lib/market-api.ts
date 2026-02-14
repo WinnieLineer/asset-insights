@@ -40,8 +40,8 @@ export async function fetchMarketData(
     }
   } catch (e) { console.error('Rates fetch error:', e); }
 
-  const priceFetchingCategories = ['Stock', 'Crypto', 'ETF', 'Option'];
-  const fetchableAssets = assets.filter(a => priceFetchingCategories.includes(a.category));
+  // 只要有代碼的資產都嘗試抓取價格
+  const fetchableAssets = assets.filter(a => a.symbol && a.symbol.trim() !== '');
   
   if (fetchableAssets.length === 0) {
     return { 

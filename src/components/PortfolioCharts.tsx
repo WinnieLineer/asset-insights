@@ -9,13 +9,24 @@ import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
-const ASSET_COLORS: Record<string, string> = {
-  'Stock': '#1e293b',   // Muted Slate
-  'ETF': '#0f172a',     // Deep Navy
-  'Crypto': '#3730a3',  // Muted Indigo
-  'Option': '#7c3aed',  // Violet
-  'Bank': '#064e3b',    // Muted Emerald
-  'Savings': '#78350f'  // Muted Amber
+// 動態生成顏色函式
+const getCategoryColor = (cat: string) => {
+  const COLORS: Record<string, string> = {
+    'Stock': '#1e293b',
+    'ETF': '#0f172a',
+    'Crypto': '#3730a3',
+    'Option': '#7c3aed',
+    'Bank': '#064e3b',
+    'Savings': '#78350f'
+  };
+  if (COLORS[cat]) return COLORS[cat];
+  
+  // Hash 顏色
+  let hash = 0;
+  for (let i = 0; i < cat.length; i++) {
+    hash = cat.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return `hsl(${Math.abs(hash % 360)}, 30%, 30%)`;
 };
 
 const SYMBOLS: Record<Currency, string> = { TWD: 'NT$', USD: '$', CNY: '¥', SGD: 'S$' };
@@ -50,6 +61,9 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
+  
+  // 將標籤推向更外圈，避免遮擋
+  const labelRadius = outerRadius + 25; 
   const sx = cx + (outerRadius + 5) * cos;
   const sy = cy + (outerRadius + 5) * sin;
   const mx = cx + (outerRadius + 15) * cos;
@@ -61,8 +75,12 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   return (
     <g>
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#e2e8f0" strokeWidth={1} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={11} fontWeight={800} className="uppercase tracking-widest">{langCategories[name] || name}</text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={9} fontWeight={600}>{`${(percent * 100).toFixed(1)}%`}</text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={11} fontWeight={800} className="uppercase tracking-widest">
+        {langCategories[name] || name}
+      </text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={9} fontWeight={600}>
+        {`${(percent * 100).toFixed(1)}%`}
+      </text>
     </g>
   );
 };
@@ -75,7 +93,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   if (loading && historicalData.length === 0) return <Skeleton className="w-full h-full rounded-2xl" />;
 
   const activeCategoriesInHistory = Array.from(new Set(
-    historicalData.flatMap((d: any) => Object.keys(d).filter(k => ASSET_COLORS[k] && d[k] > 0))
+    historicalData.flatMap((d: any) => Object.keys(d).filter(k => !['timestamp', 'displayDate', 'shortDate', 'totalValue'].includes(k) && d[k] > 0))
   )) as AssetCategory[];
 
   const formatYAxis = (v: number) => {
@@ -89,7 +107,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
       <div className="w-full mb-6 flex items-center justify-between shrink-0">
         <h3 className="pro-label">{lang.trend}</h3>
       </div>
-      <div className="w-full flex-1 min-h-[300px]" style={{ height: '100%' }}>
+      <div className="w-full flex-1 min-h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 30 }}>
             <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" />
@@ -114,7 +132,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                         return (
                           <div key={i} className={`flex justify-between items-center gap-6 transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-15'}`}>
                             <div className="flex items-center gap-3">
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ASSET_COLORS[p.name] || '#ccc' }} />
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getCategoryColor(p.name) }} />
                               <span className="text-[13px] font-black text-slate-600 uppercase tracking-widest">{lang.categories[p.name as keyof typeof lang.categories] || p.name}</span>
                             </div>
                             <span className="text-xl font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
@@ -139,7 +157,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                     if (!activeCategoriesInHistory.includes(entry.value)) return null;
                     return (
                       <div key={index} className={`flex items-center gap-2 cursor-pointer transition-all duration-200 ${(!activeCategory || activeCategory === entry.value) ? 'opacity-100' : 'opacity-20'}`} onMouseEnter={() => setActiveCategory(entry.value)} onMouseLeave={() => setActiveCategory(null)}>
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ASSET_COLORS[entry.value] || entry.color }} />
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getCategoryColor(entry.value) }} />
                         <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">{lang.categories[entry.value as keyof typeof lang.categories] || entry.value}</span>
                       </div>
                     );
@@ -152,7 +170,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                 key={cat} 
                 dataKey={cat} 
                 stackId="a" 
-                fill={ASSET_COLORS[cat]} 
+                fill={getCategoryColor(cat)} 
                 barSize={16} 
                 isAnimationActive={false}
                 opacity={(!activeCategory || activeCategory === cat) ? 1 : 0.15} 
@@ -192,7 +210,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
       <div className="w-full mb-6 text-left shrink-0">
         <h3 className="pro-label">{lang.allocation}</h3>
       </div>
-      <div className="flex-1 w-full relative min-h-[300px] flex items-center justify-center">
+      <div className="flex-1 w-full relative flex items-center justify-center">
         <div className="absolute inset-0 z-0 flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -201,7 +219,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 activeShape={renderActiveShape} 
                 data={filteredData} 
                 cx="50%" cy="50%" 
-                innerRadius="45%" outerRadius="60%" paddingAngle={5} 
+                innerRadius="40%" outerRadius="55%" paddingAngle={5} 
                 dataKey="value" stroke="transparent" 
                 onMouseEnter={(_, index) => setActiveIndex(index)} 
                 onMouseLeave={() => setActiveIndex(null)} 
@@ -210,15 +228,16 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 isAnimationActive={false}
               >
                 {filteredData.map((entry: any, i: number) => (
-                  <Cell key={i} fill={ASSET_COLORS[entry.name] || '#ccc'} className="transition-all duration-300 outline-none" />
+                  <Cell key={i} fill={getCategoryColor(entry.name)} className="transition-all duration-300 outline-none" />
                 ))}
               </Pie>
               <RechartsTooltip 
                 allowEscapeViewBox={{ x: true, y: true }}
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    const offsetX = coordinate.x > 300 ? -240 : 40;
-                    const offsetY = coordinate.y > 200 ? -140 : 20;
+                    // 智慧避讓演算法：將提示框卡片推向圓餅圖的外象限，絕對不遮擋中心
+                    const offsetX = coordinate.x > 300 ? -260 : 60;
+                    const offsetY = coordinate.y > 200 ? -160 : 40;
                     const val = Number(payload[0].value);
                     const percentVal = totalValue > 0 ? ((val / totalValue) * 100).toFixed(1) : "0.0";
                     
@@ -248,9 +267,11 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
           </ResponsiveContainer>
         </div>
         
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none text-center z-10 bg-white/50 backdrop-blur-[2px] rounded-full p-4">
-          <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em]">TOTAL</p>
-          <p className="text-3xl font-black text-black tracking-tighter">100%</p>
+        {/* 中心資訊卡：確保 TOTAL 始終居中顯示 */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none text-center z-10 bg-white/60 backdrop-blur-[4px] rounded-full w-32 h-32 shadow-inner border border-white/50">
+          <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] mb-1">TOTAL</p>
+          <p className="text-3xl font-black text-black tracking-tighter leading-none">100%</p>
+          <div className="mt-2 text-[10px] font-black text-slate-300 tracking-widest">{symbol}{totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
         </div>
       </div>
     </div>

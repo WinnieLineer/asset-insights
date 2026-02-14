@@ -311,7 +311,7 @@ export default function AssetInsightsPage() {
 
   const assetCalculations = useMemo(() => {
     let totalTWD = 0;
-    const allocationMap: Record<AssetCategory, number> = { 'Stock': 0, 'Crypto': 0, 'Bank': 0, 'Savings': 0, 'ETF': 0, 'Option': 0 };
+    const allocationMap: Record<string, number> = {};
     const rateTWD = marketData.rates.TWD || 32.5;
     const displayRate = marketData.rates[displayCurrency] || 1;
     const todayStr = new Date().toISOString().split('T')[0];
@@ -328,7 +328,7 @@ export default function AssetInsightsPage() {
       const isClosed = asset.endDate ? asset.endDate <= todayStr : false;
 
       if (!isClosed) {
-        if (['Stock', 'Crypto', 'ETF', 'Option'].includes(asset.category)) {
+        if (asset.symbol && asset.symbol.trim() !== '') {
           valueInTWD = asset.amount * priceInTWD;
           if (marketTimeline.length >= 2) {
             const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
@@ -347,11 +347,11 @@ export default function AssetInsightsPage() {
           valueInTWD = asset.amount * (rateTWD / assetCurrencyRate);
         }
         totalTWD += valueInTWD;
-        allocationMap[asset.category] += valueInTWD;
+        allocationMap[asset.category] = (allocationMap[asset.category] || 0) + valueInTWD;
       }
       
       const valueInDisplay = valueInTWD * (displayRate / rateTWD);
-      const unitPriceInDisplay = (['Stock', 'Crypto', 'ETF', 'Option'].includes(asset.category)) 
+      const unitPriceInDisplay = (asset.symbol && asset.symbol.trim() !== '') 
         ? priceInTWD * (displayRate / rateTWD)
         : (rateTWD / (marketData.rates[asset.currency] || 1)) * (displayRate / rateTWD);
 
@@ -367,7 +367,7 @@ export default function AssetInsightsPage() {
       const dateObj = new Date(pointTime);
       const dateKey = dateObj.toISOString().split('T')[0];
       let pointTotalTWD = 0;
-      const categories: Record<AssetCategory, number> = { 'Stock': 0, 'Crypto': 0, 'Bank': 0, 'Savings': 0, 'ETF': 0, 'Option': 0 };
+      const categories: Record<string, number> = {};
 
       processedAssets.forEach(asset => {
         const acqTime = new Date(asset.acquisitionDate).getTime();
@@ -380,7 +380,7 @@ export default function AssetInsightsPage() {
 
         let priceAtT = lastKnownPrices[asset.id];
         if (priceAtT === undefined) {
-          if (asset.category === 'Bank' || asset.category === 'Savings') priceAtT = 1;
+          if (!asset.symbol || asset.symbol.trim() === '') priceAtT = 1;
           else return; 
         }
 
@@ -389,7 +389,7 @@ export default function AssetInsightsPage() {
         const priceInTWDAtT = priceAtT * (rateTWD / apiCurrencyRate);
         
         let valInTWD = 0;
-        if (['Stock', 'Crypto', 'ETF', 'Option'].includes(asset.category)) {
+        if (asset.symbol && asset.symbol.trim() !== '') {
           valInTWD = asset.amount * priceInTWDAtT;
         } else {
           const assetCurrencyRate = marketData.rates[asset.currency] || 1;
@@ -397,7 +397,7 @@ export default function AssetInsightsPage() {
         }
         
         pointTotalTWD += valInTWD;
-        categories[asset.category] += valInTWD;
+        categories[asset.category] = (categories[asset.category] || 0) + valInTWD;
       });
 
       if (pointTotalTWD > 0) {
@@ -446,6 +446,12 @@ export default function AssetInsightsPage() {
   }, [assetCalculations.activeAssets, activeSort, getSortedItems, categoryFilter]);
 
   const sortedClosedAssets = useMemo(() => getSortedItems(assetCalculations.closedAssets, closedSort), [assetCalculations.closedAssets, closedSort, getSortedItems]);
+
+  const allCategories = useMemo(() => {
+    const cats = new Set<string>();
+    assets.forEach(a => cats.add(a.category));
+    return Array.from(cats);
+  }, [assets]);
 
   const requestSort = (list: 'active' | 'closed', key: string) => {
     const setter = list === 'active' ? setActiveSort : setClosedSort;
@@ -678,14 +684,14 @@ export default function AssetInsightsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t.allCategories}</SelectItem>
-                      {Object.keys(t.categoryNames).map(cat => (
-                        <SelectItem key={cat} value={cat}>{t.categoryNames[cat as AssetCategory]}</SelectItem>
+                      {allCategories.map(cat => (
+                        <SelectItem key={cat} value={cat}>{t.categoryNames[cat as keyof typeof t.categoryNames] || cat}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <CardContent className="p-0 flex-1 overflow-hidden relative h-full">
+              <CardContent className="p-0 flex-1 overflow-hidden relative">
                 <Table className="min-w-[1200px] border-separate border-spacing-0" wrapperClassName="h-full overflow-auto">
                   <TableHeader className="relative z-30">
                     <TableRow className="hover:bg-transparent border-none">
@@ -732,18 +738,18 @@ export default function AssetInsightsPage() {
                       <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
                         <TableCell className="px-6 sm:px-10 py-6">
                           <div className="font-black text-[15px] text-slate-900">{asset.name}</div>
-                          <div className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
+                          <div className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory] || asset.category}</div>
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-[11px] font-black border-slate-200 text-slate-600 bg-slate-50 uppercase tracking-widest px-2.5 py-1">
-                            {t.categoryNames[asset.category as AssetCategory]}
+                            {t.categoryNames[asset.category as AssetCategory] || asset.category}
                           </Badge>
                         </TableCell>
                         <TableCell><span className="text-[15px] font-black text-slate-700">{formatNumber(asset.amount)}</span></TableCell>
                         <TableCell><span className="text-[14px] font-black text-slate-500">{asset.acquisitionDate}</span></TableCell>
                         <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[14px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[15px] font-black text-slate-700">{formatNumber(asset.priceInDisplay)}</span></div></TableCell>
                         <TableCell>
-                          {['Stock', 'Crypto', 'ETF', 'Option'].includes(asset.category) ? (
+                          {asset.symbol ? (
                             <div className={cn("flex items-center gap-2 font-black text-[13px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
                               {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                               <span>{asset.dayChangePercent.toFixed(1)}%</span>
@@ -780,7 +786,7 @@ export default function AssetInsightsPage() {
                   <History className="w-6 h-6" /> {t.closedPositions}
                 </h3>
               </div>
-              <CardContent className="p-0 flex-1 overflow-hidden relative h-full">
+              <CardContent className="p-0 flex-1 overflow-hidden relative">
                 <Table className="min-w-[1000px] border-separate border-spacing-0" wrapperClassName="h-full overflow-auto">
                   <TableHeader className="relative z-30">
                     <TableRow className="hover:bg-transparent border-none">
@@ -812,7 +818,7 @@ export default function AssetInsightsPage() {
                       <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
                         <TableCell className="px-6 sm:px-10 py-6">
                           <div className="font-black text-[15px] text-slate-400 line-through decoration-2">{asset.name}</div>
-                          <div className="text-[14px] font-black text-slate-300 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
+                          <div className="text-[14px] font-black text-slate-300 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory] || asset.category}</div>
                         </TableCell>
                         <TableCell><span className="text-[15px] font-black text-slate-400">{formatNumber(asset.amount)}</span></TableCell>
                         <TableCell><span className="text-[14px] font-black text-slate-400">{asset.acquisitionDate}</span></TableCell>

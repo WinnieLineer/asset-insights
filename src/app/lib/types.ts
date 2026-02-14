@@ -1,6 +1,6 @@
 export type Currency = 'TWD' | 'USD' | 'CNY' | 'SGD';
 
-export type AssetCategory = 'Stock' | 'Crypto' | 'Bank' | 'Savings' | 'ETF' | 'Option';
+export type AssetCategory = string; // 允許動態類別
 
 export interface Asset {
   id: string;
