@@ -34,7 +34,7 @@ const t = {
     symbolPlaceholder: 'Search BTC, AAPL, 2330...',
     category: 'Category',
     currency: 'Base Currency',
-    amount: 'Quantity',
+    amount: 'Holdings',
     date: 'Acquisition Date',
     endDate: 'Closure Date',
     submit: 'Add to Portfolio',
@@ -155,6 +155,9 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   }, [category, symbolValue, form]);
 
   const handleAmountFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (parseFloat(e.target.value) === 0) {
+      form.setValue('amount', undefined as any);
+    }
     e.target.select();
   };
 

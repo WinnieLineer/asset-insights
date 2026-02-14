@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -118,7 +117,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ASSET_COLORS[p.name] || '#ccc' }} />
                               <span className="text-[13px] font-black text-slate-600 uppercase tracking-widest">{lang.categories[p.name] || p.name}</span>
                             </div>
-                            <span className="text-xl font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 5 })}</span>
+                            <span className="text-xl font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 5 }).replace(/\.?0+$/, '')}</span>
                           </div>
                         );
                       })}
@@ -222,8 +221,10 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
         </div>
         {activeIndex === null && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-            <p className="text-[12px] font-black text-slate-200 uppercase tracking-[0.4em]">TOTAL</p>
-            <p className="text-3xl font-black text-black tracking-tighter">100%</p>
+            <div className="flex flex-col items-center justify-center">
+              <p className="text-[12px] font-black text-slate-200 uppercase tracking-[0.4em]">TOTAL</p>
+              <p className="text-3xl font-black text-black tracking-tighter">100%</p>
+            </div>
           </div>
         )}
       </div>

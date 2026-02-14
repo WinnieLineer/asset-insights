@@ -619,42 +619,42 @@ export default function AssetInsightsPage() {
                   <BarChart3 className="w-6 h-6" /> {t.dashboard}
                 </h3>
               </div>
-              <CardContent className="p-0 flex-1 overflow-auto no-scrollbar">
+              <CardContent className="p-0 flex-1 overflow-auto no-scrollbar relative">
                 <div className="w-full overflow-x-auto no-scrollbar">
-                  <Table className="min-w-[1100px]">
-                    <TableHeader className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md">
-                      <TableRow className="hover:bg-transparent border-slate-100">
-                        <TableHead className="px-6 sm:px-10 h-14 cursor-pointer select-none group" onClick={() => requestSort('active', 'name')}>
+                  <Table className="min-w-[1100px] border-separate border-spacing-0">
+                    <TableHeader className="relative z-20">
+                      <TableRow className="hover:bg-transparent border-none">
+                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md px-6 sm:px-10 h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('active', 'name')}>
                           <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
                             {t.assetName} <SortIcon config={activeSort} columnKey="name" />
                           </div>
                         </TableHead>
-                        <TableHead className="h-14 cursor-pointer select-none group" onClick={() => requestSort('active', 'amount')}>
+                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('active', 'amount')}>
                           <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
                             {t.holdings} <SortIcon config={activeSort} columnKey="amount" />
                           </div>
                         </TableHead>
-                        <TableHead className="h-14 cursor-pointer select-none group" onClick={() => requestSort('active', 'acquisitionDate')}>
+                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('active', 'acquisitionDate')}>
                           <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
                             {t.acqDate} <SortIcon config={activeSort} columnKey="acquisitionDate" />
                           </div>
                         </TableHead>
-                        <TableHead className="h-14 cursor-pointer select-none group" onClick={() => requestSort('active', 'priceInDisplay')}>
+                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('active', 'priceInDisplay')}>
                           <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
                             {t.unitPrice} <SortIcon config={activeSort} columnKey="priceInDisplay" />
                           </div>
                         </TableHead>
-                        <TableHead className="h-14 cursor-pointer select-none group" onClick={() => requestSort('active', 'dayChangePercent')}>
+                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('active', 'dayChangePercent')}>
                           <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
                             {t.change} <SortIcon config={activeSort} columnKey="dayChangePercent" />
                           </div>
                         </TableHead>
-                        <TableHead className="h-14 cursor-pointer select-none group pr-6 sm:pr-10" onClick={() => requestSort('active', 'valueInDisplay')}>
+                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group pr-6 sm:pr-10 border-b border-slate-100" onClick={() => requestSort('active', 'valueInDisplay')}>
                           <div className="flex items-center justify-end text-[14px] font-black text-slate-500 uppercase tracking-widest">
                             {t.valuation} <SortIcon config={activeSort} columnKey="valueInDisplay" />
                           </div>
                         </TableHead>
-                        <TableHead className="w-[80px]"></TableHead>
+                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md w-[80px] border-b border-slate-100"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -706,32 +706,32 @@ export default function AssetInsightsPage() {
                   <History className="w-6 h-6" /> {t.closedPositions}
                 </h3>
               </div>
-              <CardContent className="p-0 flex-1 overflow-auto no-scrollbar">
+              <CardContent className="p-0 flex-1 overflow-auto no-scrollbar relative">
                 <div className="w-full overflow-x-auto no-scrollbar">
-                  <Table className="min-w-[1000px]">
-                    <TableHeader className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md">
-                      <TableRow className="hover:bg-transparent border-slate-100">
-                        <TableHead className="px-6 sm:px-10 h-14 cursor-pointer select-none group" onClick={() => requestSort('closed', 'name')}>
+                  <Table className="min-w-[1000px] border-separate border-spacing-0">
+                    <TableHeader className="relative z-20">
+                      <TableRow className="hover:bg-transparent border-none">
+                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md px-6 sm:px-10 h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('closed', 'name')}>
                           <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
                             {t.assetName} <SortIcon config={closedSort} columnKey="name" />
                           </div>
                         </TableHead>
-                        <TableHead className="h-14 cursor-pointer select-none group" onClick={() => requestSort('closed', 'amount')}>
+                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('closed', 'amount')}>
                           <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
                             {t.holdings} <SortIcon config={closedSort} columnKey="amount" />
                           </div>
                         </TableHead>
-                        <TableHead className="h-14 cursor-pointer select-none group" onClick={() => requestSort('closed', 'acquisitionDate')}>
+                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('closed', 'acquisitionDate')}>
                           <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
                             {t.acqDate} <SortIcon config={closedSort} columnKey="acquisitionDate" />
                           </div>
                         </TableHead>
-                        <TableHead className="h-14 cursor-pointer select-none group pr-6 sm:pr-10" onClick={() => requestSort('closed', 'endDate')}>
+                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group pr-6 sm:pr-10 border-b border-slate-100" onClick={() => requestSort('closed', 'endDate')}>
                           <div className="flex items-center justify-end text-[14px] font-black text-slate-500 uppercase tracking-widest">
                             {t.posEndDate} <SortIcon config={closedSort} columnKey="endDate" />
                           </div>
                         </TableHead>
-                        <TableHead className="w-[80px]"></TableHead>
+                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md w-[80px] border-b border-slate-100"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
