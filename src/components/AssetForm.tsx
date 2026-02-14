@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useMemo, useState, useRef } from 'react';
@@ -26,7 +25,7 @@ import {
 import { Loader2, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const AUTOCOMPLETE_API = 'https://tw.stock.yahoo.com/stock_ms/_td-stock/api/resource/AutocompleteService;query=';
+const AUTOCOMPLETE_API = 'https://script.google.com/macros/s/AKfycbyQ12dBnspvRGwcNRZmZw3sXon8tnmPTttJ2b5LDw_3G1Zw7aaM6OPe9dSLhPPv-xRL/exec?query=';
 
 const t = {
   en: {
@@ -51,7 +50,7 @@ const t = {
     category: '資產類別',
     currency: '持有幣別',
     amount: '持有數量',
-    date: '買入日期',
+    date: '持有日期',
     endDate: '結清日期 (選填)',
     submit: '新增部位',
     categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產' },
@@ -104,7 +103,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const symbolValue = form.watch('symbol');
   const hasTicker = category === 'Stock' || category === 'Crypto';
 
-  // Autocomplete logic
   useEffect(() => {
     if (!hasTicker || !symbolValue || symbolValue.length < 1) {
       setSuggestions([]);
@@ -136,7 +134,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     return () => clearTimeout(timer);
   }, [symbolValue, hasTicker]);
 
-  // Click outside to hide suggestions
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
@@ -147,7 +144,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Sync currency based on symbol
   useEffect(() => {
     if (category === 'Stock') {
       const sym = (symbolValue || '').toUpperCase();
@@ -160,9 +156,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   }, [category, symbolValue, form]);
 
   const handleAmountFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (parseFloat(e.target.value) === 0) {
-      form.setValue('amount', undefined as any);
-    }
     e.target.select();
   };
 
@@ -176,42 +169,18 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit((v) => { onAdd(v as Omit<Asset, 'id'>); form.reset({ ...form.getValues(), name: '', symbol: '', amount: 0 }); })} className="space-y-4">
         
-        <FormField control={form.control} name="name" render={({ field }) => (
+        <FormField control={form.control} name="category" render={({ field }) => (
           <FormItem>
-            <FormLabel className="pro-label text-slate-500">{lang.name}</FormLabel>
-            <FormControl>
-              <Input placeholder={lang.namePlaceholder} {...field} className="bg-slate-50 border-2 border-slate-200 h-11 text-sm font-bold focus:ring-black focus:border-black rounded-lg" />
-            </FormControl>
-            <FormMessage className="text-xs" />
+            <FormLabel className="pro-label text-slate-500">{lang.category}</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
+              <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
+              <SelectContent>
+                {['Stock', 'Crypto', 'Savings', 'Bank'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{lang.categories[c as keyof typeof lang.categories]}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </FormItem>
         )} />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField control={form.control} name="category" render={({ field }) => (
-            <FormItem>
-              <FormLabel className="pro-label text-slate-500">{lang.category}</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
-                <SelectContent>
-                  {['Stock', 'Crypto', 'Savings', 'Bank'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{lang.categories[c as keyof typeof lang.categories]}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </FormItem>
-          )} />
-          
-          {!hasTicker && (
-            <FormField control={form.control} name="currency" render={({ field }) => (
-              <FormItem>
-                <FormLabel className="pro-label text-slate-500">{lang.currency}</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
-                  <SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </FormItem>
-            )} />
-          )}
-        </div>
-        
         {hasTicker && (
           <FormField control={form.control} name="symbol" render={({ field }) => (
             <FormItem className="relative">
@@ -251,6 +220,30 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
             </FormItem>
           )} />
         )}
+
+        <FormField control={form.control} name="name" render={({ field }) => (
+          <FormItem>
+            <FormLabel className="pro-label text-slate-500">{lang.name}</FormLabel>
+            <FormControl>
+              <Input placeholder={lang.namePlaceholder} {...field} className="bg-slate-50 border-2 border-slate-200 h-11 text-sm font-bold focus:ring-black focus:border-black rounded-lg" />
+            </FormControl>
+            <FormMessage className="text-xs" />
+          </FormItem>
+        )} />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {!hasTicker && (
+            <FormField control={form.control} name="currency" render={({ field }) => (
+              <FormItem>
+                <FormLabel className="pro-label text-slate-500">{lang.currency}</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
+                  <SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </FormItem>
+            )} />
+          )}
+        </div>
 
         <FormField control={form.control} name="amount" render={({ field }) => (
           <FormItem>

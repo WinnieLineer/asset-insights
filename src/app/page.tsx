@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -83,7 +82,7 @@ const translations = {
     totalValue: 'PORTFOLIO NET VALUE',
     addAsset: 'ADD POSITION',
     assetName: 'ASSET',
-    holdings: 'QUANTITY',
+    holdings: 'HOLDINGS',
     valuation: 'VALUATION',
     unitPrice: 'UNIT PRICE',
     dashboard: 'ASSET OVERVIEW & ANALYSIS',
@@ -112,7 +111,7 @@ const translations = {
     importData: 'Import',
     importSuccess: 'Data imported successfully.',
     exitReorder: 'DONE',
-    reorderHint: 'REORDER MODE ACTIVE: Adjust layout freely.',
+    reorderHint: 'REORDER MODE ACTIVE',
     categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit' }
   },
   zh: {
@@ -150,7 +149,7 @@ const translations = {
     importData: '匯入資料',
     importSuccess: '資產資料已成功匯入。',
     exitReorder: '完成調整',
-    reorderHint: '已進入佈局調整模式：可使用 W 調整寬度，H 調整高度。',
+    reorderHint: '已進入佈局調整模式',
     categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款' }
   }
 };
@@ -164,6 +163,10 @@ interface SortConfig {
   key: string;
   direction: 'asc' | 'desc' | null;
 }
+
+const formatNumber = (num: number) => {
+  return parseFloat(num.toFixed(5)).toString();
+};
 
 export default function AssetInsightsPage() {
   const { toast } = useToast();
@@ -221,7 +224,7 @@ export default function AssetInsightsPage() {
           const dates = currentAssets.map(a => new Date(a.acquisitionDate).getTime());
           p1 = Math.floor(Math.min(...dates) / 1000);
         } else {
-          p1 = Math.floor(Date.now() / 1000) - (365 * 24 * 60 * 60);
+          p1 = 0;
         }
       } else if (trackingDays === 'custom') {
         p1 = Math.floor(new Date(customStartDate).getTime() / 1000);
@@ -451,10 +454,6 @@ export default function AssetInsightsPage() {
     longPressTimer.current = setTimeout(() => { setIsReordering(true); cleanup(); }, 800);
   };
 
-  const formatNumber = (num: number) => {
-    return parseFloat(num.toFixed(5)).toString();
-  };
-
   const handleExport = () => {
     const dataStr = JSON.stringify({ assets, sections, layoutConfigs }, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
@@ -539,7 +538,7 @@ export default function AssetInsightsPage() {
                 </Label>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                   <Select value={trackingDays} onValueChange={setTrackingDays}>
-                    <SelectTrigger className="w-28 h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 shadow-sm"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-28 sm:w-32 h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 shadow-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="30">{t.days30}</SelectItem>
                       <SelectItem value="90">{t.days90}</SelectItem>
@@ -563,7 +562,7 @@ export default function AssetInsightsPage() {
                   <Clock className="w-4 h-4" /> {t.interval}
                 </Label>
                 <Select value={interval} onValueChange={setInterval}>
-                  <SelectTrigger className="w-28 h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 shadow-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-28 sm:w-32 h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 shadow-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1d">{t.int1d}</SelectItem>
                     <SelectItem value="1wk">{t.int1wk}</SelectItem>
@@ -843,7 +842,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-24 sm:pt-28 xl:pt-28 pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-32 sm:pt-28 xl:pt-28 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>

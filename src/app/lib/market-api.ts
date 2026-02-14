@@ -1,6 +1,6 @@
 import { MarketData } from '@/app/lib/types';
 
-const BATCH_STOCK_PROXY_URL = 'https://script.google.com/macros/s/AKfycbylQ_A_KtOL3zEjJPfxe_T039D6PIXWrmNx0k6La6FaHBPdGvHXYl9KizxCeVjt_0yA/exec';
+const BATCH_STOCK_PROXY_URL = 'https://script.google.com/macros/s/AKfycbyQ12dBnspvRGwcNRZmZw3sXon8tnmPTttJ2b5LDw_3G1Zw7aaM6OPe9dSLhPPv-xRL/exec';
 const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
 function formatSymbol(s: string, category: string) {
@@ -51,7 +51,7 @@ export async function fetchMarketData(
 
   const symbols = stocksAndCryptos.map(a => formatSymbol(a.symbol, a.category));
 
-  // 2. Fetch Combined Market Data (Current + Historical) in ONE request
+  // 2. Fetch Combined Market Data (Current + Historical) via Proxy
   try {
     const url = `${BATCH_STOCK_PROXY_URL}?symbols=${encodeURIComponent(symbols.join(','))}&period1=${p1}&period2=${p2}&interval=${interval}`;
     const response = await fetch(url);
