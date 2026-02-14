@@ -171,14 +171,14 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     const rawType = (s.typeDisp || '').trim().toUpperCase();
     let targetCat = 'Stock';
     
-    // 智慧類別對應邏輯
+    // 智慧對應邏輯
     if (rawType.includes('ETF') || rawType.includes('交易所買賣基金')) targetCat = 'ETF';
     else if (rawType.includes('CRYPTO') || rawType.includes('加密貨幣')) targetCat = 'Crypto';
     else if (rawType.includes('FUND') || rawType.includes('基金')) targetCat = 'Fund';
     else if (rawType.includes('INDEX') || rawType.includes('指數')) targetCat = 'Index';
     else if (rawType.includes('OPTION') || rawType.includes('選擇權')) targetCat = 'Option';
     else if (rawType.includes('EQUITY') || rawType.includes('權益')) targetCat = 'Stock';
-    else if (s.typeDisp) targetCat = s.typeDisp; // 沒對應到就使用原始名稱
+    else if (s.typeDisp) targetCat = s.typeDisp; // 自動新增為動態類別
 
     form.setValue('category', targetCat);
     setTickerFound(true);
@@ -227,7 +227,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                       {lang.categories[c as keyof typeof lang.categories] || c}
                     </SelectItem>
                   ))}
-                  {/* 動態類別補丁：確保 API 查回的類別能被渲染，解決空白問題 */}
+                  {/* 動態類別處理：確保 API 查回的類別能被渲染，解決空白問題 */}
                   {field.value && !PREDEFINED_CATEGORIES.includes(field.value) && field.value !== 'CUSTOM_ENTRY' && (
                     <SelectItem value={field.value} className="text-sm font-bold">{field.value}</SelectItem>
                   )}
