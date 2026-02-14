@@ -33,7 +33,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Filter
+  Filter,
+  Info
 } from 'lucide-react';
 import { 
   Card, 
@@ -114,6 +115,7 @@ const translations = {
     importSuccess: 'Data imported successfully.',
     exitReorder: 'DONE',
     reorderHint: 'REORDER MODE ACTIVE',
+    layoutHint: 'Long press card area to adjust layout',
     lastUpdated: 'Last Updated',
     allCategories: 'All',
     categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index' }
@@ -155,6 +157,7 @@ const translations = {
     importSuccess: '資產資料已成功匯入。',
     exitReorder: '完成調整',
     reorderHint: '已進入佈局調整模式',
+    layoutHint: '提示：長按卡片區塊可調整佈局',
     lastUpdated: '最後更新',
     allCategories: '全部類別',
     categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數' }
@@ -198,16 +201,16 @@ export default function AssetInsightsPage() {
   const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
   
-  const [sections, setSections] = useState<string[]>(['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'closedList', 'ai', 'addAsset']);
+  const [sections, setSections] = useState<string[]>(['summary', 'addAsset', 'controls', 'historicalTrend', 'allocation', 'list', 'closedList', 'ai']);
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
-    summary: { width: 12, height: 260 },
-    controls: { width: 12, height: 110 },
+    summary: { width: 12, height: 200 },
+    addAsset: { width: 12, height: 600 },
+    controls: { width: 12, height: 90 },
     historicalTrend: { width: 12, height: 500 },
     allocation: { width: 12, height: 500 },
     list: { width: 12, height: 600 },
     closedList: { width: 12, height: 400 },
-    ai: { width: 12, height: 650 },
-    addAsset: { width: 12, height: 600 }
+    ai: { width: 12, height: 650 }
   });
 
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
@@ -551,8 +554,8 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-              <Card className="lg:col-span-9 modern-card p-6 sm:p-10 relative overflow-hidden bg-white flex flex-col justify-center min-h-[200px]">
-                <div className="space-y-6 z-20 relative text-left">
+              <Card className="lg:col-span-9 modern-card p-6 sm:p-10 relative overflow-hidden bg-white flex flex-col justify-center min-h-[160px]">
+                <div className="space-y-4 z-20 relative text-left">
                   <div className="pro-label">
                     <Globe className="w-5 h-5" /> {t.totalValue}
                   </div>
@@ -561,9 +564,12 @@ export default function AssetInsightsPage() {
                     <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                     {loading && <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-slate-200 ml-4 sm:ml-6" />}
                   </div>
+                  <div className="flex items-center gap-2 text-slate-400 font-bold text-[11px] uppercase tracking-widest mt-2">
+                    <Info className="w-3.5 h-3.5" /> {t.layoutHint}
+                  </div>
                 </div>
                 <div className="absolute bottom-6 right-6 sm:bottom-10 sm:right-10 opacity-10 pointer-events-none flex items-center justify-center">
-                  <Wallet className="w-20 h-20 sm:w-28 sm:h-28 text-black" />
+                  <Wallet className="w-16 h-16 sm:w-24 sm:h-24 text-black" />
                 </div>
               </Card>
               <div className="lg:col-span-3 flex flex-col items-center justify-center gap-2 py-4">
@@ -572,7 +578,7 @@ export default function AssetInsightsPage() {
                     {t.lastUpdated}:<br/><span className="text-slate-600 font-bold">{lastUpdated}</span>
                   </div>
                 )}
-                <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[100px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-2 rounded-2xl shadow-xl transition-all active:scale-95 py-6">
+                <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[80px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-2 rounded-2xl shadow-xl transition-all active:scale-95 py-6">
                   <RefreshCw className={cn("w-6 h-6", loading && "animate-spin")} />
                   <span className="text-[12px] tracking-[0.3em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
                 </Button>
