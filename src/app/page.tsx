@@ -917,7 +917,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-10 pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-12 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>

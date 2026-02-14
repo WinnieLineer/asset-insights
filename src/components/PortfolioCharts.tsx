@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip
+  Tooltip, Sector
 } from 'recharts';
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -35,7 +35,7 @@ const t = {
   en: { 
     allocation: 'CURRENT ALLOCATION', 
     trend: 'ASSET EVOLUTION', 
-    total: 'TOTAL', 
+    total: 'PORTFOLIO TOTAL', 
     categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF', 'Option': 'Option', 'Fund': 'Fund', 'Index': 'Index' }
   },
   zh: { 
@@ -47,27 +47,27 @@ const t = {
 };
 
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
-  if (!percent || percent < 0.01) return null;
+  if (!percent || percent < 0.015) return null; // 比例太小不顯示標籤，防止重疊
   
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
   
-  const sx = cx + (outerRadius + 2) * cos;
-  const sy = cy + (outerRadius + 2) * sin;
-  const mx = cx + (outerRadius + 18) * cos;
-  const my = cy + (outerRadius + 18) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 10;
+  const sx = cx + (outerRadius + 5) * cos;
+  const sy = cy + (outerRadius + 5) * sin;
+  const mx = cx + (outerRadius + 25) * cos;
+  const my = cy + (outerRadius + 25) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 12;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
   return (
     <g>
-      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#cbd5e1" strokeWidth={1} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={11} fontWeight={900} className="uppercase tracking-widest">
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#cbd5e1" strokeWidth={1.5} fill="none" />
+      <text x={ex + (cos >= 0 ? 1 : -1) * 6} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={12} fontWeight={900} className="uppercase tracking-widest">
         {langCategories[name] || name}
       </text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={10} fontWeight={700}>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 6} y={ey} dy={12} textAnchor={textAnchor} fill="#94a3b8" fontSize={11} fontWeight={700}>
         {`${(percent * 100).toFixed(1)}%`}
       </text>
     </g>
@@ -85,8 +85,8 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   )) as AssetCategory[];
 
   const formatYAxis = (v: number) => {
-    if (v >= 1000000) return `${symbol}${(v / 1000000).toFixed(1)}m`;
-    if (v >= 1000) return `${symbol}${(v / 1000).toFixed(0)}k`;
+    if (v >= 1000000) return `${symbol}${(v / 1000000).toFixed(1)}M`;
+    if (v >= 1000) return `${symbol}${(v / 1000).toFixed(0)}K`;
     return `${symbol}${v}`;
   };
 
@@ -159,8 +159,11 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
               <Pie 
                 data={filteredData} 
                 cx="50%" cy="50%" 
-                innerRadius="50%" outerRadius="70%" paddingAngle={2} 
-                dataKey="value" stroke="none" 
+                innerRadius="68%" 
+                outerRadius="85%" 
+                paddingAngle={2} 
+                dataKey="value" 
+                stroke="none" 
                 onMouseEnter={(_, index) => setActiveIndex(index)} 
                 onMouseLeave={() => setActiveIndex(null)} 
                 label={(props) => renderCustomLabel({ ...props, symbol, langCategories: lang.categories })} 
@@ -171,25 +174,26 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                   <Cell 
                     key={i} 
                     fill={getCategoryColor(entry.name)} 
-                    className="outline-none transition-opacity duration-300"
+                    className="outline-none transition-all duration-300"
                     opacity={activeIndex === null || activeIndex === i ? 1 : 0.4}
                   />
                 ))}
               </Pie>
-              <Tooltip content={() => null} />
+              <Tooltip content={<></>} />
             </PieChart>
           </ResponsiveContainer>
         </div>
         
-        <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center max-w-[40%]">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 line-clamp-1">
+        {/* 中心動態數據卡片 */}
+        <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center max-w-[50%] z-20">
+          <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 line-clamp-1">
             {displayLabel}
           </p>
-          <div className="flex items-baseline gap-0.5">
-             <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter leading-none">{displayPercent}</span>
-             <span className="text-[12px] font-black text-slate-400">%</span>
+          <div className="flex items-baseline gap-1">
+             <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tighter leading-none">{displayPercent}</span>
+             <span className="text-[14px] font-black text-slate-400">%</span>
           </div>
-          <div className="mt-2 text-[10px] font-black text-white bg-slate-900 px-3 py-1 rounded-full shadow-lg border border-white/10 whitespace-nowrap">
+          <div className="mt-3 text-[11px] font-black text-white bg-black px-4 py-1.5 rounded-full shadow-2xl border border-white/10 whitespace-nowrap animate-fade-in">
             {symbol}{displayValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </div>
         </div>

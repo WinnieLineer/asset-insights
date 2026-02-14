@@ -224,6 +224,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                       {lang.categories[c as keyof typeof lang.categories] || c}
                     </SelectItem>
                   ))}
+                  {/* 動態顯示 API 回傳但不在預設清單中的類別，防止顯示空白 */}
                   {field.value && !PREDEFINED_CATEGORIES.includes(field.value) && field.value !== 'CUSTOM_ENTRY' && (
                     <SelectItem value={field.value} className="text-sm font-bold">{field.value}</SelectItem>
                   )}
