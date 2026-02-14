@@ -29,11 +29,11 @@ import {
   Minimize2,
   Plus,
   ArrowRightLeft,
-  Info,
   History,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Filter
 } from 'lucide-react';
 import { 
   Card, 
@@ -67,6 +67,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from '@/components/ui/badge';
 
 const CURRENCY_SYMBOLS: Record<Currency, string> = {
   TWD: 'NT$',
@@ -85,6 +86,7 @@ const translations = {
     holdings: 'HOLDINGS',
     valuation: 'VALUATION',
     unitPrice: 'UNIT PRICE',
+    category: 'CATEGORY',
     dashboard: 'ASSET OVERVIEW & ANALYSIS',
     closedPositions: 'CLOSED POSITIONS',
     change: 'Daily Change',
@@ -113,7 +115,8 @@ const translations = {
     exitReorder: 'DONE',
     reorderHint: 'REORDER MODE ACTIVE',
     lastUpdated: 'Updated',
-    categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit' }
+    allCategories: 'All',
+    categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF' }
   },
   zh: {
     title: 'ASSET INSIGHTS PRO',
@@ -124,6 +127,7 @@ const translations = {
     holdings: '持有數量',
     valuation: '帳面價值',
     unitPrice: '單位價值',
+    category: '類別',
     dashboard: '資產部位概覽與分析',
     closedPositions: '已結清資產部位',
     change: '今日漲跌',
@@ -152,7 +156,8 @@ const translations = {
     exitReorder: '完成調整',
     reorderHint: '已進入佈局調整模式',
     lastUpdated: '最後更新',
-    categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款' }
+    allCategories: '全部類別',
+    categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款', ETF: 'ETF' }
   }
 };
 
@@ -176,6 +181,7 @@ export default function AssetInsightsPage() {
   const [language, setLanguage] = useState<'en' | 'zh'>('zh');
   const [assets, setAssets] = useState<Asset[]>([]);
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editAmount, setEditAmount] = useState<number>(0);
   const [editDate, setEditDate] = useState<string>('');
@@ -305,7 +311,7 @@ export default function AssetInsightsPage() {
 
   const assetCalculations = useMemo(() => {
     let totalTWD = 0;
-    const allocationMap: Record<AssetCategory, number> = { 'Stock': 0, 'Crypto': 0, 'Bank': 0, 'Savings': 0 };
+    const allocationMap: Record<AssetCategory, number> = { 'Stock': 0, 'Crypto': 0, 'Bank': 0, 'Savings': 0, 'ETF': 0 };
     const rateTWD = marketData.rates.TWD || 32.5;
     const displayRate = marketData.rates[displayCurrency] || 1;
     const todayStr = new Date().toISOString().split('T')[0];
@@ -322,7 +328,7 @@ export default function AssetInsightsPage() {
       const isClosed = asset.endDate ? asset.endDate <= todayStr : false;
 
       if (!isClosed) {
-        if (asset.category === 'Stock' || asset.category === 'Crypto') {
+        if (asset.category === 'Stock' || asset.category === 'Crypto' || asset.category === 'ETF') {
           valueInTWD = asset.amount * priceInTWD;
           if (marketTimeline.length >= 2) {
             const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
@@ -345,7 +351,7 @@ export default function AssetInsightsPage() {
       }
       
       const valueInDisplay = valueInTWD * (displayRate / rateTWD);
-      const unitPriceInDisplay = (asset.category === 'Stock' || asset.category === 'Crypto') 
+      const unitPriceInDisplay = (asset.category === 'Stock' || asset.category === 'Crypto' || asset.category === 'ETF') 
         ? priceInTWD * (displayRate / rateTWD)
         : (rateTWD / (marketData.rates[asset.currency] || 1)) * (displayRate / rateTWD);
 
@@ -361,7 +367,7 @@ export default function AssetInsightsPage() {
       const dateObj = new Date(pointTime);
       const dateKey = dateObj.toISOString().split('T')[0];
       let pointTotalTWD = 0;
-      const categories: Record<AssetCategory, number> = { 'Stock': 0, 'Crypto': 0, 'Bank': 0, 'Savings': 0 };
+      const categories: Record<AssetCategory, number> = { 'Stock': 0, 'Crypto': 0, 'Bank': 0, 'Savings': 0, 'ETF': 0 };
 
       processedAssets.forEach(asset => {
         const acqTime = new Date(asset.acquisitionDate).getTime();
@@ -383,7 +389,7 @@ export default function AssetInsightsPage() {
         const priceInTWDAtT = priceAtT * (rateTWD / apiCurrencyRate);
         
         let valInTWD = 0;
-        if (asset.category === 'Stock' || asset.category === 'Crypto') {
+        if (asset.category === 'Stock' || asset.category === 'Crypto' || asset.category === 'ETF') {
           valInTWD = asset.amount * priceInTWDAtT;
         } else {
           const assetCurrencyRate = marketData.rates[asset.currency] || 1;
@@ -431,7 +437,14 @@ export default function AssetInsightsPage() {
     });
   }, []);
 
-  const sortedActiveAssets = useMemo(() => getSortedItems(assetCalculations.activeAssets, activeSort), [assetCalculations.activeAssets, activeSort, getSortedItems]);
+  const sortedActiveAssets = useMemo(() => {
+    let filtered = assetCalculations.activeAssets;
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter(a => a.category === categoryFilter);
+    }
+    return getSortedItems(filtered, activeSort);
+  }, [assetCalculations.activeAssets, activeSort, getSortedItems, categoryFilter]);
+
   const sortedClosedAssets = useMemo(() => getSortedItems(assetCalculations.closedAssets, closedSort), [assetCalculations.closedAssets, closedSort, getSortedItems]);
 
   const requestSort = (list: 'active' | 'closed', key: string) => {
@@ -653,18 +666,37 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <Card className="modern-card bg-white h-full flex flex-col overflow-hidden">
-              <div className="px-6 sm:px-10 py-6 border-b border-slate-50 shrink-0">
+              <div className="px-6 sm:px-10 py-6 border-b border-slate-50 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <h3 className="pro-label">
                   <BarChart3 className="w-6 h-6" /> {t.dashboard}
                 </h3>
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-slate-400" />
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-[140px] h-9 bg-slate-50 border-slate-200 text-[12px] font-black uppercase rounded-lg">
+                      <SelectValue placeholder={t.allCategories} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t.allCategories}</SelectItem>
+                      {Object.keys(t.categoryNames).map(cat => (
+                        <SelectItem key={cat} value={cat}>{t.categoryNames[cat as AssetCategory]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <CardContent className="p-0 flex-1 overflow-hidden relative">
-                <Table className="min-w-[1100px] border-separate border-spacing-0" wrapperClassName="h-full overflow-auto">
+                <Table className="min-w-[1200px] border-separate border-spacing-0" wrapperClassName="h-full overflow-auto">
                   <TableHeader className="relative z-30">
                     <TableRow className="hover:bg-transparent border-none">
                       <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md px-6 sm:px-10 h-14 cursor-pointer select-none group border-b border-slate-100 z-30" onClick={() => requestSort('active', 'name')}>
                         <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
                           {t.assetName} <SortIcon config={activeSort} columnKey="name" />
+                        </div>
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100 z-30" onClick={() => requestSort('active', 'category')}>
+                        <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                          {t.category} <SortIcon config={activeSort} columnKey="category" />
                         </div>
                       </TableHead>
                       <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100 z-30" onClick={() => requestSort('active', 'amount')}>
@@ -702,11 +734,16 @@ export default function AssetInsightsPage() {
                           <div className="font-black text-[15px] text-slate-900">{asset.name}</div>
                           <div className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
                         </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-[11px] font-black border-slate-200 text-slate-600 bg-slate-50 uppercase tracking-widest px-2.5 py-1">
+                            {t.categoryNames[asset.category as AssetCategory]}
+                          </Badge>
+                        </TableCell>
                         <TableCell><span className="text-[15px] font-black text-slate-700">{formatNumber(asset.amount)}</span></TableCell>
                         <TableCell><span className="text-[14px] font-black text-slate-500">{asset.acquisitionDate}</span></TableCell>
                         <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[14px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[15px] font-black text-slate-700">{formatNumber(asset.priceInDisplay)}</span></div></TableCell>
                         <TableCell>
-                          {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
+                          {(asset.category === 'Stock' || asset.category === 'Crypto' || asset.category === 'ETF') ? (
                             <div className={cn("flex items-center gap-2 font-black text-[13px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
                               {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                               <span>{asset.dayChangePercent.toFixed(1)}%</span>
@@ -879,7 +916,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-16 sm:pt-20 xl:pt-16 pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-16 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>

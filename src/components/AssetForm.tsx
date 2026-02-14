@@ -39,7 +39,7 @@ const t = {
     date: 'Acquisition Date',
     endDate: 'Closure Date',
     submit: 'Add to Portfolio',
-    categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other' },
+    categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF' },
     errors: { 
       nameTooShort: 'Min 2 characters', 
       invalidAmount: 'Positive number required', 
@@ -59,7 +59,7 @@ const t = {
     date: '持有日期',
     endDate: '結清日期 (選填)',
     submit: '新增部位',
-    categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產' },
+    categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產', ETF: 'ETF' },
     errors: { 
       nameTooShort: '至少 2 個字', 
       invalidAmount: '請輸入有效的正數', 
@@ -93,17 +93,17 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const formSchema = useMemo(() => z.object({
     name: z.string().min(2, { message: lang.errors.nameTooShort }),
     symbol: z.string().optional(),
-    category: z.enum(['Stock', 'Crypto', 'Bank', 'Savings']),
+    category: z.enum(['Stock', 'Crypto', 'Bank', 'Savings', 'ETF']),
     amount: z.number({ invalid_type_error: lang.errors.invalidAmount }).min(0, { message: lang.errors.invalidAmount }),
     currency: z.enum(['TWD', 'USD', 'CNY', 'SGD']),
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
-    if ((data.category === 'Stock' || data.category === 'Crypto') && (!data.symbol || data.symbol.trim() === '')) return false;
+    if ((data.category === 'Stock' || data.category === 'Crypto' || data.category === 'ETF') && (!data.symbol || data.symbol.trim() === '')) return false;
     return true;
   }, { message: lang.errors.tickerRequired, path: ['symbol'] })
     .refine((data) => {
-      if ((data.category === 'Stock' || data.category === 'Crypto') && tickerFound === false) return false;
+      if ((data.category === 'Stock' || data.category === 'Crypto' || data.category === 'ETF') && tickerFound === false) return false;
       return true;
     }, { message: lang.errors.invalidTicker, path: ['symbol'] }), [lang, tickerFound]);
 
@@ -132,7 +132,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
 
   const category = form.watch('category');
   const symbolValue = form.watch('symbol');
-  const hasTicker = category === 'Stock' || category === 'Crypto';
+  const hasTicker = category === 'Stock' || category === 'Crypto' || category === 'ETF';
 
   useEffect(() => {
     if (!hasTicker || !symbolValue || symbolValue.length < 1) {
@@ -179,7 +179,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   }, []);
 
   useEffect(() => {
-    if (category === 'Stock') {
+    if (category === 'Stock' || category === 'ETF') {
       const sym = (symbolValue || '').toUpperCase();
       if (/^\d+$/.test(sym) || sym.endsWith('.TW')) form.setValue('currency', 'TWD');
       else if (sym.endsWith('.SI')) form.setValue('currency', 'SGD');
@@ -199,6 +199,17 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const selectSuggestion = (s: Suggestion) => {
     form.setValue('symbol', s.symbol);
     form.setValue('name', s.name);
+    
+    // 智慧類別映射
+    const typeDisp = s.typeDisp.toUpperCase();
+    if (typeDisp.includes('ETF') || typeDisp.includes('交易所買賣基金')) {
+      form.setValue('category', 'ETF');
+    } else if (typeDisp.includes('CRYPTOCURRENCY') || typeDisp.includes('加密貨幣')) {
+      form.setValue('category', 'Crypto');
+    } else if (typeDisp.includes('EQUITY') || typeDisp.includes('股票')) {
+      form.setValue('category', 'Stock');
+    }
+
     setTickerFound(true);
     setShowSuggestions(false);
   };
@@ -229,7 +240,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
             <Select onValueChange={(val) => { field.onChange(val); setTickerFound(null); }} value={field.value}>
               <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
               <SelectContent>
-                {['Stock', 'Crypto', 'Savings', 'Bank'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{lang.categories[c as keyof typeof lang.categories]}</SelectItem>)}
+                {['Stock', 'ETF', 'Crypto', 'Savings', 'Bank'].map(c => <SelectItem key={c} value={c} className="text-sm font-bold">{lang.categories[c as keyof typeof lang.categories]}</SelectItem>)}
               </SelectContent>
             </Select>
           </FormItem>

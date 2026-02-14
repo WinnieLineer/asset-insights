@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 
 const ASSET_COLORS: Record<string, string> = {
   'Stock': '#1e293b',   // Muted Slate
+  'ETF': '#0f172a',     // Deep Navy
   'Crypto': '#3730a3',  // Muted Indigo
   'Bank': '#064e3b',    // Muted Emerald
   'Savings': '#78350f'  // Muted Amber
@@ -23,13 +24,13 @@ const t = {
     allocation: 'CURRENT PORTFOLIO ALLOCATION', 
     trend: 'HISTORICAL ASSET EVOLUTION', 
     total: 'PORTFOLIO TOTAL', 
-    categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit' }
+    categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF' }
   },
   zh: { 
     allocation: '當前資產配置比例', 
     trend: '歷史資產演變走勢', 
     total: '投資組合總計', 
-    categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款' }
+    categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款', 'ETF': 'ETF' }
   }
 };
 
@@ -199,7 +200,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 activeShape={renderActiveShape} 
                 data={filteredData} 
                 cx="50%" cy="50%" 
-                innerRadius="50%" outerRadius="65%" paddingAngle={5} 
+                innerRadius="45%" outerRadius="60%" paddingAngle={5} 
                 dataKey="value" stroke="transparent" 
                 onMouseEnter={(_, index) => setActiveIndex(index)} 
                 onMouseLeave={() => setActiveIndex(null)} 
@@ -215,7 +216,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 allowEscapeViewBox={{ x: true, y: true }}
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    const offsetX = coordinate.x > 250 ? -240 : 40;
+                    const offsetX = coordinate.x > 300 ? -240 : 40;
                     const offsetY = coordinate.y > 200 ? -140 : 20;
                     const val = Number(payload[0].value);
                     const percentVal = totalValue > 0 ? ((val / totalValue) * 100).toFixed(1) : "0.0";

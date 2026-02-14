@@ -1,6 +1,6 @@
 export type Currency = 'TWD' | 'USD' | 'CNY' | 'SGD';
 
-export type AssetCategory = 'Stock' | 'Crypto' | 'Bank' | 'Savings';
+export type AssetCategory = 'Stock' | 'Crypto' | 'Bank' | 'Savings' | 'ETF';
 
 export interface Asset {
   id: string;
