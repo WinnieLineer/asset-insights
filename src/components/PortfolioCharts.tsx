@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Sector,
-  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip
 } from 'recharts';
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 const getCategoryColor = (cat: string) => {
   const COLORS: Record<string, string> = {
     'Stock': '#1e293b',
-    'ETF': '#0f172a',
+    'ETF': '#334155',
     'Crypto': '#3730a3',
     'Option': '#7c3aed',
     'Fund': '#2563eb',
@@ -45,56 +46,28 @@ const t = {
   }
 };
 
-const renderActiveShape = (props: any) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
-  return (
-    <g>
-      <Sector
-        cx={cx}
-        cy={cy}
-        innerRadius={innerRadius}
-        outerRadius={outerRadius + 8}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        fill={fill}
-      />
-      <Sector
-        cx={cx}
-        cy={cy}
-        startAngle={startAngle}
-        endAngle={endAngle}
-        innerRadius={innerRadius - 4}
-        outerRadius={innerRadius}
-        fill={fill}
-        opacity={0.3}
-      />
-    </g>
-  );
-};
-
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
-  // 比例過小不顯示標籤，防止重疊 (1% 閾值)
   if (!percent || percent < 0.01) return null;
   
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
   
-  const sx = cx + (outerRadius + 4) * cos;
-  const sy = cy + (outerRadius + 4) * sin;
-  const mx = cx + (outerRadius + 24) * cos;
-  const my = cy + (outerRadius + 24) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 16;
+  const sx = cx + (outerRadius + 2) * cos;
+  const sy = cy + (outerRadius + 2) * sin;
+  const mx = cx + (outerRadius + 20) * cos;
+  const my = cy + (outerRadius + 20) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 12;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
   return (
     <g>
-      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#e2e8f0" strokeWidth={1.5} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={12} fontWeight={900} className="uppercase tracking-widest">
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#cbd5e1" strokeWidth={1} fill="none" />
+      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={11} fontWeight={900} className="uppercase tracking-widest">
         {langCategories[name] || name}
       </text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={12} textAnchor={textAnchor} fill="#94a3b8" fontSize={11} fontWeight={700}>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={10} fontWeight={700}>
         {`${(percent * 100).toFixed(1)}%`}
       </text>
     </g>
@@ -151,7 +124,6 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               strokeWidth={3} 
               dot={false} 
               isAnimationActive={false}
-              activeDot={{ r: 6, fill: '#000', stroke: '#fff', strokeWidth: 2 }} 
             />
           </ComposedChart>
         </ResponsiveContainer>
@@ -162,7 +134,6 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
 
 export function AllocationPieChart({ allocationData, displayCurrency, language, loading, height }: any) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const [activeEntry, setActiveEntry] = useState<any>(null);
   const lang = t[language as keyof typeof t] || t.zh;
   const symbol = SYMBOLS[displayCurrency as Currency] || '$';
 
@@ -171,8 +142,10 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
   const filteredData = allocationData.filter((d: any) => d.value > 0);
   const totalValue = filteredData.reduce((acc: number, cur: any) => acc + cur.value, 0);
 
-  const displayData = activeEntry || { name: 'TOTAL', value: totalValue, percent: 1.0 };
-  const percentStr = activeEntry ? ((activeEntry.value / totalValue) * 100).toFixed(1) : "100";
+  const activeEntry = activeIndex !== null ? filteredData[activeIndex] : null;
+  const displayLabel = activeEntry ? (lang.categories[activeEntry.name as keyof typeof lang.categories] || activeEntry.name) : lang.total;
+  const displayPercent = activeEntry ? ((activeEntry.value / totalValue) * 100).toFixed(1) : "100";
+  const displayValue = activeEntry ? activeEntry.value : totalValue;
 
   return (
     <div className="modern-card p-6 sm:p-8 flex flex-col items-center border-slate-100 bg-white relative shadow-sm rounded-2xl h-full overflow-hidden">
@@ -180,47 +153,45 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
         <h3 className="pro-label">{lang.allocation}</h3>
       </div>
       <div className="flex-1 w-full relative flex items-center justify-center">
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie 
-                activeIndex={activeIndex ?? undefined} 
-                activeShape={renderActiveShape} 
                 data={filteredData} 
                 cx="50%" cy="50%" 
-                innerRadius="44%" outerRadius="62%" paddingAngle={3} 
-                dataKey="value" stroke="transparent" 
-                onMouseEnter={(_, index) => {
-                  setActiveIndex(index);
-                  setActiveEntry(filteredData[index]);
-                }} 
-                onMouseLeave={() => {
-                  setActiveIndex(null);
-                  setActiveEntry(null);
-                }} 
+                innerRadius="50%" outerRadius="70%" paddingAngle={4} 
+                dataKey="value" stroke="none" 
+                onMouseEnter={(_, index) => setActiveIndex(index)} 
+                onMouseLeave={() => setActiveIndex(null)} 
                 label={(props) => renderCustomLabel({ ...props, symbol, langCategories: lang.categories })} 
                 labelLine={false}
                 isAnimationActive={false}
               >
                 {filteredData.map((entry: any, i: number) => (
-                  <Cell key={i} fill={getCategoryColor(entry.name)} className="transition-all duration-300 outline-none" />
+                  <Cell 
+                    key={i} 
+                    fill={getCategoryColor(entry.name)} 
+                    className="outline-none transition-opacity duration-300"
+                    opacity={activeIndex === null || activeIndex === i ? 1 : 0.4}
+                  />
                 ))}
               </Pie>
+              <Tooltip content={<></>} />
             </PieChart>
           </ResponsiveContainer>
         </div>
         
-        {/* 中心區域：數據層級分明，不再遮擋彩色區塊 */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none text-center z-10">
-          <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.4em] mb-0.5">
-            {activeEntry ? (lang.categories[activeEntry.name as keyof typeof lang.categories] || activeEntry.name) : lang.total}
+        {/* 中心區域：乾淨且數據分明 */}
+        <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center">
+          <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">
+            {displayLabel}
           </p>
           <div className="flex items-baseline gap-1">
-             <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tighter leading-none">{percentStr}</span>
+             <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tighter leading-none">{displayPercent}</span>
              <span className="text-[14px] font-black text-slate-400">%</span>
           </div>
-          <div className="mt-3 text-[12px] font-black text-white bg-slate-900 px-4 py-1.5 rounded-full shadow-lg border border-white/10">
-            {symbol}{displayData.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          <div className="mt-3 text-[11px] font-black text-white bg-slate-900 px-4 py-1 rounded-full shadow-lg border border-white/10">
+            {symbol}{displayValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </div>
         </div>
       </div>
