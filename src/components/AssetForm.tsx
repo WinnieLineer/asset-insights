@@ -188,11 +188,17 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     const typeDisp = typeDispRaw.toUpperCase();
     
     let targetCat = 'Stock';
-    if (typeDisp.includes('ETF') || typeDisp.includes('交易所買賣基金')) targetCat = 'ETF';
-    else if (typeDisp.includes('CRYPTOCURRENCY') || typeDisp.includes('加密貨幣')) targetCat = 'Crypto';
-    else if (typeDisp.includes('OPTION') || typeDisp.includes('選擇權')) targetCat = 'Option';
-    else if (typeDisp.includes('EQUITY') || typeDisp.includes('股票') || typeDisp.includes('權益')) targetCat = 'Stock';
-    else if (typeDispRaw !== '') targetCat = typeDispRaw;
+    if (typeDisp.includes('ETF') || typeDisp.includes('交易所買賣基金')) {
+      targetCat = 'ETF';
+    } else if (typeDisp.includes('CRYPTOCURRENCY') || typeDisp.includes('加密貨幣')) {
+      targetCat = 'Crypto';
+    } else if (typeDisp.includes('OPTION') || typeDisp.includes('選擇權')) {
+      targetCat = 'Option';
+    } else if (typeDisp.includes('EQUITY') || typeDisp.includes('股票') || typeDisp.includes('權益')) {
+      targetCat = 'Stock';
+    } else if (typeDispRaw !== '') {
+      targetCat = typeDispRaw; // 可能是 基金、指數 等
+    }
 
     form.setValue('category', targetCat);
     setTickerFound(true);
