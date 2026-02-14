@@ -866,30 +866,42 @@ export default function AssetInsightsPage() {
 
   return (
     <div className="min-h-screen bg-white text-black pb-24 overflow-x-hidden" onMouseDown={handleMouseDown}>
-      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl h-auto py-2 sm:py-3 shadow-sm">
-        <div className="max-w-[1900px] mx-auto px-4 sm:px-10 h-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 overflow-hidden">
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-4 h-4 text-white" /></div>
-            <div className="flex flex-col">
-              <h1 className="text-[14px] font-black tracking-tighter uppercase leading-tight">{t.title}</h1>
+      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl h-auto py-1.5 sm:py-3 shadow-sm">
+        <div className="max-w-[1900px] mx-auto px-4 sm:px-10 h-full flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 overflow-hidden">
+          <div className="flex items-center justify-between sm:justify-start gap-3 shrink-0 w-full sm:w-auto">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-4 h-4 text-white" /></div>
+              <h1 className="text-[13px] sm:text-[14px] font-black tracking-tighter uppercase leading-tight">{t.title}</h1>
+            </div>
+            <div className="flex sm:hidden items-center gap-2">
+               <div className="flex bg-slate-100 p-0.5 rounded-md">
+                  <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-5 px-1.5 font-black text-[11px]">繁</Button>
+                  <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-5 px-1.5 font-black text-[11px]">EN</Button>
+                </div>
+                <Select value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
+                  <SelectTrigger className="h-6 w-16 bg-slate-100 border-none font-black text-[11px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<SelectItem key={cur} value={cur}>{cur}</SelectItem>))}
+                  </SelectContent>
+                </Select>
             </div>
           </div>
           
-          <div className="flex-1 flex items-center gap-4 overflow-hidden">
-            <div className="flex items-center gap-6 px-0 sm:px-4 border-l-0 sm:border-l border-slate-100 overflow-x-auto no-scrollbar w-full sm:w-auto pb-1 sm:pb-0">
-               <span className="text-[13px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
+          <div className="flex-1 flex items-center gap-4 overflow-hidden w-full">
+            <div className="flex items-center gap-4 sm:gap-6 px-0 sm:px-4 border-l-0 sm:border-l border-slate-100 overflow-x-auto no-scrollbar w-full sm:w-auto pb-0.5 sm:pb-0">
+               <span className="text-[11px] sm:text-[13px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
                  {t.exchangeRate.replace('[CUR]', displayCurrency)}
                </span>
-               <div className="flex items-center gap-6">
+               <div className="flex items-center gap-4 sm:gap-6">
                  {Object.entries(marketData.rates).filter(([cur]) => cur !== displayCurrency).map(([cur, rate]) => {
                    const baseRate = marketData.rates[displayCurrency] || 1;
                    const relativeRate = rate / baseRate;
                    return (
-                     <div key={cur} className="flex items-center gap-2 whitespace-nowrap">
-                       <span className="text-[14px] font-black text-slate-900">{cur}</span>
-                       <ArrowRightLeft className="w-3 h-3 text-slate-300" />
-                       <span className="text-[14px] font-black text-emerald-600">
-                         {relativeRate.toFixed(5).replace(/\.?0+$/, '')}
+                     <div key={cur} className="flex items-center gap-1.5 whitespace-nowrap">
+                       <span className="text-[12px] sm:text-[14px] font-black text-slate-900">{cur}</span>
+                       <ArrowRightLeft className="w-2.5 h-2.5 text-slate-300" />
+                       <span className="text-[12px] sm:text-[14px] font-black text-emerald-600">
+                         {relativeRate.toFixed(4).replace(/\.?0+$/, '')}
                        </span>
                      </div>
                    );
@@ -898,7 +910,7 @@ export default function AssetInsightsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="hidden sm:flex items-center gap-2 sm:gap-3 shrink-0">
             {isReordering ? (
               <Button onClick={() => setIsReordering(false)} className="h-7 bg-black text-white px-4 font-black text-[12px] uppercase tracking-[0.2em] gap-1 rounded-full shadow-lg"><Check className="w-4 h-4" /> {t.exitReorder}</Button>
             ) : (
@@ -907,7 +919,7 @@ export default function AssetInsightsPage() {
                   <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-6 px-2 font-black text-[14px]">繁</Button>
                   <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-6 px-2 font-black text-[14px]">EN</Button>
                 </div>
-                <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)} className="hidden sm:block">
+                <Tabs value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
                   <TabsList className="h-7 bg-slate-100 p-0.5 rounded-md">
                     {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<TabsTrigger key={cur} value={cur} className="text-[14px] font-black uppercase px-2 h-6">{cur}</TabsTrigger>))}
                   </TabsList>
@@ -918,7 +930,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-20 pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-[105px] sm:pt-24 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>
