@@ -215,7 +215,6 @@ export default function AssetInsightsPage() {
 
   const t = translations[language];
 
-  // Load persistent states
   useEffect(() => {
     setMounted(true);
     const savedAssets = localStorage.getItem('assets');
@@ -243,7 +242,6 @@ export default function AssetInsightsPage() {
     if (savedUpdated) setLastUpdated(savedUpdated);
   }, []);
 
-  // Save persistent states
   useEffect(() => {
     if (mounted) {
       localStorage.setItem('assets', JSON.stringify(assets));
@@ -480,7 +478,11 @@ export default function AssetInsightsPage() {
     };
     window.addEventListener('mouseup', cleanup);
     window.addEventListener('touchend', cleanup);
-    longPressTimer.current = setTimeout(() => { setIsReordering(true); cleanup(); }, 800);
+    longPressTimer.current = setTimeout(() => { 
+      setIsReordering(true); 
+      toast({ title: t.reorderHint });
+      cleanup(); 
+    }, 800);
   };
 
   const handleExport = () => {

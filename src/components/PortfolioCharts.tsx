@@ -213,9 +213,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 coordinate={{ x: 0, y: 0 }} 
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    // Logic to avoid center text by pushing tooltips to quadrants
-                    const isLeft = coordinate.x < (window.innerWidth / 2) ? false : true; 
-                    const isTop = coordinate.y < 200;
+                    const isLeft = coordinate.x < (window.innerWidth / 2); 
                     const percentVal = totalValue > 0 ? (Number(payload[0].value) / totalValue * 100).toFixed(1) : "0.0";
                     
                     return (
