@@ -55,8 +55,7 @@ const renderActiveShape = (props: any) => {
 
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
   const displayPercent = percent || 0;
-  // 防止極小比例的資產標籤重疊
-  if (displayPercent < 0.01) return null; 
+  if (displayPercent < 0.005) return null; 
   
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
@@ -233,7 +232,6 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 position={{ y: 20 }} 
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    // 根據游標所在的左右象限動態調整提示框位置，避免遮擋中心卡片
                     const quadrantX = coordinate.x > 300 ? -220 : 60;
                     const val = Number(payload[0].value);
                     const percentVal = totalValue > 0 ? ((val / totalValue) * 100).toFixed(1) : "0.0";
@@ -264,7 +262,6 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
           </ResponsiveContainer>
         </div>
         
-        {/* 中心固定總額標籤卡片 */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none text-center z-10 bg-white/60 backdrop-blur-[4px] rounded-full w-32 h-32 shadow-inner border border-white/50">
           <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] mb-1">TOTAL</p>
           <p className="text-3xl font-black text-black tracking-tighter leading-none">100%</p>

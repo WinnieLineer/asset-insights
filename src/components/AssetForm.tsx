@@ -135,8 +135,8 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const showTickerField = !['Savings', 'Bank'].includes(categoryValue);
   
   useEffect(() => {
-    if (!isManualTyping.current || !symbolValue || symbolValue.length < 1 || !showTickerField) {
-      if (!symbolValue || !showTickerField) {
+    if (!isManualTyping.current || !symbolValue || symbolValue.length < 1) {
+      if (!symbolValue) {
         setSuggestions([]);
         setTickerFound(null);
       }
@@ -168,7 +168,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [symbolValue, showTickerField]);
+  }, [symbolValue]);
 
   useEffect(() => {
     if (showTickerField) {
@@ -236,10 +236,10 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                   field.onChange(val); 
                 }
                 setTickerFound(null); 
-              }} value={field.value}>
+              }} value={field.value || "Stock"}>
                 <FormControl>
                   <SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg transition-all focus:border-black">
-                    <SelectValue />
+                    <SelectValue placeholder={lang.category} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
