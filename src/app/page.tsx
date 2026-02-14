@@ -639,79 +639,77 @@ export default function AssetInsightsPage() {
                   <BarChart3 className="w-6 h-6" /> {t.dashboard}
                 </h3>
               </div>
-              <CardContent className="p-0 flex-1 overflow-auto no-scrollbar relative">
-                <div className="w-full overflow-x-auto no-scrollbar">
-                  <Table className="min-w-[1100px] border-separate border-spacing-0">
-                    <TableHeader className="relative z-20">
-                      <TableRow className="hover:bg-transparent border-none">
-                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md px-6 sm:px-10 h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('active', 'name')}>
-                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
-                            {t.assetName} <SortIcon config={activeSort} columnKey="name" />
+              <CardContent className="p-0 flex-1 overflow-hidden relative">
+                <Table className="min-w-[1100px] border-separate border-spacing-0 h-full">
+                  <TableHeader className="relative z-30">
+                    <TableRow className="hover:bg-transparent border-none">
+                      <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md px-6 sm:px-10 h-14 cursor-pointer select-none group border-b border-slate-100 z-30" onClick={() => requestSort('active', 'name')}>
+                        <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                          {t.assetName} <SortIcon config={activeSort} columnKey="name" />
+                        </div>
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100 z-30" onClick={() => requestSort('active', 'amount')}>
+                        <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                          {t.holdings} <SortIcon config={activeSort} columnKey="amount" />
+                        </div>
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100 z-30" onClick={() => requestSort('active', 'acquisitionDate')}>
+                        <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                          {t.acqDate} <SortIcon config={activeSort} columnKey="acquisitionDate" />
+                        </div>
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100 z-30" onClick={() => requestSort('active', 'priceInDisplay')}>
+                        <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                          {t.unitPrice} <SortIcon config={activeSort} columnKey="priceInDisplay" />
+                        </div>
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100 z-30" onClick={() => requestSort('active', 'dayChangePercent')}>
+                        <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                          {t.change} <SortIcon config={activeSort} columnKey="dayChangePercent" />
+                        </div>
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md h-14 cursor-pointer select-none group pr-6 sm:pr-10 border-b border-slate-100 z-30" onClick={() => requestSort('active', 'valueInDisplay')}>
+                        <div className="flex items-center justify-end text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                          {t.valuation} <SortIcon config={activeSort} columnKey="valueInDisplay" />
+                        </div>
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md w-[80px] border-b border-slate-100 z-30"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedActiveAssets.map((asset: any) => (
+                      <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
+                        <TableCell className="px-6 sm:px-10 py-6">
+                          <div className="font-black text-[15px] text-slate-900">{asset.name}</div>
+                          <div className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
+                        </TableCell>
+                        <TableCell><span className="text-[15px] font-black text-slate-700">{formatNumber(asset.amount)}</span></TableCell>
+                        <TableCell><span className="text-[14px] font-black text-slate-500">{asset.acquisitionDate}</span></TableCell>
+                        <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[14px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[15px] font-black text-slate-700">{formatNumber(asset.priceInDisplay)}</span></div></TableCell>
+                        <TableCell>
+                          {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
+                            <div className={cn("flex items-center gap-2 font-black text-[13px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                              {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                              <span>{asset.dayChangePercent.toFixed(1)}%</span>
+                            </div>
+                          ) : <span className="text-slate-200">—</span>}
+                        </TableCell>
+                        <TableCell className="text-right pr-6 sm:pr-10">
+                          <div className="font-black text-lg">
+                            <span className="text-slate-300 text-[14px] mr-1 sm:mr-2">{CURRENCY_SYMBOLS[displayCurrency]}</span>
+                            {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </div>
-                        </TableHead>
-                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('active', 'amount')}>
-                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
-                            {t.holdings} <SortIcon config={activeSort} columnKey="amount" />
+                        </TableCell>
+                        <TableCell className="pr-6 sm:pr-10 text-right">
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); setEditEndDate(asset.endDate || ''); }}><Edit2 className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-4 h-4" /></Button>
                           </div>
-                        </TableHead>
-                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('active', 'acquisitionDate')}>
-                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
-                            {t.acqDate} <SortIcon config={activeSort} columnKey="acquisitionDate" />
-                          </div>
-                        </TableHead>
-                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('active', 'priceInDisplay')}>
-                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
-                            {t.unitPrice} <SortIcon config={activeSort} columnKey="priceInDisplay" />
-                          </div>
-                        </TableHead>
-                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('active', 'dayChangePercent')}>
-                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
-                            {t.change} <SortIcon config={activeSort} columnKey="dayChangePercent" />
-                          </div>
-                        </TableHead>
-                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group pr-6 sm:pr-10 border-b border-slate-100" onClick={() => requestSort('active', 'valueInDisplay')}>
-                          <div className="flex items-center justify-end text-[14px] font-black text-slate-500 uppercase tracking-widest">
-                            {t.valuation} <SortIcon config={activeSort} columnKey="valueInDisplay" />
-                          </div>
-                        </TableHead>
-                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md w-[80px] border-b border-slate-100"></TableHead>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sortedActiveAssets.map((asset: any) => (
-                        <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
-                          <TableCell className="px-6 sm:px-10 py-6">
-                            <div className="font-black text-[15px] text-slate-900">{asset.name}</div>
-                            <div className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
-                          </TableCell>
-                          <TableCell><span className="text-[15px] font-black text-slate-700">{formatNumber(asset.amount)}</span></TableCell>
-                          <TableCell><span className="text-[14px] font-black text-slate-500">{asset.acquisitionDate}</span></TableCell>
-                          <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[14px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[15px] font-black text-slate-700">{formatNumber(asset.priceInDisplay)}</span></div></TableCell>
-                          <TableCell>
-                            {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
-                              <div className={cn("flex items-center gap-2 font-black text-[13px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
-                                {asset.dayChangeInDisplay >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-                                <span>{asset.dayChangePercent.toFixed(1)}%</span>
-                              </div>
-                            ) : <span className="text-slate-200">—</span>}
-                          </TableCell>
-                          <TableCell className="text-right pr-6 sm:pr-10">
-                            <div className="font-black text-lg">
-                              <span className="text-slate-300 text-[14px] mr-1 sm:mr-2">{CURRENCY_SYMBOLS[displayCurrency]}</span>
-                              {asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                            </div>
-                          </TableCell>
-                          <TableCell className="pr-6 sm:pr-10 text-right">
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); setEditEndDate(asset.endDate || ''); }}><Edit2 className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-4 h-4" /></Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </div>
@@ -726,57 +724,55 @@ export default function AssetInsightsPage() {
                   <History className="w-6 h-6" /> {t.closedPositions}
                 </h3>
               </div>
-              <CardContent className="p-0 flex-1 overflow-auto no-scrollbar relative">
-                <div className="w-full overflow-x-auto no-scrollbar">
-                  <Table className="min-w-[1000px] border-separate border-spacing-0">
-                    <TableHeader className="relative z-20">
-                      <TableRow className="hover:bg-transparent border-none">
-                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md px-6 sm:px-10 h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('closed', 'name')}>
-                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
-                            {t.assetName} <SortIcon config={closedSort} columnKey="name" />
+              <CardContent className="p-0 flex-1 overflow-hidden relative">
+                <Table className="min-w-[1000px] border-separate border-spacing-0 h-full">
+                  <TableHeader className="relative z-30">
+                    <TableRow className="hover:bg-transparent border-none">
+                      <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md px-6 sm:px-10 h-14 cursor-pointer select-none group border-b border-slate-100 z-30" onClick={() => requestSort('closed', 'name')}>
+                        <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                          {t.assetName} <SortIcon config={closedSort} columnKey="name" />
+                        </div>
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100 z-30" onClick={() => requestSort('closed', 'amount')}>
+                        <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                          {t.holdings} <SortIcon config={closedSort} columnKey="amount" />
+                        </div>
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100 z-30" onClick={() => requestSort('closed', 'acquisitionDate')}>
+                        <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                          {t.acqDate} <SortIcon config={closedSort} columnKey="acquisitionDate" />
+                        </div>
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md h-14 cursor-pointer select-none group pr-6 sm:pr-10 border-b border-slate-100 z-30" onClick={() => requestSort('closed', 'endDate')}>
+                        <div className="flex items-center justify-end text-[14px] font-black text-slate-500 uppercase tracking-widest">
+                          {t.posEndDate} <SortIcon config={closedSort} columnKey="endDate" />
+                        </div>
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md w-[80px] border-b border-slate-100 z-30"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedClosedAssets.map((asset: any) => (
+                      <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
+                        <TableCell className="px-6 sm:px-10 py-6">
+                          <div className="font-black text-[15px] text-slate-400 line-through decoration-2">{asset.name}</div>
+                          <div className="text-[14px] font-black text-slate-300 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
+                        </TableCell>
+                        <TableCell><span className="text-[15px] font-black text-slate-400">{formatNumber(asset.amount)}</span></TableCell>
+                        <TableCell><span className="text-[14px] font-black text-slate-400">{asset.acquisitionDate}</span></TableCell>
+                        <TableCell className="text-right pr-6 sm:pr-10">
+                          <div className="font-black text-[14px] text-slate-500">{asset.endDate}</div>
+                        </TableCell>
+                        <TableCell className="pr-6 sm:pr-10 text-right">
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); setEditEndDate(asset.endDate || ''); }}><Edit2 className="w-4 h-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-4 h-4" /></Button>
                           </div>
-                        </TableHead>
-                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('closed', 'amount')}>
-                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
-                            {t.holdings} <SortIcon config={closedSort} columnKey="amount" />
-                          </div>
-                        </TableHead>
-                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group border-b border-slate-100" onClick={() => requestSort('closed', 'acquisitionDate')}>
-                          <div className="flex items-center text-[14px] font-black text-slate-500 uppercase tracking-widest">
-                            {t.acqDate} <SortIcon config={closedSort} columnKey="acquisitionDate" />
-                          </div>
-                        </TableHead>
-                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md h-14 cursor-pointer select-none group pr-6 sm:pr-10 border-b border-slate-100" onClick={() => requestSort('closed', 'endDate')}>
-                          <div className="flex items-center justify-end text-[14px] font-black text-slate-500 uppercase tracking-widest">
-                            {t.posEndDate} <SortIcon config={closedSort} columnKey="endDate" />
-                          </div>
-                        </TableHead>
-                        <TableHead className="sticky top-0 bg-slate-50/90 backdrop-blur-md w-[80px] border-b border-slate-100"></TableHead>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sortedClosedAssets.map((asset: any) => (
-                        <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
-                          <TableCell className="px-6 sm:px-10 py-6">
-                            <div className="font-black text-[15px] text-slate-400 line-through decoration-2">{asset.name}</div>
-                            <div className="text-[14px] font-black text-slate-300 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
-                          </TableCell>
-                          <TableCell><span className="text-[15px] font-black text-slate-400">{formatNumber(asset.amount)}</span></TableCell>
-                          <TableCell><span className="text-[14px] font-black text-slate-400">{asset.acquisitionDate}</span></TableCell>
-                          <TableCell className="text-right pr-6 sm:pr-10">
-                            <div className="font-black text-[14px] text-slate-500">{asset.endDate}</div>
-                          </TableCell>
-                          <TableCell className="pr-6 sm:pr-10 text-right">
-                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); setEditEndDate(asset.endDate || ''); }}><Edit2 className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-4 h-4" /></Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </div>
