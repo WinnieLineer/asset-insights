@@ -20,21 +20,18 @@ import {
   Clock,
   Download,
   Upload,
-  TrendingUp,
-  TrendingDown,
-  ChevronUp,
-  ChevronDown,
-  Check,
-  Maximize2,
-  Minimize2,
-  Plus,
   ArrowRightLeft,
   History,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
   Filter,
-  Info
+  Info,
+  ChevronUp,
+  ChevronDown,
+  Maximize2,
+  Minimize2,
+  Plus
 } from 'lucide-react';
 import { 
   Card, 
@@ -50,7 +47,6 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Dialog,
   DialogContent,
@@ -80,17 +76,15 @@ const CURRENCY_SYMBOLS: Record<Currency, string> = {
 const translations = {
   en: {
     title: 'ASSET INSIGHTS PRO',
-    syncMarket: 'Sync',
+    syncMarket: 'Sync Market',
     totalValue: 'PORTFOLIO NET VALUE',
     addAsset: 'ADD POSITION',
     assetName: 'ASSET',
     holdings: 'HOLDINGS',
     valuation: 'VALUATION',
-    unitPrice: 'UNIT PRICE',
     category: 'CATEGORY',
     dashboard: 'ASSET OVERVIEW',
     closedPositions: 'CLOSED POSITIONS',
-    change: 'Daily Change',
     editAsset: 'EDIT POSITION',
     cancel: 'Cancel',
     saveChanges: 'Save',
@@ -113,7 +107,6 @@ const translations = {
     exportData: 'Export',
     importData: 'Import',
     importSuccess: 'Data imported successfully.',
-    exitReorder: 'DONE',
     reorderHint: 'REORDER MODE ACTIVE',
     layoutHint: 'Long press card area to adjust layout',
     lastUpdated: 'Last Updated',
@@ -122,24 +115,22 @@ const translations = {
   },
   zh: {
     title: 'ASSET INSIGHTS PRO',
-    syncMarket: '同步',
+    syncMarket: '同步市場數據',
     totalValue: '投資組合總淨值',
     addAsset: '新增資產部位',
     assetName: '資產名稱',
     holdings: '持有數量',
     valuation: '帳面價值',
-    unitPrice: '單位價值',
     category: '類別',
     dashboard: '資產部位概覽',
     closedPositions: '已結清資產部位',
-    change: '今日漲跌',
     editAsset: '編輯部位資訊',
     cancel: '取消',
     saveChanges: '儲存',
     fetching: '同步中',
     exchangeRate: '即時匯率 (1 [CUR])',
-    baseRange: '區間',
-    interval: '頻率',
+    baseRange: '追蹤時間區間',
+    interval: '數據頻率',
     days30: '30 天',
     days90: '90 天',
     days180: '180 天',
@@ -155,7 +146,6 @@ const translations = {
     exportData: '匯出',
     importData: '匯入',
     importSuccess: '資產資料已成功匯入。',
-    exitReorder: '完成調整',
     reorderHint: '已進入佈局調整模式',
     layoutHint: '提示：長按卡片區塊可調整佈局',
     lastUpdated: '最後更新',
@@ -201,12 +191,12 @@ export default function AssetInsightsPage() {
   const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
   
-  const [sections, setSections] = useState<string[]>(['summary', 'addAsset', 'controls', 'historicalTrend', 'allocation', 'list', 'closedList', 'ai']);
+  const [sections, setSections] = useState<string[]>(['summary', 'controls', 'addAsset', 'historicalTrend', 'allocation', 'list', 'closedList', 'ai']);
   
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
     summary: { width: 12, height: 160 },
+    controls: { width: 12, height: 80 },
     addAsset: { width: 12, height: 420 },
-    controls: { width: 12, height: 110 },
     historicalTrend: { width: 12, height: 450 },
     allocation: { width: 12, height: 450 },
     list: { width: 12, height: 600 },
@@ -294,7 +284,10 @@ export default function AssetInsightsPage() {
       const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
       setLastUpdated(timestamp);
       
-      toast({ title: t.dataUpdated });
+      // 網頁版顯示 Toast，手機版不顯示
+      if (typeof window !== 'undefined' && window.innerWidth > 768) {
+        toast({ title: t.dataUpdated });
+      }
     } catch (error) {
       toast({ variant: 'destructive', title: '市場同步失敗' });
     } finally {
@@ -322,25 +315,11 @@ export default function AssetInsightsPage() {
       const apiCurrencyRate = (marketData.rates[apiCurrency as Currency] || 1);
       const priceInTWD = nativePrice * (rateTWD / apiCurrencyRate);
       let valueInTWD = 0;
-      let dayChangeInTWD = 0;
-      let dayChangePercent = 0;
       const isClosed = asset.endDate ? asset.endDate <= todayStr : false;
 
       if (!isClosed) {
         if (asset.symbol && asset.symbol.trim() !== '') {
           valueInTWD = asset.amount * priceInTWD;
-          if (marketTimeline.length >= 2) {
-            const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
-            const lastPoint = sortedTimeline[sortedTimeline.length - 1];
-            const prevPoint = sortedTimeline[sortedTimeline.length - 2];
-            const currentP = lastPoint.assets[asset.id];
-            const prevP = prevPoint.assets[asset.id];
-            if (currentP !== undefined && prevP !== undefined) {
-              const priceDiff = (currentP - prevP) * (rateTWD / apiCurrencyRate);
-              dayChangeInTWD = asset.amount * priceDiff;
-              dayChangePercent = ((currentP - prevP) / prevP) * 100;
-            }
-          }
         } else {
           const assetCurrencyRate = marketData.rates[asset.currency] || 1;
           valueInTWD = asset.amount * (rateTWD / assetCurrencyRate);
@@ -354,7 +333,7 @@ export default function AssetInsightsPage() {
         ? priceInTWD * (displayRate / rateTWD)
         : (rateTWD / (marketData.rates[asset.currency] || 1)) * (displayRate / rateTWD);
 
-      return { ...asset, isClosed, valueInDisplay, priceInDisplay: unitPriceInDisplay, dayChangeInDisplay: dayChangeInTWD * (displayRate / rateTWD), dayChangePercent };
+      return { ...asset, isClosed, valueInDisplay, priceInDisplay: unitPriceInDisplay };
     });
 
     const historyData: any[] = [];
@@ -565,15 +544,8 @@ export default function AssetInsightsPage() {
                     <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                     {loading && <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-slate-200 ml-3" />}
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-1">
-                    <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase tracking-widest">
-                      <Info className="w-3 h-3" /> {t.layoutHint}
-                    </div>
-                    {lastUpdated && (
-                      <div className="flex items-center gap-1.5 text-slate-300 font-bold text-[10px] uppercase tracking-widest">
-                        <Clock className="w-3 h-3" /> {t.lastUpdated}: {lastUpdated}
-                      </div>
-                    )}
+                  <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-1">
+                    <Info className="w-3 h-3" /> {t.layoutHint}
                   </div>
                 </div>
                 <div className="absolute bottom-4 right-4 opacity-5 pointer-events-none">
@@ -584,10 +556,17 @@ export default function AssetInsightsPage() {
                 <Button 
                   onClick={() => updateAllData(assets)} 
                   disabled={loading} 
-                  className="w-full min-h-[60px] md:h-full bg-slate-900 text-white hover:bg-black font-black flex flex-row md:flex-col items-center justify-center gap-3 rounded-2xl shadow-lg transition-all active:scale-95 py-4"
+                  className="w-full min-h-[60px] md:h-full bg-slate-900 text-white hover:bg-black font-black flex flex-col items-center justify-center gap-1 rounded-2xl shadow-lg transition-all active:scale-95 py-4"
                 >
-                  <RefreshCw className={cn("w-5 h-5", loading && "animate-spin")} />
-                  <span className="text-[11px] tracking-[0.2em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
+                  <div className="flex items-center gap-3">
+                    <RefreshCw className={cn("w-5 h-5", loading && "animate-spin")} />
+                    <span className="text-[11px] tracking-[0.2em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
+                  </div>
+                  {lastUpdated && !loading && (
+                    <span className="text-[9px] opacity-60 font-medium uppercase tracking-widest mt-1">
+                      {lastUpdated}
+                    </span>
+                  )}
                 </Button>
               </div>
             </div>
@@ -598,13 +577,13 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <section className="bg-slate-50/80 backdrop-blur-md p-3 sm:p-4 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-center gap-3 sm:gap-4 shadow-sm h-full">
-              <div className="w-full md:w-auto flex items-center justify-between md:justify-start gap-4 flex-wrap">
-                <div className="flex items-center gap-2">
+              <div className="w-full md:w-auto flex items-center justify-between md:justify-start gap-3 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
                   <Label className="pro-label text-[10px] whitespace-nowrap opacity-60 flex items-center gap-1">
-                    <Calendar className="w-3 h-3" /> {t.baseRange}
+                    {t.baseRange}
                   </Label>
                   <Select value={trackingDays} onValueChange={setTrackingDays}>
-                    <SelectTrigger className="w-20 sm:w-24 h-8 bg-white font-black text-[11px] rounded-lg border-slate-200"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-full sm:w-28 h-8 bg-white font-black text-[11px] rounded-lg border-slate-200"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="30">{t.days30}</SelectItem>
                       <SelectItem value="90">{t.days90}</SelectItem>
@@ -615,12 +594,12 @@ export default function AssetInsightsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
                   <Label className="pro-label text-[10px] whitespace-nowrap opacity-60 flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {t.interval}
+                    {t.interval}
                   </Label>
                   <Select value={interval} onValueChange={setInterval}>
-                    <SelectTrigger className="w-20 sm:w-24 h-8 bg-white font-black text-[11px] rounded-lg border-slate-200"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-full sm:w-24 h-8 bg-white font-black text-[11px] rounded-lg border-slate-200"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="1d">{t.int1d}</SelectItem>
                       <SelectItem value="1wk">{t.int1wk}</SelectItem>
@@ -776,10 +755,10 @@ export default function AssetInsightsPage() {
   return (
     <div className="min-h-screen bg-slate-50/30 text-black pb-24 overflow-x-hidden" onMouseDown={handleMouseDown}>
       <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl shadow-sm">
-        <div className="max-w-[1900px] mx-auto px-4 sm:px-10 py-1.5 sm:py-3 flex flex-col gap-1.5 sm:gap-3">
+        <div className="max-w-[1900px] mx-auto px-4 sm:px-10 py-2 sm:py-3 flex flex-col gap-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-md"><Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" /></div>
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-md"><Activity className="w-3.5 h-3.5 sm:w-4 h-4 text-white" /></div>
               <h1 className="text-[12px] sm:text-[15px] font-black tracking-tighter uppercase leading-tight">{t.title}</h1>
             </div>
             
@@ -797,7 +776,7 @@ export default function AssetInsightsPage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-3 overflow-hidden border-t border-slate-50 pt-1.5 sm:pt-2">
+          <div className="flex items-center gap-3 overflow-hidden border-t border-slate-50 pt-2">
              <span className="text-[9px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap shrink-0">
                {t.exchangeRate.replace('[CUR]', displayCurrency)}
              </span>
@@ -820,7 +799,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-[95px] sm:pt-[105px] pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-[105px] sm:pt-24 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-8 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>

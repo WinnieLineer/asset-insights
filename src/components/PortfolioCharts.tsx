@@ -55,9 +55,9 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   
   const sx = cx + (outerRadius + 5) * cos;
   const sy = cy + (outerRadius + 5) * sin;
-  const mx = cx + (outerRadius + 20) * cos;
-  const my = cy + (outerRadius + 20) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 10;
+  const mx = cx + (outerRadius + 15) * cos;
+  const my = cy + (outerRadius + 15) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 8;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
@@ -74,7 +74,7 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   );
 };
 
-export function HistoricalTrendChart({ historicalData, displayCurrency, language, loading, height }: any) {
+export function HistoricalTrendChart({ historicalData, displayCurrency, language, loading }: any) {
   const lang = t[language as keyof typeof t] || t.zh;
   const symbol = SYMBOLS[displayCurrency as Currency] || '$';
   
@@ -132,7 +132,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   );
 }
 
-export function AllocationPieChart({ allocationData, displayCurrency, language, loading, height }: any) {
+export function AllocationPieChart({ allocationData, displayCurrency, language, loading }: any) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const lang = t[language as keyof typeof t] || t.zh;
   const symbol = SYMBOLS[displayCurrency as Currency] || '$';
@@ -160,7 +160,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 data={filteredData} 
                 cx="50%" cy="50%" 
                 innerRadius="75%" 
-                outerRadius="95%" 
+                outerRadius="92%" 
                 paddingAngle={2} 
                 dataKey="value" 
                 stroke="none" 
@@ -184,7 +184,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
           </ResponsiveContainer>
         </div>
         
-        <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center max-w-[55%] z-0">
+        <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center max-w-[65%] z-0">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 line-clamp-1">
             {displayLabel}
           </p>
