@@ -201,13 +201,16 @@ export default function AssetInsightsPage() {
   const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
   
-  const [sections, setSections] = useState<string[]>(['summary', 'addAsset', 'controls', 'historicalTrend', 'allocation', 'list', 'closedList', 'ai']);
+  // 調整後的初始順序
+  const [sections, setSections] = useState<string[]>(['summary', 'controls', 'addAsset', 'historicalTrend', 'allocation', 'list', 'closedList', 'ai']);
+  
+  // 調整後的初始寬高 (更短的初始值)
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
-    summary: { width: 12, height: 200 },
-    addAsset: { width: 12, height: 600 },
-    controls: { width: 12, height: 90 },
-    historicalTrend: { width: 12, height: 500 },
-    allocation: { width: 12, height: 500 },
+    summary: { width: 12, height: 160 },
+    controls: { width: 12, height: 80 },
+    addAsset: { width: 12, height: 500 },
+    historicalTrend: { width: 12, height: 450 },
+    allocation: { width: 12, height: 450 },
     list: { width: 12, height: 600 },
     closedList: { width: 12, height: 400 },
     ai: { width: 12, height: 650 }
@@ -554,31 +557,26 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-              <Card className="lg:col-span-9 modern-card p-6 sm:p-10 relative overflow-hidden bg-white flex flex-col justify-center min-h-[160px]">
-                <div className="space-y-4 z-20 relative text-left">
+              <Card className="lg:col-span-9 modern-card p-6 sm:p-8 relative overflow-hidden bg-white flex flex-col justify-center min-h-[160px]">
+                <div className="space-y-3 z-20 relative text-left">
                   <div className="pro-label">
-                    <Globe className="w-5 h-5" /> {t.totalValue}
+                    <Globe className="w-4 h-4" /> {t.totalValue}
                   </div>
-                  <div className="pro-title">
-                    <span className="text-slate-200 font-medium text-[0.6em] mr-4">{CURRENCY_SYMBOLS[displayCurrency]}</span>
+                  <div className="pro-title flex items-center">
+                    <span className="text-slate-200 font-medium text-[0.6em] mr-3">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                     <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                    {loading && <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 animate-spin text-slate-200 ml-4 sm:ml-6" />}
+                    {loading && <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-slate-200 ml-4" />}
                   </div>
-                  <div className="flex items-center gap-2 text-slate-400 font-bold text-[11px] uppercase tracking-widest mt-2">
+                  <div className="flex items-center gap-2 text-slate-400 font-bold text-[11px] uppercase tracking-widest mt-1">
                     <Info className="w-3.5 h-3.5" /> {t.layoutHint}
                   </div>
                 </div>
-                <div className="absolute bottom-6 right-6 sm:bottom-10 sm:right-10 opacity-10 pointer-events-none flex items-center justify-center">
-                  <Wallet className="w-16 h-16 sm:w-24 sm:h-24 text-black" />
+                <div className="absolute bottom-6 right-6 opacity-10 pointer-events-none flex items-center justify-center">
+                  <Wallet className="w-16 h-16 sm:w-20 sm:h-20 text-black" />
                 </div>
               </Card>
-              <div className="lg:col-span-3 flex flex-col items-center justify-center gap-2 py-4">
-                {lastUpdated && (
-                  <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] animate-fade-in text-center w-full mb-1">
-                    {t.lastUpdated}:<br/><span className="text-slate-600 font-bold">{lastUpdated}</span>
-                  </div>
-                )}
-                <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[80px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-2 rounded-2xl shadow-xl transition-all active:scale-95 py-6">
+              <div className="lg:col-span-3 flex flex-col items-center justify-center gap-2 py-0">
+                <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[160px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-2 rounded-2xl shadow-xl transition-all active:scale-95 py-6">
                   <RefreshCw className={cn("w-6 h-6", loading && "animate-spin")} />
                   <span className="text-[12px] tracking-[0.3em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
                 </Button>
@@ -590,38 +588,36 @@ export default function AssetInsightsPage() {
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <section className="bg-slate-50/80 backdrop-blur-md p-4 sm:p-5 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-center gap-3 sm:gap-4 shadow-inner h-full">
-              <div className="shrink-0 flex items-center gap-3">
-                <div className="space-y-1.5">
-                  <Label className="pro-label text-[11px] whitespace-nowrap flex items-center gap-1.5 ml-0.5 opacity-70">
+            <section className="bg-slate-50/80 backdrop-blur-md p-3 sm:p-4 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-center gap-3 sm:gap-4 shadow-inner h-full">
+              <div className="shrink-0 flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Label className="pro-label text-[10px] whitespace-nowrap flex items-center gap-1.5 opacity-70">
                     <Calendar className="w-3.5 h-3.5" /> {t.baseRange}
                   </Label>
-                  <div className="flex items-center gap-2">
-                    <Select value={trackingDays} onValueChange={setTrackingDays}>
-                      <SelectTrigger className="w-24 sm:w-28 h-9 bg-white font-black text-[13px] rounded-lg border border-slate-200 shadow-sm"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">{t.days30}</SelectItem>
-                        <SelectItem value="90">{t.days90}</SelectItem>
-                        <SelectItem value="180">{t.days180}</SelectItem>
-                        <SelectItem value="365">{t.days365}</SelectItem>
-                        <SelectItem value="max">{t.maxRange}</SelectItem>
-                        <SelectItem value="custom">{t.customRange}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {trackingDays === 'custom' && (
-                      <div className="flex items-center gap-1.5 animate-fade-in">
-                        <Input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="w-28 h-9 font-black text-[11px] rounded-lg border border-slate-200" />
-                        <Input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="w-28 h-9 font-black text-[11px] rounded-lg border border-slate-200" />
-                      </div>
-                    )}
-                  </div>
+                  <Select value={trackingDays} onValueChange={setTrackingDays}>
+                    <SelectTrigger className="w-24 sm:w-28 h-8 bg-white font-black text-[12px] rounded-lg border border-slate-200 shadow-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="30">{t.days30}</SelectItem>
+                      <SelectItem value="90">{t.days90}</SelectItem>
+                      <SelectItem value="180">{t.days180}</SelectItem>
+                      <SelectItem value="365">{t.days365}</SelectItem>
+                      <SelectItem value="max">{t.maxRange}</SelectItem>
+                      <SelectItem value="custom">{t.customRange}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {trackingDays === 'custom' && (
+                    <div className="flex items-center gap-1 animate-fade-in">
+                      <Input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="w-28 h-8 font-black text-[10px] rounded-lg border border-slate-200" />
+                      <Input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="w-28 h-8 font-black text-[10px] rounded-lg border border-slate-200" />
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="pro-label text-[11px] whitespace-nowrap flex items-center gap-1.5 ml-0.5 opacity-70">
+                <div className="flex items-center gap-2">
+                  <Label className="pro-label text-[10px] whitespace-nowrap flex items-center gap-1.5 opacity-70">
                     <Clock className="w-3.5 h-3.5" /> {t.interval}
                   </Label>
                   <Select value={interval} onValueChange={setInterval}>
-                    <SelectTrigger className="w-24 sm:w-28 h-9 bg-white font-black text-[13px] rounded-lg border border-slate-200 shadow-sm"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-24 sm:w-28 h-8 bg-white font-black text-[12px] rounded-lg border border-slate-200 shadow-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="1d">{t.int1d}</SelectItem>
                       <SelectItem value="1wk">{t.int1wk}</SelectItem>
@@ -630,9 +626,9 @@ export default function AssetInsightsPage() {
                   </Select>
                 </div>
               </div>
-              <div className="flex-1 flex items-center gap-3 w-full self-end md:mb-0.5">
-                <Button variant="outline" onClick={handleExport} className="flex-1 h-9 font-black text-[12px] uppercase tracking-[0.1em] gap-1.5 bg-white rounded-lg shadow-sm border border-slate-200 hover:border-black transition-all"><Download className="w-3.5 h-3.5" /> {t.exportData}</Button>
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-9 font-black text-[12px] uppercase tracking-[0.1em] gap-1.5 bg-white rounded-lg shadow-sm border border-slate-200 hover:border-black transition-all"><Upload className="w-3.5 h-3.5" /> {t.importData}</Button>
+              <div className="flex-1 flex items-center gap-2 w-full">
+                <Button variant="outline" onClick={handleExport} className="flex-1 h-8 font-black text-[11px] uppercase tracking-[0.1em] gap-1.5 bg-white rounded-lg shadow-sm border border-slate-200 hover:border-black transition-all"><Download className="w-3.5 h-3.5" /> {t.exportData}</Button>
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-8 font-black text-[11px] uppercase tracking-[0.1em] gap-1.5 bg-white rounded-lg shadow-sm border border-slate-200 hover:border-black transition-all"><Upload className="w-3.5 h-3.5" /> {t.importData}</Button>
                 <input type="file" ref={fileInputRef} onChange={(e) => {
                    const file = e.target.files?.[0]; if (!file) return;
                    const reader = new FileReader(); reader.onload = (event) => {
