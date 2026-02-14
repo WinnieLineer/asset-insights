@@ -194,11 +194,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     else if (typeDisp.includes('EQUITY') || typeDisp.includes('股票') || typeDisp.includes('權益')) targetCat = 'Stock';
     else if (typeDispRaw !== '') targetCat = typeDispRaw;
 
-    // 如果是動態類別且不在預設中，確保選單能正確選取
-    if (!PREDEFINED_CATEGORIES.includes(targetCat)) {
-      setIsCustomCategory(false); // 透過回傳設定的類別，我們視為一般選單項目
-    }
-
     form.setValue('category', targetCat);
     setTickerFound(true);
     setShowSuggestions(false);

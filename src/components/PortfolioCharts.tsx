@@ -232,7 +232,6 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 allowEscapeViewBox={{ x: true, y: true }}
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    // 智慧避讓演算法：偵測滑鼠位置，自動彈向外側
                     const quadrantX = coordinate.x > 300 ? -260 : 60;
                     const quadrantY = coordinate.y > 200 ? -160 : 40;
                     
