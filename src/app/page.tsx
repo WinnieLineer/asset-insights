@@ -451,6 +451,10 @@ export default function AssetInsightsPage() {
     longPressTimer.current = setTimeout(() => { setIsReordering(true); cleanup(); }, 800);
   };
 
+  const formatNumber = (num: number) => {
+    return parseFloat(num.toFixed(5)).toString();
+  };
+
   const handleExport = () => {
     const dataStr = JSON.stringify({ assets, sections, layoutConfigs }, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
@@ -488,10 +492,11 @@ export default function AssetInsightsPage() {
       config.width === 6 && "xl:col-span-6",
       config.width === 8 && "xl:col-span-8",
       config.width === 10 && "xl:col-span-10",
-      config.width === 12 && "xl:col-span-12"
+      config.width === 12 && "xl:col-span-12",
+      !isDesktop && "h-auto min-h-0"
     );
 
-    const wrapperStyle = { minHeight: isDesktop ? `${config.height}px` : 'auto', height: isDesktop ? `${config.height}px` : 'auto' };
+    const wrapperStyle = isDesktop ? { minHeight: `${config.height}px`, height: `${config.height}px` } : {};
 
     switch (id) {
       case 'summary':
@@ -617,7 +622,7 @@ export default function AssetInsightsPage() {
               </div>
               <CardContent className="p-0 flex-1 overflow-auto no-scrollbar">
                 <div className="w-full overflow-x-auto no-scrollbar">
-                  <Table className="min-w-[1000px]">
+                  <Table className="min-w-[1100px]">
                     <TableHeader className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md">
                       <TableRow className="hover:bg-transparent border-slate-100">
                         <TableHead className="px-6 sm:px-10 h-14 cursor-pointer select-none group" onClick={() => requestSort('active', 'name')}>
@@ -660,9 +665,9 @@ export default function AssetInsightsPage() {
                             <div className="font-black text-[15px] text-slate-900">{asset.name}</div>
                             <div className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
                           </TableCell>
-                          <TableCell><span className="text-[15px] font-black text-slate-700">{asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</span></TableCell>
+                          <TableCell><span className="text-[15px] font-black text-slate-700">{formatNumber(asset.amount)}</span></TableCell>
                           <TableCell><span className="text-[14px] font-black text-slate-500">{asset.acquisitionDate}</span></TableCell>
-                          <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[14px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[15px] font-black text-slate-700">{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 5 })}</span></div></TableCell>
+                          <TableCell><div className="flex items-center gap-2 sm:gap-3"><span className="text-[14px] font-black text-slate-300">{CURRENCY_SYMBOLS[displayCurrency]}</span><span className="text-[15px] font-black text-slate-700">{formatNumber(asset.priceInDisplay)}</span></div></TableCell>
                           <TableCell>
                             {(asset.category === 'Stock' || asset.category === 'Crypto') ? (
                               <div className={cn("flex items-center gap-2 font-black text-[13px]", asset.dayChangeInDisplay >= 0 ? "text-emerald-600" : "text-rose-600")}>
@@ -704,7 +709,7 @@ export default function AssetInsightsPage() {
               </div>
               <CardContent className="p-0 flex-1 overflow-auto no-scrollbar">
                 <div className="w-full overflow-x-auto no-scrollbar">
-                  <Table className="min-w-[900px]">
+                  <Table className="min-w-[1000px]">
                     <TableHeader className="bg-slate-50/80 sticky top-0 z-10 backdrop-blur-md">
                       <TableRow className="hover:bg-transparent border-slate-100">
                         <TableHead className="px-6 sm:px-10 h-14 cursor-pointer select-none group" onClick={() => requestSort('closed', 'name')}>
@@ -737,7 +742,7 @@ export default function AssetInsightsPage() {
                             <div className="font-black text-[15px] text-slate-400 line-through decoration-2">{asset.name}</div>
                             <div className="text-[14px] font-black text-slate-300 uppercase tracking-[0.2em] mt-1">{asset.symbol || t.categoryNames[asset.category as AssetCategory]}</div>
                           </TableCell>
-                          <TableCell><span className="text-[15px] font-black text-slate-400">{asset.amount.toLocaleString(undefined, { maximumFractionDigits: 5 })}</span></TableCell>
+                          <TableCell><span className="text-[15px] font-black text-slate-400">{formatNumber(asset.amount)}</span></TableCell>
                           <TableCell><span className="text-[14px] font-black text-slate-400">{asset.acquisitionDate}</span></TableCell>
                           <TableCell className="text-right pr-6 sm:pr-10">
                             <div className="font-black text-[14px] text-slate-500">{asset.endDate}</div>
@@ -838,7 +843,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-32 sm:pt-36 xl:pt-28 pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-24 sm:pt-28 xl:pt-28 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>
@@ -849,7 +854,18 @@ export default function AssetInsightsPage() {
           <DialogHeader><DialogTitle className="text-xl sm:text-2xl font-black uppercase tracking-tight flex items-center gap-4"><Edit2 className="w-5 h-5 text-primary" /> {t.editAsset}</DialogTitle></DialogHeader>
           <div className="grid gap-6 py-6">
             <div className="space-y-2"><Label className="pro-label ml-1 mb-1">{t.assetName}</Label><div className="p-4 bg-slate-50 rounded-xl font-black text-sm text-slate-900 border border-slate-100">{editingAsset?.name}</div></div>
-            <div className="space-y-2"><Label htmlFor="amount" className="pro-label ml-1 mb-1">{t.holdings}</Label><Input id="amount" type="number" step="any" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} onFocus={(e) => e.target.select()} className="h-11 font-black text-base border-2 border-slate-300 rounded-xl" /></div>
+            <div className="space-y-2">
+              <Label htmlFor="amount" className="pro-label ml-1 mb-1">{t.holdings}</Label>
+              <Input 
+                id="amount" 
+                type="number" 
+                step="any" 
+                value={editAmount} 
+                onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} 
+                onFocus={(e) => e.target.select()} 
+                className="h-11 font-black text-base border-2 border-slate-300 rounded-xl" 
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label className="pro-label ml-1 mb-1">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-11 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
               <div className="space-y-2"><Label className="pro-label ml-1 mb-1">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-11 font-black text-xs rounded-xl border-2 border-slate-300" /></div>

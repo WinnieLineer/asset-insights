@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -23,13 +23,17 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Loader2, Search, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const AUTOCOMPLETE_API = 'https://tw.stock.yahoo.com/stock_ms/_td-stock/api/resource/AutocompleteService;query=';
 
 const t = {
   en: {
     name: 'Asset Name',
     namePlaceholder: 'e.g., DBS Global Fund',
     symbol: 'Ticker / Symbol',
-    symbolPlaceholder: 'BTC, AAPL, 2330, D05.SI',
+    symbolPlaceholder: 'Search BTC, AAPL, 2330...',
     category: 'Category',
     currency: 'Base Currency',
     amount: 'Quantity',
@@ -43,7 +47,7 @@ const t = {
     name: '資產名稱',
     namePlaceholder: '例如：台積電、美金存款',
     symbol: '資產代碼',
-    symbolPlaceholder: 'BTC, AAPL, 2330, D05.SI',
+    symbolPlaceholder: '搜尋 BTC, AAPL, 2330...',
     category: '資產類別',
     currency: '持有幣別',
     amount: '持有數量',
@@ -60,8 +64,19 @@ interface AssetFormProps {
   language: 'en' | 'zh';
 }
 
+interface Suggestion {
+  symbol: string;
+  name: string;
+  exchDisp: string;
+  typeDisp: string;
+}
+
 export function AssetForm({ onAdd, language }: AssetFormProps) {
   const lang = t[language];
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionRef = useRef<HTMLDivElement>(null);
 
   const formSchema = useMemo(() => z.object({
     name: z.string().min(2, { message: lang.errors.nameTooShort }),
@@ -86,19 +101,63 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   });
 
   const category = form.watch('category');
-  const symbol = form.watch('symbol');
+  const symbolValue = form.watch('symbol');
   const hasTicker = category === 'Stock' || category === 'Crypto';
 
+  // Autocomplete logic
+  useEffect(() => {
+    if (!hasTicker || !symbolValue || symbolValue.length < 1) {
+      setSuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const response = await fetch(`${AUTOCOMPLETE_API}${encodeURIComponent(symbolValue)}`);
+        if (response.ok) {
+          const data = await response.json();
+          const results = data.ResultSet?.Result || [];
+          setSuggestions(results.map((r: any) => ({
+            symbol: r.symbol,
+            name: r.name,
+            exchDisp: r.exchDisp,
+            typeDisp: r.typeDisp
+          })));
+          setShowSuggestions(true);
+        }
+      } catch (error) {
+        console.error('Autocomplete error:', error);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [symbolValue, hasTicker]);
+
+  // Click outside to hide suggestions
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Sync currency based on symbol
   useEffect(() => {
     if (category === 'Stock') {
-      const sym = (symbol || '').toUpperCase();
-      if (/^\d+$/.test(sym)) form.setValue('currency', 'TWD');
+      const sym = (symbolValue || '').toUpperCase();
+      if (/^\d+$/.test(sym) || sym.endsWith('.TW')) form.setValue('currency', 'TWD');
       else if (sym.endsWith('.SI')) form.setValue('currency', 'SGD');
       else if (sym) form.setValue('currency', 'USD');
     } else if (category === 'Crypto') {
       form.setValue('currency', 'USD');
     }
-  }, [category, symbol, form]);
+  }, [category, symbolValue, form]);
 
   const handleAmountFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     if (parseFloat(e.target.value) === 0) {
@@ -107,9 +166,16 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     e.target.select();
   };
 
+  const selectSuggestion = (s: Suggestion) => {
+    form.setValue('symbol', s.symbol);
+    form.setValue('name', s.name);
+    setShowSuggestions(false);
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit((v) => { onAdd(v as Omit<Asset, 'id'>); form.reset({ ...form.getValues(), name: '', symbol: '', amount: 0 }); })} className="space-y-4">
+        
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
             <FormLabel className="pro-label text-slate-500">{lang.name}</FormLabel>
@@ -119,20 +185,8 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
             <FormMessage className="text-xs" />
           </FormItem>
         )} />
-        
-        {hasTicker && (
-          <FormField control={form.control} name="symbol" render={({ field }) => (
-            <FormItem>
-              <FormLabel className="pro-label text-slate-500">{lang.symbol}</FormLabel>
-              <FormControl>
-                <Input placeholder={lang.symbolPlaceholder} {...field} className="bg-slate-50 border-2 border-slate-200 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg" />
-              </FormControl>
-              <FormMessage className="text-xs" />
-            </FormItem>
-          )} />
-        )}
 
-        <div className={`grid ${hasTicker ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField control={form.control} name="category" render={({ field }) => (
             <FormItem>
               <FormLabel className="pro-label text-slate-500">{lang.category}</FormLabel>
@@ -157,6 +211,46 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
             )} />
           )}
         </div>
+        
+        {hasTicker && (
+          <FormField control={form.control} name="symbol" render={({ field }) => (
+            <FormItem className="relative">
+              <FormLabel className="pro-label text-slate-500">{lang.symbol}</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <Input 
+                    placeholder={lang.symbolPlaceholder} 
+                    {...field} 
+                    autoComplete="off"
+                    className="bg-slate-50 border-2 border-slate-200 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg pr-10" 
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : <Search className="w-4 h-4 text-slate-400" />}
+                  </div>
+                </div>
+              </FormControl>
+              
+              {showSuggestions && suggestions.length > 0 && (
+                <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border-2 border-slate-200 rounded-xl shadow-2xl max-h-[280px] overflow-auto no-scrollbar animate-fade-in">
+                  {suggestions.map((s, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => selectSuggestion(s)}
+                      className="p-4 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors"
+                    >
+                      <div className="font-black text-sm text-slate-900 leading-tight">{s.name}</div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-[12px] font-black text-blue-600 tracking-wider uppercase">{s.symbol}</span>
+                        <span className="text-[11px] font-bold text-slate-400">{s.typeDisp}-{s.exchDisp}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <FormMessage className="text-xs" />
+            </FormItem>
+          )} />
+        )}
 
         <FormField control={form.control} name="amount" render={({ field }) => (
           <FormItem>
