@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useMemo, useState, useRef } from 'react';
@@ -220,15 +221,15 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
               <FormLabel className="pro-label text-slate-500">{lang.symbol}</FormLabel>
               <FormControl>
                 <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
+                    {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : <Search className="w-4 h-4 text-slate-400" />}
+                  </div>
                   <Input 
                     placeholder={lang.symbolPlaceholder} 
                     {...field} 
                     autoComplete="off"
-                    className="bg-slate-50 border-2 border-slate-200 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg pr-10" 
+                    className="bg-slate-50 border-2 border-slate-200 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg pl-10 pr-4" 
                   />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : <Search className="w-4 h-4 text-slate-400" />}
-                  </div>
                 </div>
               </FormControl>
               
