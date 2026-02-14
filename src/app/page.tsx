@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -880,7 +879,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-16 sm:pt-20 xl:pt-20 pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-16 sm:pt-20 xl:pt-16 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>

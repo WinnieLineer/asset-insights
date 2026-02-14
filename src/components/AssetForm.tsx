@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useMemo, useState, useRef } from 'react';
@@ -24,6 +23,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Loader2, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const AUTOCOMPLETE_API = 'https://script.google.com/macros/s/AKfycbyQ12dBnspvRGwcNRZmZw3sXon8tnmPTttJ2b5LDw_3G1Zw7aaM6OPe9dSLhPPv-xRL/exec?q=';
 

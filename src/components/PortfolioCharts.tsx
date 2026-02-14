@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -51,17 +50,17 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   const cos = Math.cos(-RADIAN * midAngle);
   const sx = cx + (outerRadius + 5) * cos;
   const sy = cy + (outerRadius + 5) * sin;
-  const mx = cx + (outerRadius + 20) * cos;
-  const my = cy + (outerRadius + 20) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 15;
+  const mx = cx + (outerRadius + 15) * cos;
+  const my = cy + (outerRadius + 15) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 12;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
   return (
     <g>
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#e2e8f0" strokeWidth={1} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={12} fontWeight={800} className="uppercase tracking-widest">{langCategories[name] || name}</text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={10} fontWeight={600}>{`${(percent * 100).toFixed(1)}%`}</text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={11} fontWeight={800} className="uppercase tracking-widest">{langCategories[name] || name}</text>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={9} fontWeight={600}>{`${(percent * 100).toFixed(1)}%`}</text>
     </g>
   );
 };
@@ -216,7 +215,6 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 allowEscapeViewBox={{ x: true, y: true }}
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    // 智慧避讓演算法：確保提示框向外象限偏移，絕不擋到中心文字
                     const offsetX = coordinate.x > 250 ? -240 : 40;
                     const offsetY = coordinate.y > 200 ? -140 : 20;
                     const val = Number(payload[0].value);
