@@ -291,7 +291,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
           <FormField control={form.control} name="currency" render={({ field }) => (
             <FormItem>
               <FormLabel className="pro-label text-[10px] opacity-60">{lang.currency}</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={field.value} disabled={showTickerField}>
                 <FormControl><SelectTrigger className="h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
                 <SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-[13px] font-bold">{c}</SelectItem>)}</SelectContent>
               </Select>

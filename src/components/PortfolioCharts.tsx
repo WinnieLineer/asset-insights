@@ -95,7 +95,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
       <div className="w-full mb-4 flex items-center justify-between shrink-0">
         <h3 className="pro-label text-xs sm:text-sm">{lang.trend}</h3>
       </div>
-      <div className="w-full flex-1">
+      <div className="w-full flex-1 min-h-[250px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 20 }}>
             <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" />
@@ -153,7 +153,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
       <div className="w-full mb-4 text-left shrink-0">
         <h3 className="pro-label text-xs sm:text-sm">{lang.allocation}</h3>
       </div>
-      <div className="flex-1 w-full relative flex items-center justify-center overflow-hidden">
+      <div className="flex-1 w-full relative flex items-center justify-center overflow-hidden min-h-[250px]">
         <div className="absolute inset-0 z-10">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>

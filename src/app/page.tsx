@@ -287,6 +287,7 @@ export default function AssetInsightsPage() {
       const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
       setLastUpdated(timestamp);
       
+      // Only show toast on desktop as requested
       if (typeof window !== 'undefined' && window.innerWidth > 768) {
         toast({ title: t.dataUpdated });
       }
@@ -313,14 +314,17 @@ export default function AssetInsightsPage() {
     const processedAssets = assets.map(asset => {
       const marketInfo = marketData.assetMarketPrices[asset.id];
       const nativePrice = marketInfo?.price || 0;
-      const apiCurrency = marketInfo?.currency || 'TWD';
+      // Use API returned currency for market assets, fallback to manual for non-market
+      const apiCurrency = marketInfo?.currency || asset.currency || 'TWD';
       const apiCurrencyRate = (marketData.rates[apiCurrency as Currency] || 1);
-      const priceInTWD = nativePrice * (rateTWD / apiCurrencyRate);
+      
+      // Calculate TWD value based on the correct currency source
       let valueInTWD = 0;
       const isClosed = asset.endDate ? asset.endDate <= todayStr : false;
 
       if (!isClosed) {
         if (asset.symbol && asset.symbol.trim() !== '') {
+          const priceInTWD = nativePrice * (rateTWD / apiCurrencyRate);
           valueInTWD = asset.amount * priceInTWD;
         } else {
           const assetCurrencyRate = marketData.rates[asset.currency] || 1;
@@ -332,7 +336,7 @@ export default function AssetInsightsPage() {
       
       const valueInDisplay = valueInTWD * (displayRate / rateTWD);
       const unitPriceInDisplay = (asset.symbol && asset.symbol.trim() !== '') 
-        ? priceInTWD * (displayRate / rateTWD)
+        ? (nativePrice * (rateTWD / apiCurrencyRate)) * (displayRate / rateTWD)
         : (rateTWD / (marketData.rates[asset.currency] || 1)) * (displayRate / rateTWD);
 
       return { ...asset, isClosed, valueInDisplay, priceInDisplay: unitPriceInDisplay };
@@ -581,10 +585,10 @@ export default function AssetInsightsPage() {
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <section className="bg-slate-50/80 backdrop-blur-md p-4 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-center gap-4 shadow-sm h-full">
+            <section className="bg-slate-50/80 backdrop-blur-md p-4 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-center gap-3 shadow-sm h-full overflow-hidden">
               <div className="w-full md:w-auto flex items-center justify-between md:justify-start gap-3 flex-wrap sm:flex-nowrap">
                 <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
-                  <Label className="pro-label text-[10px] whitespace-nowrap opacity-60 flex items-center gap-1">
+                  <Label className="pro-label text-[10px] whitespace-nowrap opacity-60 flex items-center gap-1 shrink-0">
                     {t.baseRange}
                   </Label>
                   <Select value={trackingDays} onValueChange={setTrackingDays}>
@@ -600,7 +604,7 @@ export default function AssetInsightsPage() {
                   </Select>
                 </div>
                 <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
-                  <Label className="pro-label text-[10px] whitespace-nowrap opacity-60 flex items-center gap-1">
+                  <Label className="pro-label text-[10px] whitespace-nowrap opacity-60 flex items-center gap-1 shrink-0">
                     {t.interval}
                   </Label>
                   <Select value={interval} onValueChange={setInterval}>
@@ -759,8 +763,8 @@ export default function AssetInsightsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/30 text-black pb-24 overflow-x-hidden" onMouseDown={handleMouseDown}>
-      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl shadow-sm h-auto md:h-14 flex items-center">
-        <div className="max-w-[1900px] mx-auto w-full px-4 sm:px-10 py-2 sm:py-0">
+      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl shadow-sm h-auto flex flex-col justify-center">
+        <div className="max-w-[1900px] mx-auto w-full px-4 sm:px-10 py-2 sm:py-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-6">
             <div className="flex items-center gap-6 overflow-hidden">
               <div className="flex items-center gap-2 shrink-0">

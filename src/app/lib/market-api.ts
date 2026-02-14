@@ -5,8 +5,9 @@ const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
 function formatSymbol(s: string, category: string) {
   const upper = s.toUpperCase();
-  // 加密貨幣代碼透過搜尋 API 已取得標準格式 (如 BTC-USD)，故不需額外處理
-  if (/^\d+$/.test(upper)) return `${upper}.TW`; // Taiwan
+  // Crypto symbols from pre-search API are already standard (e.g., BTC-USD), 
+  // so we don't need additional logic for them.
+  if (/^\d+$/.test(upper)) return `${upper}.TW`; // Taiwan stocks
   if (upper.endsWith('.SI')) return upper; // Singapore
   if (upper.length <= 4 && !upper.includes('.')) return upper; // US
   return upper;
