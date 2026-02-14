@@ -52,7 +52,6 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
-  // 增加位移量，給文字更多空間
   const sx = cx + (outerRadius + 5) * cos;
   const sy = cy + (outerRadius + 5) * sin;
   const mx = cx + (outerRadius + 25) * cos;
@@ -213,11 +212,9 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 allowEscapeViewBox={{ x: true, y: true }}
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    // 智慧避讓：計算與中心點的相對位置
-                    // 容器寬高通常在 ResponsiveContainer 下是 100%，這裡假設基準點為圖表中心
-                    // 我們將提示框推向外側，絕不擋到中心文字
+                    // 智慧避讓演算法：計算滑鼠在圖表中的象限並推向外側
                     const offsetX = coordinate.x > 300 ? -220 : 40;
-                    const offsetY = coordinate.y > 300 ? -120 : 20;
+                    const offsetY = coordinate.y > 250 ? -120 : 20;
                     
                     const percentVal = totalValue > 0 ? (Number(payload[0].value) / totalValue * 100).toFixed(1) : "0.0";
                     
