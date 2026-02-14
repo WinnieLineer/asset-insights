@@ -169,16 +169,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   }, [symbolValue, hasTicker]);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
     if (category === 'Stock' || category === 'ETF') {
       const sym = (symbolValue || '').toUpperCase();
       if (/^\d+$/.test(sym) || sym.endsWith('.TW')) form.setValue('currency', 'TWD');

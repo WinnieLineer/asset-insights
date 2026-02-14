@@ -41,15 +41,17 @@ export async function fetchMarketData(
     }
   } catch (e) { console.error('Rates fetch error:', e); }
 
-  const stocksAndCryptos = assets.filter(a => a.category === 'Stock' || a.category === 'Crypto');
-  if (stocksAndCryptos.length === 0) {
+  const priceFetchingCategories = ['Stock', 'Crypto', 'ETF'];
+  const fetchableAssets = assets.filter(a => priceFetchingCategories.includes(a.category));
+  
+  if (fetchableAssets.length === 0) {
     return { 
       marketData: { exchangeRate: rates.TWD, rates, assetMarketPrices },
       historicalTimeline: [] 
     };
   }
 
-  const symbols = stocksAndCryptos.map(a => formatSymbol(a.symbol, a.category));
+  const symbols = fetchableAssets.map(a => formatSymbol(a.symbol, a.category));
 
   // 2. Fetch Combined Market Data (Current + Historical) via Proxy
   try {
@@ -63,7 +65,7 @@ export async function fetchMarketData(
         const chart = result?.chart?.result?.[0];
         if (!chart) return;
 
-        const asset = stocksAndCryptos[idx];
+        const asset = fetchableAssets[idx];
         const apiCurrency = chart.meta?.currency || (asset.category === 'Crypto' ? 'USD' : 'TWD');
         const currentPrice = chart.meta?.regularMarketPrice || 0;
         
