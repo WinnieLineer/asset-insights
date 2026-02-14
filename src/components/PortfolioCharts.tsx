@@ -7,9 +7,7 @@ import {
 } from 'recharts';
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
 
-// 動態生成顏色函式
 const getCategoryColor = (cat: string) => {
   const COLORS: Record<string, string> = {
     'Stock': '#1e293b',
@@ -21,7 +19,6 @@ const getCategoryColor = (cat: string) => {
   };
   if (COLORS[cat]) return COLORS[cat];
   
-  // Hash 顏色
   let hash = 0;
   for (let i = 0; i < cat.length; i++) {
     hash = cat.charCodeAt(i) + ((hash << 5) - hash);
@@ -62,7 +59,6 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
   
-  // 將標籤推向更外圈，避免遮擋
   const labelRadius = outerRadius + 25; 
   const sx = cx + (outerRadius + 5) * cos;
   const sy = cy + (outerRadius + 5) * sin;
@@ -235,7 +231,6 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 allowEscapeViewBox={{ x: true, y: true }}
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    // 智慧避讓演算法：將提示框卡片推向圓餅圖的外象限，絕對不遮擋中心
                     const offsetX = coordinate.x > 300 ? -260 : 60;
                     const offsetY = coordinate.y > 200 ? -160 : 40;
                     const val = Number(payload[0].value);
@@ -267,7 +262,6 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
           </ResponsiveContainer>
         </div>
         
-        {/* 中心資訊卡：確保 TOTAL 始終居中顯示 */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none text-center z-10 bg-white/60 backdrop-blur-[4px] rounded-full w-32 h-32 shadow-inner border border-white/50">
           <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] mb-1">TOTAL</p>
           <p className="text-3xl font-black text-black tracking-tighter leading-none">100%</p>

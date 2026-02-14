@@ -22,7 +22,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Loader2, Search, Info } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const AUTOCOMPLETE_API = 'https://script.google.com/macros/s/AKfycbyQ12dBnspvRGwcNRZmZw3sXon8tnmPTttJ2b5LDw_3G1Zw7aaM6OPe9dSLhPPv-xRL/exec?q=';
@@ -82,12 +82,15 @@ interface Suggestion {
   typeDisp: string;
 }
 
+const PREDEFINED_CATEGORIES = ['Stock', 'ETF', 'Crypto', 'Option', 'Savings', 'Bank'];
+
 export function AssetForm({ onAdd, language }: AssetFormProps) {
   const lang = t[language];
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [tickerFound, setTickerFound] = useState<boolean | null>(null);
+  const isManualTyping = useRef(false);
   const suggestionRef = useRef<HTMLDivElement>(null);
 
   const formSchema = useMemo(() => z.object({
@@ -99,13 +102,11 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
-    // 如果類別是預設的市場類別，則必須有代碼
     const marketCats = ['Stock', 'Crypto', 'ETF', 'Option'];
     if (marketCats.includes(data.category) && (!data.symbol || data.symbol.trim() === '')) return false;
     return true;
   }, { message: lang.errors.tickerRequired, path: ['symbol'] })
     .refine((data) => {
-      // 如果有輸入代碼且搜尋無果，則報錯
       if (data.symbol && data.symbol.trim() !== '' && tickerFound === false) return false;
       return true;
     }, { message: lang.errors.invalidTicker, path: ['symbol'] }), [lang, tickerFound]);
@@ -136,14 +137,12 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const category = form.watch('category');
   const symbolValue = form.watch('symbol');
   
-  // 市場資產類別定義
-  const marketCats = ['Stock', 'Crypto', 'ETF', 'Option'];
-  const isMarketAsset = marketCats.includes(category);
-
   useEffect(() => {
-    if (!symbolValue || symbolValue.length < 1) {
-      setSuggestions([]);
-      setTickerFound(null);
+    if (!isManualTyping.current || !symbolValue || symbolValue.length < 1) {
+      if (!symbolValue) {
+        setSuggestions([]);
+        setTickerFound(null);
+      }
       return;
     }
 
@@ -175,6 +174,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   }, [symbolValue]);
 
   useEffect(() => {
+    const marketCats = ['Stock', 'Crypto', 'ETF', 'Option'];
     if (marketCats.includes(category)) {
       const sym = (symbolValue || '').toUpperCase();
       if (/^\d+$/.test(sym) || sym.endsWith('.TW')) form.setValue('currency', 'TWD');
@@ -184,12 +184,13 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   }, [category, symbolValue, form]);
 
   const selectSuggestion = (s: Suggestion) => {
+    isManualTyping.current = false;
     form.setValue('symbol', s.symbol);
     form.setValue('name', s.name);
     
-    // 智慧分類映射
     const typeDisp = (s.typeDisp || '').toUpperCase();
     let targetCat = 'Stock';
+    
     if (typeDisp.includes('ETF') || typeDisp.includes('交易所買賣基金')) {
       targetCat = 'ETF';
     } else if (typeDisp.includes('CRYPTOCURRENCY') || typeDisp.includes('加密貨幣')) {
@@ -199,13 +200,13 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     } else if (typeDisp.includes('EQUITY') || typeDisp.includes('股票')) {
       targetCat = 'Stock';
     } else if (s.typeDisp) {
-      // 如果 API 回傳了新的分類名稱且不在預設列表中，則直接使用 API 的分類
       targetCat = s.typeDisp;
     }
 
     form.setValue('category', targetCat);
     setTickerFound(true);
     setShowSuggestions(false);
+    setSuggestions([]);
   };
 
   const onSubmit = (v: z.infer<typeof formSchema>) => {
@@ -222,6 +223,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
       endDate: ''
     });
     setTickerFound(null);
+    isManualTyping.current = false;
   };
 
   return (
@@ -234,13 +236,12 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
             <Select onValueChange={(val) => { field.onChange(val); setTickerFound(null); }} value={field.value}>
               <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg transition-all focus:border-black"><SelectValue /></SelectTrigger></FormControl>
               <SelectContent>
-                {['Stock', 'ETF', 'Crypto', 'Option', 'Savings', 'Bank'].map(c => (
+                {PREDEFINED_CATEGORIES.map(c => (
                   <SelectItem key={c} value={c} className="text-sm font-bold">
                     {lang.categories[c as keyof typeof lang.categories] || c}
                   </SelectItem>
                 ))}
-                {/* 顯示動態新增的類別 */}
-                {!['Stock', 'ETF', 'Crypto', 'Option', 'Savings', 'Bank'].includes(field.value) && (
+                {!PREDEFINED_CATEGORIES.includes(field.value) && (
                   <SelectItem value={field.value} className="text-sm font-bold">{field.value}</SelectItem>
                 )}
               </SelectContent>
@@ -260,6 +261,10 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                   placeholder={lang.symbolPlaceholder} 
                   {...field} 
                   autoComplete="off"
+                  onChange={(e) => {
+                    isManualTyping.current = true;
+                    field.onChange(e);
+                  }}
                   className={cn(
                     "bg-slate-50 border-2 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg pl-10 pr-4 transition-colors",
                     tickerFound === false ? "border-rose-300 bg-rose-50" : "border-slate-200"
@@ -345,7 +350,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
         
         <Button 
           type="submit" 
-          disabled={tickerFound === false}
+          disabled={tickerFound === false || isSearching}
           className="w-full h-11 bg-black hover:bg-slate-800 text-white font-bold rounded-lg text-sm uppercase tracking-widest shadow-md transition-all active:scale-[0.98] mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {lang.submit}
