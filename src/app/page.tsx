@@ -112,6 +112,7 @@ const translations = {
     importSuccess: 'Data imported successfully.',
     exitReorder: 'DONE',
     reorderHint: 'REORDER MODE ACTIVE',
+    lastUpdated: 'Updated',
     categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit' }
   },
   zh: {
@@ -150,6 +151,7 @@ const translations = {
     importSuccess: '資產資料已成功匯入。',
     exitReorder: '完成調整',
     reorderHint: '已進入佈局調整模式',
+    lastUpdated: '最後更新',
     categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款' }
   }
 };
@@ -185,6 +187,7 @@ export default function AssetInsightsPage() {
   const [marketTimeline, setMarketTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
   const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
@@ -235,6 +238,9 @@ export default function AssetInsightsPage() {
 
     const savedInterval = localStorage.getItem('pref_interval');
     if (savedInterval) setInterval(savedInterval);
+
+    const savedUpdated = localStorage.getItem('pref_lastUpdated');
+    if (savedUpdated) setLastUpdated(savedUpdated);
   }, []);
 
   // Save persistent states
@@ -247,8 +253,9 @@ export default function AssetInsightsPage() {
       localStorage.setItem('pref_currency', displayCurrency);
       localStorage.setItem('pref_trackingDays', trackingDays);
       localStorage.setItem('pref_interval', interval);
+      if (lastUpdated) localStorage.setItem('pref_lastUpdated', lastUpdated);
     }
-  }, [assets, sections, layoutConfigs, language, displayCurrency, trackingDays, interval, mounted]);
+  }, [assets, sections, layoutConfigs, language, displayCurrency, trackingDays, interval, lastUpdated, mounted]);
 
   const updateAllData = useCallback(async (currentAssets: Asset[]) => {
     if (!mounted || loading) return;
@@ -279,6 +286,8 @@ export default function AssetInsightsPage() {
       );
       setMarketData(newData);
       setMarketTimeline(historicalTimeline);
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      setLastUpdated(now);
       toast({ title: t.dataUpdated });
     } catch (error) {
       toast({ variant: 'destructive', title: '市場同步失敗' });
@@ -812,7 +821,10 @@ export default function AssetInsightsPage() {
         <div className="max-w-[1900px] mx-auto px-4 sm:px-10 h-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 overflow-hidden">
           <div className="flex items-center gap-3 shrink-0">
             <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-lg"><Activity className="w-4 h-4 text-white" /></div>
-            <h1 className="text-[14px] font-black tracking-tighter uppercase">{t.title}</h1>
+            <div className="flex flex-col">
+              <h1 className="text-[14px] font-black tracking-tighter uppercase leading-tight">{t.title}</h1>
+              {lastUpdated && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t.lastUpdated}: {lastUpdated}</span>}
+            </div>
           </div>
           
           <div className="flex-1 flex items-center gap-4 overflow-hidden">

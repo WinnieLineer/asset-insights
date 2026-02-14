@@ -35,10 +35,11 @@ const t = {
 
 const renderActiveShape = (props: any) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, percent } = props;
+  const displayPercent = isNaN(percent) ? 0 : (percent * 100).toFixed(1);
   return (
     <g>
       <text x={cx} y={cy} dy={10} textAnchor="middle" fill="#000" fontSize={32} fontWeight={900}>
-        {`${(percent * 100).toFixed(1)}%`}
+        {`${displayPercent}%`}
       </text>
       <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} />
       <circle cx={cx} cy={cy} r={innerRadius - 10} fill={fill} opacity={0.05} />
@@ -47,7 +48,7 @@ const renderActiveShape = (props: any) => {
 };
 
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
-  if (percent < 0.05) return null; 
+  if (percent < 0.05 || isNaN(percent)) return null; 
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
@@ -186,6 +187,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
   if (loading && (!allocationData || allocationData.length === 0)) return <Skeleton className="w-full h-full rounded-2xl" />;
 
   const filteredData = allocationData.filter((d: any) => d.value > 0);
+  const totalValue = filteredData.reduce((acc: number, cur: any) => acc + cur.value, 0);
 
   return (
     <div className="modern-card p-6 sm:p-8 flex flex-col items-center border-slate-100 bg-white relative shadow-sm rounded-2xl h-full overflow-hidden">
@@ -207,25 +209,27 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 ))}
               </Pie>
               <RechartsTooltip 
+                allowEscapeViewBox={{ x: true, y: true }}
                 coordinate={{ x: 0, y: 0 }} 
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    // Dynamic tooltip positioning based on mouse quadrant to avoid overlap with center text
-                    const isLeft = coordinate.x < 200; 
+                    // Logic to avoid center text by pushing tooltips to quadrants
+                    const isLeft = coordinate.x < (window.innerWidth / 2) ? false : true; 
                     const isTop = coordinate.y < 200;
+                    const percentVal = totalValue > 0 ? (Number(payload[0].value) / totalValue * 100).toFixed(1) : "0.0";
                     
                     return (
                       <div 
                         className={cn(
-                          "bg-white border border-slate-100 p-4 rounded-xl shadow-xl z-[1000] min-w-[200px] pointer-events-none transition-transform duration-200",
-                          isLeft ? "-translate-x-full" : "translate-x-4",
-                          isTop ? "-translate-y-full" : "translate-y-4"
+                          "bg-white border border-slate-100 p-4 rounded-xl shadow-xl z-[1000] min-w-[180px] pointer-events-none transition-transform duration-200",
+                          coordinate.x > 300 ? "-translate-x-[110%]" : "translate-x-4",
+                          coordinate.y > 300 ? "-translate-y-[110%]" : "translate-y-4"
                         )}
                       >
                         <div className="flex justify-between items-start mb-1">
                           <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em]">{lang.categories[payload[0].name] || payload[0].name}</p>
                           <span className="text-[12px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
-                            {(payload[0].payload.percent * 100).toFixed(1)}%
+                            {percentVal}%
                           </span>
                         </div>
                         <p className="text-2xl font-black text-black">{symbol}{Number(payload[0].value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
