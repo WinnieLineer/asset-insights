@@ -35,7 +35,7 @@ const t = {
   en: { 
     allocation: 'CURRENT ALLOCATION', 
     trend: 'ASSET EVOLUTION', 
-    total: 'PORTFOLIO TOTAL', 
+    total: 'TOTAL', 
     categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF', 'Option': 'Option', 'Fund': 'Fund', 'Index': 'Index' }
   },
   zh: { 
@@ -55,19 +55,19 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   
   const sx = cx + (outerRadius + 5) * cos;
   const sy = cy + (outerRadius + 5) * sin;
-  const mx = cx + (outerRadius + 25) * cos;
-  const my = cy + (outerRadius + 25) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 12;
+  const mx = cx + (outerRadius + 20) * cos;
+  const my = cy + (outerRadius + 20) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 10;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
   return (
     <g>
-      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#cbd5e1" strokeWidth={1.5} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 6} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={12} fontWeight={900} className="uppercase tracking-widest">
+      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#cbd5e1" strokeWidth={1} fill="none" />
+      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={-2} textAnchor={textAnchor} fill="#64748b" fontSize={10} fontWeight={900} className="uppercase tracking-widest">
         {langCategories[name] || name}
       </text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 6} y={ey} dy={12} textAnchor={textAnchor} fill="#94a3b8" fontSize={11} fontWeight={700}>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={9} fontWeight={700}>
         {`${(percent * 100).toFixed(1)}%`}
       </text>
     </g>
@@ -91,20 +91,20 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   };
 
   return (
-    <div className="modern-card p-6 sm:p-8 border-slate-100 bg-white relative shadow-sm rounded-2xl h-full flex flex-col overflow-hidden">
-      <div className="w-full mb-6 flex items-center justify-between shrink-0">
-        <h3 className="pro-label">{lang.trend}</h3>
+    <div className="modern-card p-5 sm:p-6 border-slate-100 bg-white relative shadow-sm rounded-2xl h-full flex flex-col overflow-hidden">
+      <div className="w-full mb-4 flex items-center justify-between shrink-0">
+        <h3 className="pro-label text-xs sm:text-sm">{lang.trend}</h3>
       </div>
-      <div className="w-full flex-1 min-h-[300px]">
+      <div className="w-full flex-1 min-h-[250px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 30 }}>
+          <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 20 }}>
             <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="shortDate" axisLine={false} tickLine={false} tick={{ fontSize: 13, fill: '#94a3b8', fontWeight: 800 }} dy={10} />
+            <XAxis dataKey="shortDate" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 800 }} dy={5} />
             <YAxis 
               axisLine={false} 
               tickLine={false} 
-              width={80}
-              tick={{ fontSize: 13, fill: '#cbd5e1', fontWeight: 700 }} 
+              width={60}
+              tick={{ fontSize: 11, fill: '#cbd5e1', fontWeight: 700 }} 
               tickFormatter={formatYAxis} 
             />
             {activeCategoriesInHistory.map((cat) => (
@@ -113,7 +113,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                 dataKey={cat} 
                 stackId="a" 
                 fill={getCategoryColor(cat)} 
-                barSize={16} 
+                barSize={12} 
                 isAnimationActive={false}
               />
             ))}
@@ -121,7 +121,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               type="monotone" 
               dataKey="totalValue" 
               stroke="#000000" 
-              strokeWidth={3} 
+              strokeWidth={2} 
               dot={false} 
               isAnimationActive={false}
             />
@@ -148,19 +148,19 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
   const displayValue = activeEntry ? activeEntry.value : totalValue;
 
   return (
-    <div className="modern-card p-6 sm:p-8 flex flex-col items-center border-slate-100 bg-white relative shadow-sm rounded-2xl h-full overflow-hidden">
-      <div className="w-full mb-6 text-left shrink-0">
-        <h3 className="pro-label">{lang.allocation}</h3>
+    <div className="modern-card p-5 sm:p-6 flex flex-col items-center border-slate-100 bg-white relative shadow-sm rounded-2xl h-full overflow-hidden">
+      <div className="w-full mb-4 text-left shrink-0">
+        <h3 className="pro-label text-xs sm:text-sm">{lang.allocation}</h3>
       </div>
       <div className="flex-1 w-full relative flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 z-10">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie 
                 data={filteredData} 
                 cx="50%" cy="50%" 
                 innerRadius="75%" 
-                outerRadius="92%" 
+                outerRadius="95%" 
                 paddingAngle={2} 
                 dataKey="value" 
                 stroke="none" 
@@ -184,15 +184,15 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
           </ResponsiveContainer>
         </div>
         
-        <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center max-w-[60%] z-20">
-          <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 line-clamp-1">
+        <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center max-w-[55%] z-0">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 line-clamp-1">
             {displayLabel}
           </p>
-          <div className="flex items-baseline gap-1">
-             <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tighter leading-none">{displayPercent}</span>
-             <span className="text-[14px] font-black text-slate-400">%</span>
+          <div className="flex items-baseline gap-0.5">
+             <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter leading-none">{displayPercent}</span>
+             <span className="text-[12px] font-black text-slate-400">%</span>
           </div>
-          <div className="mt-3 text-[11px] font-black text-white bg-black px-4 py-1.5 rounded-full shadow-2xl border border-white/10 whitespace-nowrap animate-fade-in">
+          <div className="mt-2 text-[10px] font-black text-white bg-slate-900 px-3 py-1 rounded-full shadow-lg border border-white/10 whitespace-nowrap">
             {symbol}{displayValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </div>
         </div>
