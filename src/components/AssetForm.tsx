@@ -124,16 +124,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     },
   });
 
-  useEffect(() => {
-    const lastCategory = localStorage.getItem('last_asset_category');
-    const lastCurrency = localStorage.getItem('last_asset_currency') as Currency;
-    const lastDate = localStorage.getItem('last_asset_date');
-
-    if (lastCategory) form.setValue('category', lastCategory);
-    if (lastCurrency) form.setValue('currency', lastCurrency);
-    if (lastDate) form.setValue('acquisitionDate', lastDate);
-  }, [form]);
-
   const category = form.watch('category');
   const symbolValue = form.watch('symbol');
   
@@ -210,10 +200,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   };
 
   const onSubmit = (v: z.infer<typeof formSchema>) => {
-    localStorage.setItem('last_asset_category', v.category);
-    localStorage.setItem('last_asset_currency', v.currency);
-    localStorage.setItem('last_asset_date', v.acquisitionDate);
-
     onAdd(v as Omit<Asset, 'id'>);
     form.reset({
       ...v,
@@ -241,7 +227,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                     {lang.categories[c as keyof typeof lang.categories] || c}
                   </SelectItem>
                 ))}
-                {!PREDEFINED_CATEGORIES.includes(field.value) && (
+                {field.value && !PREDEFINED_CATEGORIES.includes(field.value) && (
                   <SelectItem value={field.value} className="text-sm font-bold">{field.value}</SelectItem>
                 )}
               </SelectContent>

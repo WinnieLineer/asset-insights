@@ -54,7 +54,8 @@ const renderActiveShape = (props: any) => {
 };
 
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
-  if (percent < 0.005 || isNaN(percent)) return null; 
+  const displayPercent = percent || 0;
+  if (displayPercent < 0.005) return null; 
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
@@ -75,7 +76,7 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
         {langCategories[name] || name}
       </text>
       <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={9} fontWeight={600}>
-        {`${(percent * 100).toFixed(1)}%`}
+        {`${(displayPercent * 100).toFixed(1)}%`}
       </text>
     </g>
   );
