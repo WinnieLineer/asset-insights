@@ -157,7 +157,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
               </label>
               <Textarea 
                 placeholder={lang.instructionPlaceholder}
-                className="text-sm min-h-[80px] bg-white text-slate-900 border-2 border-slate-200 focus:ring-0 focus:border-black rounded-xl p-4 font-bold placeholder:text-slate-300 transition-all shadow-sm"
+                className="text-sm min-h-[80px] bg-white text-black border-2 border-slate-200 focus:ring-0 focus:border-black rounded-xl p-4 font-bold placeholder:text-slate-300 transition-all shadow-sm"
                 value={userQuestion}
                 onChange={(e) => setUserQuestion(e.target.value)}
               />

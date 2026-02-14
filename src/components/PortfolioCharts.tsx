@@ -74,7 +74,7 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   );
 };
 
-export function HistoricalTrendChart({ historicalData, displayCurrency, language, loading }: any) {
+export function HistoricalTrendChart({ historicalData, displayCurrency, language, loading, height }: any) {
   const lang = t[language as keyof typeof t] || t.zh;
   const symbol = SYMBOLS[displayCurrency as Currency] || '$';
   
@@ -91,11 +91,11 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   };
 
   return (
-    <div className="modern-card p-5 sm:p-6 border-slate-100 bg-white relative shadow-sm rounded-2xl h-full flex flex-col overflow-hidden">
+    <div className="modern-card p-5 sm:p-6 border-slate-100 bg-white relative shadow-sm rounded-2xl h-full flex flex-col overflow-hidden" style={{ minHeight: height || 350 }}>
       <div className="w-full mb-4 flex items-center justify-between shrink-0">
         <h3 className="pro-label text-xs sm:text-sm">{lang.trend}</h3>
       </div>
-      <div className="w-full flex-1 min-h-[250px]">
+      <div className="w-full flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 20 }}>
             <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" />
@@ -125,6 +125,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               dot={false} 
               isAnimationActive={false}
             />
+            <Tooltip content={() => null} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -132,7 +133,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   );
 }
 
-export function AllocationPieChart({ allocationData, displayCurrency, language, loading }: any) {
+export function AllocationPieChart({ allocationData, displayCurrency, language, loading, height }: any) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const lang = t[language as keyof typeof t] || t.zh;
   const symbol = SYMBOLS[displayCurrency as Currency] || '$';
@@ -148,7 +149,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
   const displayValue = activeEntry ? activeEntry.value : totalValue;
 
   return (
-    <div className="modern-card p-5 sm:p-6 flex flex-col items-center border-slate-100 bg-white relative shadow-sm rounded-2xl h-full overflow-hidden">
+    <div className="modern-card p-5 sm:p-6 flex flex-col items-center border-slate-100 bg-white relative shadow-sm rounded-2xl h-full overflow-hidden" style={{ minHeight: height || 350 }}>
       <div className="w-full mb-4 text-left shrink-0">
         <h3 className="pro-label text-xs sm:text-sm">{lang.allocation}</h3>
       </div>

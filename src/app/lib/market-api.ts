@@ -5,7 +5,7 @@ const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
 function formatSymbol(s: string, category: string) {
   const upper = s.toUpperCase();
-  if (category === 'Crypto') return `${upper}-USD`;
+  // 加密貨幣代碼透過搜尋 API 已取得標準格式 (如 BTC-USD)，故不需額外處理
   if (/^\d+$/.test(upper)) return `${upper}.TW`; // Taiwan
   if (upper.endsWith('.SI')) return upper; // Singapore
   if (upper.length <= 4 && !upper.includes('.')) return upper; // US
@@ -40,7 +40,6 @@ export async function fetchMarketData(
     }
   } catch (e) { console.error('Rates fetch error:', e); }
 
-  // 只要有代碼的資產都嘗試抓取價格
   const fetchableAssets = assets.filter(a => a.symbol && a.symbol.trim() !== '');
   
   if (fetchableAssets.length === 0) {

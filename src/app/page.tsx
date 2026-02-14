@@ -525,10 +525,13 @@ export default function AssetInsightsPage() {
       config.width === 8 && "xl:col-span-8",
       config.width === 10 && "xl:col-span-10",
       config.width === 12 && "xl:col-span-12",
-      !isDesktop && "h-auto min-h-0"
+      !isDesktop && "h-auto min-h-[100px]"
     );
 
-    const wrapperStyle = isDesktop ? { minHeight: `${config.height}px`, height: `${config.height}px` } : {};
+    const wrapperStyle = { 
+      minHeight: isDesktop ? `${config.height}px` : (['historicalTrend', 'allocation'].includes(id) ? '350px' : 'auto'), 
+      height: isDesktop ? `${config.height}px` : 'auto' 
+    };
 
     switch (id) {
       case 'summary':
@@ -643,14 +646,14 @@ export default function AssetInsightsPage() {
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <HistoricalTrendChart language={language} historicalData={assetCalculations.chartData} displayCurrency={displayCurrency} loading={loading} height={config.height} />
+            <HistoricalTrendChart language={language} historicalData={assetCalculations.chartData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? config.height : 350} />
           </div>
         );
       case 'allocation':
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <AllocationPieChart language={language} allocationData={assetCalculations.allocationData} displayCurrency={displayCurrency} loading={loading} height={config.height} />
+            <AllocationPieChart language={language} allocationData={assetCalculations.allocationData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? config.height : 350} />
           </div>
         );
       case 'list':
@@ -766,19 +769,15 @@ export default function AssetInsightsPage() {
               </div>
               
               <div className="hidden md:flex items-center gap-4 overflow-hidden border-l border-slate-100 pl-6 h-6">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap shrink-0">
-                  {t.exchangeRate.replace('[CUR]', displayCurrency)}
-                </span>
                 <div className="flex items-center gap-6 overflow-x-auto no-scrollbar scroll-smooth">
-                  {Object.entries(marketData.rates).filter(([cur]) => cur !== displayCurrency).map(([cur, rate]) => {
+                  {Object.entries(marketData.rates).map(([cur, rate]) => {
                     const baseRate = marketData.rates[displayCurrency] || 1;
                     const relativeRate = rate / baseRate;
                     return (
-                      <div key={cur} className="flex items-center gap-1.5 whitespace-nowrap">
-                        <span className="text-[11px] font-black text-slate-900">{cur}</span>
-                        <ArrowRightLeft className="w-2 h-2 text-slate-300" />
+                      <div key={cur} className="flex items-center gap-1.5 whitespace-nowrap bg-slate-50 px-2 py-0.5 rounded-md">
+                        <span className="text-[10px] font-black text-slate-500">{cur}</span>
                         <span className="text-[11px] font-black text-emerald-600">
-                          {relativeRate.toFixed(4).replace(/\.?0+$/, '')}
+                          {relativeRate.toFixed(3)}
                         </span>
                       </div>
                     );
