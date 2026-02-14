@@ -105,11 +105,8 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
-    // 存款與其他資產不需要代碼
     const noMarketCats = ['Savings', 'Bank'];
     if (noMarketCats.includes(data.category)) return true;
-    
-    // 市場類別需要代碼
     if (!data.symbol || data.symbol.trim() === '') return false;
     return true;
   }, { message: lang.errors.tickerRequired, path: ['symbol'] })
@@ -233,7 +230,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                   field.onChange(val); 
                 }
                 setTickerFound(null); 
-              }} value={PREDEFINED_CATEGORIES.includes(field.value) ? field.value : (field.value === '' ? '' : field.value)}>
+              }} value={field.value}>
                 <FormControl>
                   <SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg transition-all focus:border-black">
                     <SelectValue />
