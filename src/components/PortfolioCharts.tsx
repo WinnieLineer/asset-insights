@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -34,13 +35,9 @@ const t = {
 };
 
 const renderActiveShape = (props: any) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, percent } = props;
-  const displayPercent = isNaN(percent) ? 0 : (percent * 100).toFixed(1);
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
   return (
     <g>
-      <text x={cx} y={cy} dy={10} textAnchor="middle" fill="#000" fontSize={32} fontWeight={900}>
-        {`${displayPercent}%`}
-      </text>
       <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} />
       <circle cx={cx} cy={cy} r={innerRadius - 10} fill={fill} opacity={0.05} />
     </g>
@@ -48,7 +45,7 @@ const renderActiveShape = (props: any) => {
 };
 
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
-  if (percent < 0.05 || isNaN(percent)) return null; 
+  if (percent < 0.01 || isNaN(percent)) return null; 
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
@@ -199,10 +196,17 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie 
-                activeIndex={activeIndex ?? undefined} activeShape={renderActiveShape} data={filteredData} cx="50%" cy="50%" 
+                activeIndex={activeIndex ?? undefined} 
+                activeShape={renderActiveShape} 
+                data={filteredData} 
+                cx="50%" cy="50%" 
                 innerRadius="55%" outerRadius="70%" paddingAngle={4} 
-                dataKey="value" stroke="transparent" onMouseEnter={(_, index) => setActiveIndex(index)} onMouseLeave={() => setActiveIndex(null)} 
-                label={(props) => renderCustomLabel({ ...props, symbol, langCategories: lang.categories })} labelLine={false}
+                dataKey="value" stroke="transparent" 
+                onMouseEnter={(_, index) => setActiveIndex(index)} 
+                onMouseLeave={() => setActiveIndex(null)} 
+                label={(props) => renderCustomLabel({ ...props, symbol, langCategories: lang.categories })} 
+                labelLine={false}
+                isAnimationActive={false}
               >
                 {filteredData.map((entry: any, i: number) => (
                   <Cell key={i} fill={ASSET_COLORS[entry.name] || '#ccc'} opacity={activeIndex === null || activeIndex === i ? 1 : 0.2} className="transition-opacity duration-300 outline-none" />
@@ -212,10 +216,8 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 allowEscapeViewBox={{ x: true, y: true }}
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    // 智慧避讓演算法：計算滑鼠在圖表中的象限並推向外側
-                    const offsetX = coordinate.x > 300 ? -220 : 40;
-                    const offsetY = coordinate.y > 250 ? -120 : 20;
-                    
+                    const offsetX = coordinate.x > 250 ? -220 : 40;
+                    const offsetY = coordinate.y > 200 ? -120 : 20;
                     const percentVal = totalValue > 0 ? (Number(payload[0].value) / totalValue * 100).toFixed(1) : "0.0";
                     
                     return (
@@ -244,12 +246,11 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
             </PieChart>
           </ResponsiveContainer>
         </div>
-        {activeIndex === null && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none text-center z-10">
-            <p className="text-[12px] font-black text-slate-200 uppercase tracking-[0.4em]">TOTAL</p>
-            <p className="text-3xl font-black text-black tracking-tighter">100%</p>
-          </div>
-        )}
+        
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none text-center z-10">
+          <p className="text-[12px] font-black text-slate-200 uppercase tracking-[0.4em]">TOTAL</p>
+          <p className="text-3xl font-black text-black tracking-tighter">100%</p>
+        </div>
       </div>
     </div>
   );

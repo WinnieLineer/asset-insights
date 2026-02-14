@@ -660,7 +660,7 @@ export default function AssetInsightsPage() {
                 </h3>
               </div>
               <CardContent className="p-0 flex-1 overflow-hidden relative">
-                <Table className="min-w-[1100px] border-separate border-spacing-0" wrapperClassName="h-full">
+                <Table className="min-w-[1100px] border-separate border-spacing-0" wrapperClassName="h-full overflow-auto">
                   <TableHeader className="relative z-30">
                     <TableRow className="hover:bg-transparent border-none">
                       <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md px-6 sm:px-10 h-14 cursor-pointer select-none group border-b border-slate-100 z-30" onClick={() => requestSort('active', 'name')}>
@@ -745,7 +745,7 @@ export default function AssetInsightsPage() {
                 </h3>
               </div>
               <CardContent className="p-0 flex-1 overflow-hidden relative">
-                <Table className="min-w-[1000px] border-separate border-spacing-0" wrapperClassName="h-full">
+                <Table className="min-w-[1000px] border-separate border-spacing-0" wrapperClassName="h-full overflow-auto">
                   <TableHeader className="relative z-30">
                     <TableRow className="hover:bg-transparent border-none">
                       <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md px-6 sm:px-10 h-14 cursor-pointer select-none group border-b border-slate-100 z-30" onClick={() => requestSort('closed', 'name')}>
