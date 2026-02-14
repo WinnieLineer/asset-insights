@@ -232,6 +232,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 allowEscapeViewBox={{ x: true, y: true }}
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
+                    // Tooltip 象限避讓邏輯：確保不遮擋中心
                     const quadrantX = coordinate.x > 300 ? -260 : 60;
                     const quadrantY = coordinate.y > 200 ? -160 : 40;
                     
