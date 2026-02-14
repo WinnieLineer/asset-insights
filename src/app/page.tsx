@@ -31,7 +31,8 @@ import {
   ChevronDown,
   Maximize2,
   Minimize2,
-  Plus
+  Plus,
+  CheckCircle2
 } from 'lucide-react';
 import { 
   Card, 
@@ -108,6 +109,7 @@ const translations = {
     importData: 'Import',
     importSuccess: 'Data imported successfully.',
     reorderHint: 'REORDER MODE ACTIVE',
+    saveLayout: 'SAVE LAYOUT',
     layoutHint: 'Hint: Long press card to adjust layout',
     lastUpdated: 'Last Updated',
     allCategories: 'All',
@@ -147,6 +149,7 @@ const translations = {
     importData: '匯入',
     importSuccess: '資產資料已成功匯入。',
     reorderHint: '已進入佈局調整模式',
+    saveLayout: '儲存佈局配置',
     layoutHint: '提示：長按卡片區塊可調整佈局',
     lastUpdated: '最後更新',
     allCategories: '全部類別',
@@ -785,6 +788,14 @@ export default function AssetInsightsPage() {
             </div>
             
             <div className="flex items-center justify-between md:justify-end gap-2 sm:gap-4">
+              {isReordering && (
+                <Button 
+                  onClick={() => setIsReordering(false)} 
+                  className="bg-black text-white hover:bg-slate-800 h-7 px-4 rounded-full font-black text-[11px] flex items-center gap-2 shadow-lg animate-fade-in"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" /> {t.saveLayout}
+                </Button>
+              )}
               <div className="md:hidden flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
                  {Object.entries(marketData.rates).slice(0, 3).map(([cur, rate]) => {
                    const baseRate = marketData.rates[displayCurrency] || 1;
