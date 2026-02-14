@@ -14,6 +14,7 @@ const getCategoryColor = (cat: string) => {
     'ETF': '#0f172a',
     'Crypto': '#3730a3',
     'Option': '#7c3aed',
+    'Fund': '#2563eb',
     'Bank': '#064e3b',
     'Savings': '#78350f'
   };
@@ -33,13 +34,13 @@ const t = {
     allocation: 'CURRENT PORTFOLIO ALLOCATION', 
     trend: 'HISTORICAL ASSET EVOLUTION', 
     total: 'PORTFOLIO TOTAL', 
-    categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF', 'Option': 'Option' }
+    categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF', 'Option': 'Option', 'Fund': 'Fund' }
   },
   zh: { 
     allocation: '當前資產配置比例', 
     trend: '歷史資產演變走勢', 
     total: '投資組合總計', 
-    categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款', 'ETF': 'ETF', 'Option': '選擇權' }
+    categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款', 'ETF': 'ETF', 'Option': '選擇權', 'Fund': '基金' }
   }
 };
 
@@ -229,10 +230,10 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 ))}
               </Pie>
               <RechartsTooltip 
-                position={{ y: 20 }} 
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    const quadrantX = coordinate.x > 300 ? -220 : 60;
+                    const isRightSide = coordinate.x > 250;
+                    const quadrantX = isRightSide ? coordinate.x - 220 : coordinate.x + 60;
                     const val = Number(payload[0].value);
                     const percentVal = totalValue > 0 ? ((val / totalValue) * 100).toFixed(1) : "0.0";
                     
@@ -242,7 +243,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                         style={{
                           position: 'absolute',
                           left: quadrantX,
-                          top: 0,
+                          top: coordinate.y - 40,
                         }}
                       >
                         <div className="flex justify-between items-center mb-2">

@@ -40,7 +40,7 @@ const t = {
     date: 'Acquisition Date',
     endDate: 'Closure Date',
     submit: 'Add to Portfolio',
-    categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF', Option: 'Option', Custom: 'Custom...' },
+    categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Custom: 'Custom...' },
     errors: { 
       nameTooShort: 'Min 2 characters', 
       invalidAmount: 'Positive number required', 
@@ -61,7 +61,7 @@ const t = {
     date: '持有日期',
     endDate: '結清日期 (選填)',
     submit: '新增部位',
-    categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產', ETF: 'ETF', Option: '選擇權', Custom: '自定義類別...' },
+    categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產', ETF: 'ETF', Option: '選擇權', Fund: '基金', Custom: '自定義類別...' },
     errors: { 
       nameTooShort: '至少 2 個字', 
       invalidAmount: '請輸入有效的正數', 
@@ -84,7 +84,7 @@ interface Suggestion {
   typeDisp: string;
 }
 
-const PREDEFINED_CATEGORIES = ['Stock', 'ETF', 'Crypto', 'Option', 'Savings', 'Bank'];
+const PREDEFINED_CATEGORIES = ['Stock', 'ETF', 'Crypto', 'Option', 'Fund', 'Savings', 'Bank'];
 
 export function AssetForm({ onAdd, language }: AssetFormProps) {
   const lang = t[language];
@@ -160,7 +160,6 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
           setShowSuggestions(true);
         }
       } catch (error) {
-        console.error('Autocomplete error:', error);
         setTickerFound(false);
       } finally {
         setIsSearching(false);
@@ -196,6 +195,8 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
       targetCat = 'Option';
     } else if (typeDisp.includes('EQUITY') || typeDisp.includes('股票') || typeDisp.includes('權益')) {
       targetCat = 'Stock';
+    } else if (typeDisp.includes('FUND') || typeDisp.includes('基金')) {
+      targetCat = 'Fund';
     } else if (typeDispRaw !== '') {
       targetCat = typeDispRaw; 
     }

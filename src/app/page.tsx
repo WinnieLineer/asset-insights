@@ -116,7 +116,7 @@ const translations = {
     reorderHint: 'REORDER MODE ACTIVE',
     lastUpdated: 'Updated',
     allCategories: 'All',
-    categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option' }
+    categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option', Fund: 'Fund' }
   },
   zh: {
     title: 'ASSET INSIGHTS PRO',
@@ -157,7 +157,7 @@ const translations = {
     reorderHint: '已進入佈局調整模式',
     lastUpdated: '最後更新',
     allCategories: '全部類別',
-    categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款', ETF: 'ETF', Option: '選擇權' }
+    categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款', ETF: 'ETF', Option: '選擇權', Fund: '基金' }
   }
 };
 
