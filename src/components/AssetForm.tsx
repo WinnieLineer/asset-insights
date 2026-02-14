@@ -22,10 +22,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Loader2, Search, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Loader2, Search } from 'lucide-react';
 
-const AUTOCOMPLETE_API = 'https://script.google.com/macros/s/AKfycbyQ12dBnspvRGwcNRZmZw3sXon8tnmPTttJ2b5LDw_3G1Zw7aaM6OPe9dSLhPPv-xRL/exec?query=';
+const AUTOCOMPLETE_API = 'https://script.google.com/macros/s/AKfycbyQ12dBnspvRGwcNRZmZw3sXon8tnmPTttJ2b5LDw_3G1Zw7aaM6OPe9dSLhPPv-xRL/exec?q=';
 
 const t = {
   en: {
