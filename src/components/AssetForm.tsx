@@ -169,13 +169,14 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     const rawType = (s.typeDisp || '').trim().toUpperCase();
     let targetCat = 'Stock';
     
+    // Mapping common display types to internal keys
     if (rawType.includes('ETF') || rawType.includes('交易所買賣基金')) targetCat = 'ETF';
     else if (rawType.includes('CRYPTO') || rawType.includes('加密貨幣')) targetCat = 'Crypto';
     else if (rawType.includes('FUND') || rawType.includes('基金')) targetCat = 'Fund';
     else if (rawType.includes('INDEX') || rawType.includes('指數')) targetCat = 'Index';
     else if (rawType.includes('OPTION') || rawType.includes('選擇權')) targetCat = 'Option';
     else if (rawType.includes('EQUITY') || rawType.includes('權益') || rawType.includes('股票')) targetCat = 'Stock';
-    else if (s.typeDisp) targetCat = s.typeDisp;
+    else if (s.typeDisp) targetCat = s.typeDisp; // For any other categories (e.g., BRO)
 
     form.setValue('category', targetCat);
     setTickerFound(true);
@@ -224,7 +225,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                       {lang.categories[c as keyof typeof lang.categories] || c}
                     </SelectItem>
                   ))}
-                  {/* 動態顯示 API 回傳但不在預設清單中的類別，防止顯示空白 */}
+                  {/* Fixed: Render dynamic category if not in predefined list to prevent blank display */}
                   {field.value && !PREDEFINED_CATEGORIES.includes(field.value) && field.value !== 'CUSTOM_ENTRY' && (
                     <SelectItem value={field.value} className="text-sm font-bold">{field.value}</SelectItem>
                   )}

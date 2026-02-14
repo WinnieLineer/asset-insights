@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, Sector
+  Tooltip
 } from 'recharts';
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -47,7 +47,7 @@ const t = {
 };
 
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
-  if (!percent || percent < 0.015) return null; // 比例太小不顯示標籤，防止重疊
+  if (!percent || percent < 0.015) return null;
   
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
@@ -179,12 +179,12 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                   />
                 ))}
               </Pie>
-              <Tooltip content={<></>} />
+              {/* Fixed: Use a standard div or a functional component that returns null to avoid Fragment prop error */}
+              <Tooltip content={() => null} />
             </PieChart>
           </ResponsiveContainer>
         </div>
         
-        {/* 中心動態數據卡片 */}
         <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center max-w-[50%] z-20">
           <p className="text-[12px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 line-clamp-1">
             {displayLabel}
