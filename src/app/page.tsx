@@ -201,7 +201,7 @@ export default function AssetInsightsPage() {
   const [sections, setSections] = useState<string[]>(['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'closedList', 'ai', 'addAsset']);
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
     summary: { width: 12, height: 260 },
-    controls: { width: 12, height: 160 },
+    controls: { width: 12, height: 110 },
     historicalTrend: { width: 12, height: 500 },
     allocation: { width: 12, height: 500 },
     list: { width: 12, height: 600 },
@@ -568,13 +568,13 @@ export default function AssetInsightsPage() {
               </Card>
               <div className="lg:col-span-3 flex flex-col items-center justify-center gap-2 py-4">
                 {lastUpdated && (
-                  <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] animate-fade-in text-center w-full mb-2">
-                    {t.lastUpdated}:<br/><span className="text-slate-600">{lastUpdated}</span>
+                  <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] animate-fade-in text-center w-full mb-1">
+                    {t.lastUpdated}:<br/><span className="text-slate-600 font-bold">{lastUpdated}</span>
                   </div>
                 )}
-                <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[120px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-4 rounded-2xl shadow-xl transition-all active:scale-95 py-8">
-                  <RefreshCw className={cn("w-8 h-8", loading && "animate-spin")} />
-                  <span className="text-[14px] tracking-[0.4em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
+                <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full min-h-[100px] bg-black text-white hover:bg-slate-800 font-black flex flex-col items-center justify-center gap-2 rounded-2xl shadow-xl transition-all active:scale-95 py-6">
+                  <RefreshCw className={cn("w-6 h-6", loading && "animate-spin")} />
+                  <span className="text-[12px] tracking-[0.3em] uppercase">{loading ? t.fetching : t.syncMarket}</span>
                 </Button>
               </div>
             </section>
@@ -584,48 +584,49 @@ export default function AssetInsightsPage() {
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <section className="bg-slate-50/80 backdrop-blur-md p-6 sm:p-8 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-end gap-4 sm:gap-6 shadow-inner h-full">
-              <div className="shrink-0 space-y-2">
-                <Label className="pro-label whitespace-nowrap flex items-center gap-2 ml-1 mb-2">
-                  <Calendar className="w-4 h-4" /> {t.baseRange}
-                </Label>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                  <Select value={trackingDays} onValueChange={setTrackingDays}>
-                    <SelectTrigger className="w-28 sm:w-32 h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 shadow-sm"><SelectValue /></SelectTrigger>
+            <section className="bg-slate-50/80 backdrop-blur-md p-4 sm:p-5 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-center gap-3 sm:gap-4 shadow-inner h-full">
+              <div className="shrink-0 flex items-center gap-3">
+                <div className="space-y-1.5">
+                  <Label className="pro-label text-[11px] whitespace-nowrap flex items-center gap-1.5 ml-0.5 opacity-70">
+                    <Calendar className="w-3.5 h-3.5" /> {t.baseRange}
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Select value={trackingDays} onValueChange={setTrackingDays}>
+                      <SelectTrigger className="w-24 sm:w-28 h-9 bg-white font-black text-[13px] rounded-lg border border-slate-200 shadow-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="30">{t.days30}</SelectItem>
+                        <SelectItem value="90">{t.days90}</SelectItem>
+                        <SelectItem value="180">{t.days180}</SelectItem>
+                        <SelectItem value="365">{t.days365}</SelectItem>
+                        <SelectItem value="max">{t.maxRange}</SelectItem>
+                        <SelectItem value="custom">{t.customRange}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {trackingDays === 'custom' && (
+                      <div className="flex items-center gap-1.5 animate-fade-in">
+                        <Input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="w-28 h-9 font-black text-[11px] rounded-lg border border-slate-200" />
+                        <Input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="w-28 h-9 font-black text-[11px] rounded-lg border border-slate-200" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="pro-label text-[11px] whitespace-nowrap flex items-center gap-1.5 ml-0.5 opacity-70">
+                    <Clock className="w-3.5 h-3.5" /> {t.interval}
+                  </Label>
+                  <Select value={interval} onValueChange={setInterval}>
+                    <SelectTrigger className="w-24 sm:w-28 h-9 bg-white font-black text-[13px] rounded-lg border border-slate-200 shadow-sm"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="30">{t.days30}</SelectItem>
-                      <SelectItem value="90">{t.days90}</SelectItem>
-                      <SelectItem value="180">{t.days180}</SelectItem>
-                      <SelectItem value="365">{t.days365}</SelectItem>
-                      <SelectItem value="max">{t.maxRange}</SelectItem>
-                      <SelectItem value="custom">{t.customRange}</SelectItem>
+                      <SelectItem value="1d">{t.int1d}</SelectItem>
+                      <SelectItem value="1wk">{t.int1wk}</SelectItem>
+                      <SelectItem value="1mo">{t.int1mo}</SelectItem>
                     </SelectContent>
                   </Select>
-                  {trackingDays === 'custom' && (
-                    <div className="flex items-center gap-2 animate-fade-in">
-                      <Input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="w-32 h-10 sm:h-11 font-black text-[12px] rounded-xl border-2 border-slate-300" />
-                      <span className="font-black text-slate-300">-</span>
-                      <Input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="w-32 h-10 sm:h-11 font-black text-[12px] rounded-xl border-2 border-slate-300" />
-                    </div>
-                  )}
                 </div>
               </div>
-              <div className="shrink-0 space-y-2">
-                <Label className="pro-label whitespace-nowrap flex items-center gap-2 ml-1 mb-2">
-                  <Clock className="w-4 h-4" /> {t.interval}
-                </Label>
-                <Select value={interval} onValueChange={setInterval}>
-                  <SelectTrigger className="w-28 sm:w-32 h-10 sm:h-11 bg-white font-black text-[14px] rounded-xl border-2 border-slate-300 shadow-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1d">{t.int1d}</SelectItem>
-                    <SelectItem value="1wk">{t.int1wk}</SelectItem>
-                    <SelectItem value="1mo">{t.int1mo}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex-1 flex items-center gap-3 sm:gap-4 w-full">
-                <Button variant="outline" onClick={handleExport} className="flex-1 h-10 sm:h-11 font-black text-[14px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black transition-all"><Download className="w-4 h-4" /> {t.exportData}</Button>
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-10 sm:h-11 font-black text-[14px] uppercase tracking-[0.2em] gap-2 bg-white rounded-xl shadow-sm border-2 border-slate-200 hover:border-black transition-all"><Upload className="w-4 h-4" /> {t.importData}</Button>
+              <div className="flex-1 flex items-center gap-3 w-full self-end md:mb-0.5">
+                <Button variant="outline" onClick={handleExport} className="flex-1 h-9 font-black text-[12px] uppercase tracking-[0.1em] gap-1.5 bg-white rounded-lg shadow-sm border border-slate-200 hover:border-black transition-all"><Download className="w-3.5 h-3.5" /> {t.exportData}</Button>
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 h-9 font-black text-[12px] uppercase tracking-[0.1em] gap-1.5 bg-white rounded-lg shadow-sm border border-slate-200 hover:border-black transition-all"><Upload className="w-3.5 h-3.5" /> {t.importData}</Button>
                 <input type="file" ref={fileInputRef} onChange={(e) => {
                    const file = e.target.files?.[0]; if (!file) return;
                    const reader = new FileReader(); reader.onload = (event) => {
