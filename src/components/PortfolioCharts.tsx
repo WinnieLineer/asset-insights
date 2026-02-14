@@ -232,8 +232,9 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 allowEscapeViewBox={{ x: true, y: true }}
                 content={({ active, payload, coordinate }) => {
                   if (active && payload?.length && coordinate) {
-                    const offsetX = coordinate.x > 300 ? -260 : 60;
-                    const offsetY = coordinate.y > 200 ? -160 : 40;
+                    const quadrantX = coordinate.x > 300 ? -260 : 60;
+                    const quadrantY = coordinate.y > 200 ? -160 : 40;
+                    
                     const val = Number(payload[0].value);
                     const percentVal = totalValue > 0 ? ((val / totalValue) * 100).toFixed(1) : "0.0";
                     
@@ -242,8 +243,8 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                         className="bg-white border border-slate-100 p-5 rounded-2xl shadow-2xl z-[1000] min-w-[220px] pointer-events-none animate-in fade-in zoom-in-95 duration-200"
                         style={{
                           position: 'absolute',
-                          left: coordinate.x + offsetX,
-                          top: coordinate.y + offsetY,
+                          left: coordinate.x + quadrantX,
+                          top: coordinate.y + quadrantY,
                         }}
                       >
                         <div className="flex justify-between items-center mb-2">

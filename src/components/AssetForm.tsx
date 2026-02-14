@@ -178,7 +178,9 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     form.setValue('symbol', s.symbol);
     form.setValue('name', s.name);
     
-    const typeDisp = (s.typeDisp || '').toUpperCase();
+    const typeDispRaw = (s.typeDisp || '').trim();
+    const typeDisp = typeDispRaw.toUpperCase();
+    
     let targetCat = 'Stock';
     
     if (typeDisp.includes('ETF') || typeDisp.includes('交易所買賣基金')) {
@@ -189,8 +191,8 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
       targetCat = 'Option';
     } else if (typeDisp.includes('EQUITY') || typeDisp.includes('股票')) {
       targetCat = 'Stock';
-    } else if (s.typeDisp) {
-      targetCat = s.typeDisp;
+    } else if (typeDispRaw !== '') {
+      targetCat = typeDispRaw;
     }
 
     form.setValue('category', targetCat);
@@ -220,7 +222,11 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
           <FormItem>
             <FormLabel className="pro-label text-slate-500">{lang.category}</FormLabel>
             <Select onValueChange={(val) => { field.onChange(val); setTickerFound(null); }} value={field.value}>
-              <FormControl><SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg transition-all focus:border-black"><SelectValue /></SelectTrigger></FormControl>
+              <FormControl>
+                <SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg transition-all focus:border-black">
+                  <SelectValue />
+                </SelectTrigger>
+              </FormControl>
               <SelectContent>
                 {PREDEFINED_CATEGORIES.map(c => (
                   <SelectItem key={c} value={c} className="text-sm font-bold">
@@ -253,7 +259,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                   }}
                   className={cn(
                     "bg-slate-50 border-2 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg pl-10 pr-4 transition-colors",
-                    tickerFound === false ? "border-rose-300 bg-rose-50" : "border-slate-200"
+                    tickerFound === false ? "border-rose-300" : "border-slate-200"
                   )} 
                 />
               </div>
