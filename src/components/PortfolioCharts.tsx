@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Sector,
+  PieChart, Pie, Cell, ResponsiveContainer, Sector,
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Legend
 } from 'recharts';
 import { AssetCategory, Currency } from '@/app/lib/types';
@@ -25,22 +25,22 @@ const getCategoryColor = (cat: string) => {
   for (let i = 0; i < cat.length; i++) {
     hash = cat.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return `hsl(${Math.abs(hash % 360)}, 30%, 30%)`;
+  return `hsl(${Math.abs(hash % 360)}, 35%, 35%)`;
 };
 
 const SYMBOLS: Record<Currency, string> = { TWD: 'NT$', USD: '$', CNY: '¥', SGD: 'S$' };
 
 const t = {
   en: { 
-    allocation: 'CURRENT PORTFOLIO ALLOCATION', 
-    trend: 'HISTORICAL ASSET EVOLUTION', 
-    total: 'PORTFOLIO TOTAL', 
+    allocation: 'CURRENT ALLOCATION', 
+    trend: 'ASSET EVOLUTION', 
+    total: 'TOTAL', 
     categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF', 'Option': 'Option', 'Fund': 'Fund', 'Index': 'Index' }
   },
   zh: { 
     allocation: '當前資產配置比例', 
     trend: '歷史資產演變走勢', 
-    total: '投資組合總計', 
+    total: '總計', 
     categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款', 'ETF': 'ETF', 'Option': '選擇權', 'Fund': '基金', 'Index': '指數' }
   }
 };
@@ -49,34 +49,42 @@ const renderActiveShape = (props: any) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
   return (
     <g>
-      <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} />
-      <circle cx={cx} cy={cy} r={innerRadius - 8} fill={fill} opacity={0.1} />
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 6}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+      />
+      <path d={`M${cx},${cy} m-${innerRadius},0 a${innerRadius},${innerRadius} 0 1,0 ${innerRadius*2},0 a${innerRadius},${innerRadius} 0 1,0 -${innerRadius*2},0`} fill={fill} opacity={0.05} />
     </g>
   );
 };
 
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
-  if (!percent || percent < 0.01) return null; 
+  if (!percent || percent < 0.05) return null; // 比例太小不顯示標籤，防止重疊
   
   const RADIAN = Math.PI / 180;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
   
-  const sx = cx + (outerRadius + 5) * cos;
-  const sy = cy + (outerRadius + 5) * sin;
-  const mx = cx + (outerRadius + 20) * cos;
-  const my = cy + (outerRadius + 20) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 15;
+  const sx = cx + (outerRadius + 4) * cos;
+  const sy = cy + (outerRadius + 4) * sin;
+  const mx = cx + (outerRadius + 22) * cos;
+  const my = cy + (outerRadius + 22) * sin;
+  const ex = mx + (cos >= 0 ? 1 : -1) * 12;
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
   return (
     <g>
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#cbd5e1" strokeWidth={1} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={-4} textAnchor={textAnchor} fill="#475569" fontSize={11} fontWeight={800} className="uppercase tracking-widest">
+      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={-4} textAnchor={textAnchor} fill="#64748b" fontSize={11} fontWeight={900} className="uppercase tracking-widest">
         {langCategories[name] || name}
       </text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 5} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={10} fontWeight={600}>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={10} fontWeight={700}>
         {`${(percent * 100).toFixed(1)}%`}
       </text>
     </g>
@@ -117,52 +125,6 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               tick={{ fontSize: 13, fill: '#cbd5e1', fontWeight: 700 }} 
               tickFormatter={formatYAxis} 
             />
-            <RechartsTooltip cursor={{ fill: '#f8fafc', opacity: 0.8 }} content={({ active, payload, label }) => {
-              if (active && payload?.length) {
-                const fullDate = payload[0].payload.displayDate || label;
-                return (
-                  <div className="bg-white border border-slate-100 p-6 rounded-xl shadow-xl z-[1000] min-w-[240px] pointer-events-none">
-                    <p className="text-[12px] font-black text-slate-300 uppercase tracking-[0.4em] mb-4 border-b border-slate-50 pb-2">{fullDate}</p>
-                    <div className="space-y-3">
-                      {payload.map((p: any, i: number) => {
-                        if (p.dataKey === 'totalValue' || !p.value) return null;
-                        const isActive = !activeCategory || activeCategory === p.dataKey;
-                        return (
-                          <div key={i} className={`flex justify-between items-center gap-6 transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-15'}`}>
-                            <div className="flex items-center gap-3">
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getCategoryColor(p.name) }} />
-                              <span className="text-[13px] font-black text-slate-600 uppercase tracking-widest">{lang.categories[p.name as keyof typeof lang.categories] || p.name}</span>
-                            </div>
-                            <span className="text-xl font-black text-black">{symbol}{Number(p.value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                          </div>
-                        );
-                      })}
-                      <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
-                        <span className="text-[13px] font-black text-black uppercase tracking-[0.4em]">{lang.total}</span>
-                        <span className="text-2xl font-black text-black">{symbol}{Number(payload.find((p:any)=>p.dataKey==='totalValue')?.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            }} />
-            <Legend 
-              verticalAlign="top" align="right" iconType="circle" wrapperStyle={{ paddingBottom: '20px' }} 
-              content={({ payload }) => (
-                <div className="flex flex-wrap justify-end gap-x-6 gap-y-2">
-                  {payload?.map((entry: any, index: number) => {
-                    if (!activeCategoriesInHistory.includes(entry.value)) return null;
-                    return (
-                      <div key={index} className={`flex items-center gap-2 cursor-pointer transition-all duration-200 ${(!activeCategory || activeCategory === entry.value) ? 'opacity-100' : 'opacity-20'}`} onMouseEnter={() => setActiveCategory(entry.value)} onMouseLeave={() => setActiveCategory(null)}>
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getCategoryColor(entry.value) }} />
-                        <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">{lang.categories[entry.value as keyof typeof lang.categories] || entry.value}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )} 
-            />
             {activeCategoriesInHistory.map((cat) => (
               <Bar 
                 key={cat} 
@@ -171,20 +133,17 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                 fill={getCategoryColor(cat)} 
                 barSize={16} 
                 isAnimationActive={false}
-                opacity={(!activeCategory || activeCategory === cat) ? 1 : 0.15} 
-                className="transition-opacity duration-300" 
+                opacity={(!activeCategory || activeCategory === cat) ? 1 : 0.1} 
               />
             ))}
             <Line 
               type="monotone" 
               dataKey="totalValue" 
               stroke="#000000" 
-              strokeWidth={4} 
+              strokeWidth={3} 
               dot={false} 
               isAnimationActive={false}
               activeDot={{ r: 6, fill: '#000', stroke: '#fff', strokeWidth: 2 }} 
-              opacity={!activeCategory ? 1 : 0.1} 
-              className="transition-opacity duration-300" 
             />
           </ComposedChart>
         </ResponsiveContainer>
@@ -221,7 +180,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                 activeShape={renderActiveShape} 
                 data={filteredData} 
                 cx="50%" cy="50%" 
-                innerRadius="40%" outerRadius="55%" paddingAngle={6} 
+                innerRadius="42%" outerRadius="58%" paddingAngle={4} 
                 dataKey="value" stroke="transparent" 
                 onMouseEnter={(_, index) => {
                   setActiveIndex(index);
@@ -243,16 +202,16 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
           </ResponsiveContainer>
         </div>
         
-        {/* 中心區域：智慧顯示總計或當前懸停類別 */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none text-center z-10 bg-white rounded-full w-[38%] h-[38%] shadow-2xl border border-slate-50 transition-all duration-300 scale-110">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-1">
-            {activeEntry ? (lang.categories[activeEntry.name as keyof typeof lang.categories] || activeEntry.name) : 'TOTAL'}
+        {/* 中心區域：簡約文字，不再遮擋圖表 */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center pointer-events-none text-center z-10 w-[35%] h-[35%]">
+          <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] mb-1">
+            {activeEntry ? (lang.categories[activeEntry.name as keyof typeof lang.categories] || activeEntry.name) : lang.total}
           </p>
           <div className="flex items-baseline gap-1">
-             <span className="text-3xl font-black text-black tracking-tighter">{percentStr}</span>
-             <span className="text-sm font-black text-slate-400">%</span>
+             <span className="text-4xl font-black text-slate-900 tracking-tighter">{percentStr}</span>
+             <span className="text-[14px] font-black text-slate-400">%</span>
           </div>
-          <div className="mt-1.5 text-[11px] font-black text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full shadow-inner border border-slate-200/50">
+          <div className="mt-2 text-[12px] font-black text-white bg-slate-900 px-3 py-1 rounded-full shadow-md">
             {symbol}{displayData.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </div>
         </div>

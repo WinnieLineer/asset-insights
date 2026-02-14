@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Asset, AssetCategory, Currency } from '@/app/lib/types';
+import { Asset, Currency } from '@/app/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -46,7 +46,7 @@ const t = {
       invalidAmount: 'Positive number required', 
       required: 'Required', 
       tickerRequired: 'Ticker symbol is required for market assets',
-      invalidTicker: 'Ticker not found, please check symbol'
+      invalidTicker: 'Ticker not found'
     }
   },
   zh: {
@@ -67,7 +67,7 @@ const t = {
       invalidAmount: '請輸入有效的正數', 
       required: '必填', 
       tickerRequired: '此類別必須填寫代號',
-      invalidTicker: '查無此資產代碼，請重新輸入'
+      invalidTicker: '查無此代碼'
     }
   }
 };
@@ -109,13 +109,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     if (noMarketCats.includes(data.category)) return true;
     if (!data.symbol || data.symbol.trim() === '') return false;
     return true;
-  }, { message: lang.errors.tickerRequired, path: ['symbol'] })
-    .refine((data) => {
-      const noMarketCats = ['Savings', 'Bank'];
-      if (noMarketCats.includes(data.category)) return true;
-      if (data.symbol && data.symbol.trim() !== '' && tickerFound === false) return false;
-      return true;
-    }, { message: lang.errors.invalidTicker, path: ['symbol'] }), [lang, tickerFound]);
+  }, { message: lang.errors.tickerRequired, path: ['symbol'] }), [lang]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -169,39 +163,22 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
     return () => clearTimeout(timer);
   }, [symbolValue]);
 
-  useEffect(() => {
-    if (showTickerField) {
-      const sym = (symbolValue || '').toUpperCase();
-      if (/^\d+$/.test(sym) || sym.endsWith('.TW')) form.setValue('currency', 'TWD');
-      else if (sym.endsWith('.SI')) form.setValue('currency', 'SGD');
-      else if (sym) form.setValue('currency', 'USD');
-    }
-  }, [categoryValue, symbolValue, form, showTickerField]);
-
   const selectSuggestion = (s: Suggestion) => {
     isManualTyping.current = false;
     form.setValue('symbol', s.symbol);
     form.setValue('name', s.name);
     
-    const typeDispRaw = (s.typeDisp || '').trim();
-    const typeDisp = typeDispRaw.toUpperCase();
-    
+    const rawType = (s.typeDisp || '').trim().toUpperCase();
     let targetCat = 'Stock';
-    if (typeDisp.includes('ETF') || typeDisp.includes('交易所買賣基金')) {
-      targetCat = 'ETF';
-    } else if (typeDisp.includes('CRYPTOCURRENCY') || typeDisp.includes('加密貨幣')) {
-      targetCat = 'Crypto';
-    } else if (typeDisp.includes('OPTION') || typeDisp.includes('選擇權')) {
-      targetCat = 'Option';
-    } else if (typeDisp.includes('EQUITY') || typeDisp.includes('股票') || typeDisp.includes('權益')) {
-      targetCat = 'Stock';
-    } else if (typeDisp.includes('FUND') || typeDisp.includes('基金')) {
-      targetCat = 'Fund';
-    } else if (typeDisp.includes('INDEX') || typeDisp.includes('指數')) {
-      targetCat = 'Index';
-    } else if (typeDispRaw !== '') {
-      targetCat = typeDispRaw; 
-    }
+    
+    // 智慧類別對應邏輯
+    if (rawType.includes('ETF') || rawType.includes('交易所買賣基金')) targetCat = 'ETF';
+    else if (rawType.includes('CRYPTO') || rawType.includes('加密貨幣')) targetCat = 'Crypto';
+    else if (rawType.includes('FUND') || rawType.includes('基金')) targetCat = 'Fund';
+    else if (rawType.includes('INDEX') || rawType.includes('指數')) targetCat = 'Index';
+    else if (rawType.includes('OPTION') || rawType.includes('選擇權')) targetCat = 'Option';
+    else if (rawType.includes('EQUITY') || rawType.includes('權益')) targetCat = 'Stock';
+    else if (s.typeDisp) targetCat = s.typeDisp; // 沒對應到就使用原始名稱
 
     form.setValue('category', targetCat);
     setTickerFound(true);
@@ -238,11 +215,10 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                 } else {
                   field.onChange(val); 
                 }
-                setTickerFound(null); 
               }} value={field.value || "Stock"}>
                 <FormControl>
                   <SelectTrigger className="h-11 bg-slate-50 border-2 border-slate-200 text-sm font-bold rounded-lg transition-all focus:border-black">
-                    <SelectValue placeholder={lang.category} />
+                    <SelectValue />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -251,6 +227,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
                       {lang.categories[c as keyof typeof lang.categories] || c}
                     </SelectItem>
                   ))}
+                  {/* 動態類別補丁：確保 API 查回的類別能被渲染，解決空白問題 */}
                   {field.value && !PREDEFINED_CATEGORIES.includes(field.value) && field.value !== 'CUSTOM_ENTRY' && (
                     <SelectItem value={field.value} className="text-sm font-bold">{field.value}</SelectItem>
                   )}
@@ -280,33 +257,25 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
               <FormLabel className="pro-label text-slate-500">{lang.symbol}</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex items-center">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 z-10">
                     {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : <Search className="w-4 h-4 text-slate-400" />}
                   </div>
                   <Input 
                     placeholder={lang.symbolPlaceholder} 
                     {...field} 
                     autoComplete="off"
-                    onChange={(e) => {
-                      isManualTyping.current = true;
-                      field.onChange(e);
-                    }}
+                    onChange={(e) => { isManualTyping.current = true; field.onChange(e); }}
                     className={cn(
-                      "bg-slate-50 border-2 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg pl-10 pr-4 transition-colors",
-                      tickerFound === false ? "border-rose-300" : "border-slate-200"
+                      "bg-slate-50 border-2 h-11 text-sm font-bold uppercase tracking-widest focus:ring-black focus:border-black rounded-lg pl-10 pr-4",
+                      tickerFound === false && "border-rose-300"
                     )} 
                   />
                 </div>
               </FormControl>
-              
               {showSuggestions && suggestions.length > 0 && (
-                <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border-2 border-slate-200 rounded-xl shadow-2xl max-h-[280px] overflow-auto no-scrollbar animate-fade-in">
+                <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border-2 border-slate-200 rounded-xl shadow-2xl max-h-[280px] overflow-auto no-scrollbar">
                   {suggestions.map((s, idx) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => selectSuggestion(s)}
-                      className="p-4 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors"
-                    >
+                    <div key={idx} onClick={() => selectSuggestion(s)} className="p-4 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0">
                       <div className="font-black text-sm text-slate-900 leading-tight">{s.name}</div>
                       <div className="flex items-center justify-between mt-1">
                         <span className="text-[12px] font-black text-blue-600 tracking-wider uppercase">{s.symbol}</span>
@@ -325,13 +294,13 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
           <FormItem>
             <FormLabel className="pro-label text-slate-500">{lang.name}</FormLabel>
             <FormControl>
-              <Input placeholder={lang.namePlaceholder} {...field} className="bg-slate-50 border-2 border-slate-200 h-11 text-sm font-bold focus:ring-black focus:border-black rounded-lg" />
+              <Input placeholder={lang.namePlaceholder} {...field} className="bg-slate-50 border-2 border-slate-200 h-11 text-sm font-bold rounded-lg" />
             </FormControl>
-            <FormMessage className="text-xs" />
+            <FormMessage />
           </FormItem>
         )} />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <FormField control={form.control} name="currency" render={({ field }) => (
             <FormItem>
               <FormLabel className="pro-label text-slate-500">{lang.currency}</FormLabel>
@@ -341,26 +310,18 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
               </Select>
             </FormItem>
           )} />
+          <FormField control={form.control} name="amount" render={({ field }) => (
+            <FormItem>
+              <FormLabel className="pro-label text-slate-500">{lang.amount}</FormLabel>
+              <FormControl>
+                <Input type="number" step="any" {...field} onFocus={(e) => e.target.select()} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-11 font-bold bg-slate-50 border-2 border-slate-200 text-sm rounded-lg" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
         </div>
 
-        <FormField control={form.control} name="amount" render={({ field }) => (
-          <FormItem>
-            <FormLabel className="pro-label text-slate-500">{lang.amount}</FormLabel>
-            <FormControl>
-              <Input 
-                type="number" 
-                step="any" 
-                {...field} 
-                onFocus={(e) => e.target.select()}
-                onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
-                className="h-11 font-bold bg-slate-50 border-2 border-slate-200 text-sm rounded-lg" 
-              />
-            </FormControl>
-            <FormMessage className="text-xs" />
-          </FormItem>
-        )} />
-
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <FormField control={form.control} name="acquisitionDate" render={({ field }) => (
             <FormItem>
               <FormLabel className="pro-label text-slate-500">{lang.date}</FormLabel>
@@ -375,11 +336,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
           )} />
         </div>
         
-        <Button 
-          type="submit" 
-          disabled={(showTickerField && tickerFound === false) || isSearching}
-          className="w-full h-11 bg-black hover:bg-slate-800 text-white font-bold rounded-lg text-sm uppercase tracking-widest shadow-md transition-all active:scale-[0.98] mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <Button type="submit" className="w-full h-12 bg-black hover:bg-slate-800 text-white font-black rounded-xl text-sm uppercase tracking-widest shadow-xl transition-all active:scale-[0.98] mt-4">
           {lang.submit}
         </Button>
       </form>

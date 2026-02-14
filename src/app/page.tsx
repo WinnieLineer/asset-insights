@@ -87,7 +87,7 @@ const translations = {
     valuation: 'VALUATION',
     unitPrice: 'UNIT PRICE',
     category: 'CATEGORY',
-    dashboard: 'ASSET OVERVIEW & ANALYSIS',
+    dashboard: 'ASSET OVERVIEW',
     closedPositions: 'CLOSED POSITIONS',
     change: 'Daily Change',
     editAsset: 'EDIT POSITION',
@@ -116,7 +116,7 @@ const translations = {
     reorderHint: 'REORDER MODE ACTIVE',
     lastUpdated: 'Updated',
     allCategories: 'All',
-    categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option', Fund: 'Fund' }
+    categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index' }
   },
   zh: {
     title: 'ASSET INSIGHTS PRO',
@@ -128,7 +128,7 @@ const translations = {
     valuation: '帳面價值',
     unitPrice: '單位價值',
     category: '類別',
-    dashboard: '資產部位概覽與分析',
+    dashboard: '資產部位概覽',
     closedPositions: '已結清資產部位',
     change: '今日漲跌',
     editAsset: '編輯部位資訊',
@@ -157,7 +157,7 @@ const translations = {
     reorderHint: '已進入佈局調整模式',
     lastUpdated: '最後更新',
     allCategories: '全部類別',
-    categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款', ETF: 'ETF', Option: '選擇權', Fund: '基金' }
+    categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數' }
   }
 };
 
@@ -282,12 +282,7 @@ export default function AssetInsightsPage() {
         p1 = p2 - (parseInt(trackingDays) * 24 * 60 * 60);
       }
 
-      const { marketData: newData, historicalTimeline } = await fetchMarketData(
-        currentAssets, 
-        p1, 
-        p2, 
-        interval
-      );
+      const { marketData: newData, historicalTimeline } = await fetchMarketData(currentAssets, p1, p2, interval);
       setMarketData(newData);
       setMarketTimeline(historicalTimeline);
       
@@ -922,7 +917,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-12 pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-8 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 sm:gap-10 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>
@@ -935,15 +930,7 @@ export default function AssetInsightsPage() {
             <div className="space-y-2"><Label className="pro-label ml-1 mb-1">{t.assetName}</Label><div className="p-4 bg-slate-50 rounded-xl font-black text-sm text-slate-900 border border-slate-100">{editingAsset?.name}</div></div>
             <div className="space-y-2">
               <Label htmlFor="amount" className="pro-label ml-1 mb-1">{t.holdings}</Label>
-              <Input 
-                id="amount" 
-                type="number" 
-                step="any" 
-                value={editAmount} 
-                onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} 
-                onFocus={(e) => (e.target as HTMLInputElement).select()} 
-                className="h-11 font-black text-base border-2 border-slate-300 rounded-xl" 
-              />
+              <Input id="amount" type="number" step="any" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} onFocus={(e) => (e.target as HTMLInputElement).select()} className="h-11 font-black text-base border-2 border-slate-300 rounded-xl" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label className="pro-label ml-1 mb-1">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-11 font-black text-xs rounded-xl border-2 border-slate-300" /></div>
