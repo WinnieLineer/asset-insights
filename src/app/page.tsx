@@ -194,6 +194,7 @@ export default function AssetInsightsPage() {
   const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
   
+  // 佈局順序調整：新增資產部位現在緊貼在總淨值下方
   const [sections, setSections] = useState<string[]>(['summary', 'addAsset', 'controls', 'historicalTrend', 'allocation', 'list', 'closedList', 'ai']);
   
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
@@ -287,6 +288,7 @@ export default function AssetInsightsPage() {
       const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
       setLastUpdated(timestamp);
       
+      // 手機版不顯示同步提示，桌機版顯示
       if (typeof window !== 'undefined' && window.innerWidth > 768) {
         toast({ title: t.dataUpdated });
       }
@@ -823,7 +825,7 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-[110px] md:pt-24 pb-20">
+      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-[105px] md:pt-24 pb-20">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-8 items-start">
           {sections.map((id, index) => renderSection(id, index))}
         </div>

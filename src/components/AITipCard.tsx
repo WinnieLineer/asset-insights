@@ -46,7 +46,7 @@ const t = {
     ctaButton: 'EXECUTE ANALYSIS',
     loading: 'PROCESSING...',
     answer: 'EXECUTIVE SUMMARY',
-    instructionLabel: 'CUSTOM ANALYSIS DIRECTIVE',
+    instructionLabel: 'CUSTOM ANALYSIS INSTRUCTION',
     instructionPlaceholder: 'ENTER COMMAND (e.g. Audit for volatility)...',
     noApiKey: 'Gemini API Configuration missing.'
   },
@@ -147,7 +147,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
               <div className="p-3 bg-black rounded-lg shrink-0 shadow-lg"><Brain className="w-6 h-6 text-white" /></div>
               <h3 className="pro-label">{lang.title}</h3>
             </div>
-            <div className="text-[14px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.desc}</div>
+            <div className="text-[12px] sm:text-[14px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.desc}</div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 flex-1 max-w-xl w-full">
@@ -157,7 +157,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
               </label>
               <Textarea 
                 placeholder={lang.instructionPlaceholder}
-                className="text-sm min-h-[80px] bg-white text-black border border-slate-200 focus:ring-0 focus:border-black rounded-xl p-4 font-bold placeholder:text-slate-300 transition-all shadow-sm"
+                className="text-sm min-h-[80px] bg-white text-black border border-slate-200 focus:ring-2 focus:ring-black focus:border-black rounded-xl p-4 font-bold placeholder:text-slate-300 transition-all shadow-sm"
                 value={userQuestion}
                 onChange={(e) => setUserQuestion(e.target.value)}
               />
