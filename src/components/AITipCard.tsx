@@ -46,8 +46,8 @@ const t = {
     ctaButton: 'EXECUTE ANALYSIS',
     loading: 'PROCESSING...',
     answer: 'EXECUTIVE SUMMARY',
-    instructionLabel: 'CUSTOM ANALYSIS DIRECTIVES',
-    instructionPlaceholder: 'ENTER COMMAND OR QUERY (e.g. Audit for volatility)...',
+    instructionLabel: 'CUSTOM ANALYSIS DIRECTIVE',
+    instructionPlaceholder: 'ENTER COMMAND (e.g. Audit for volatility)...',
     noApiKey: 'Gemini API Configuration missing.'
   },
   zh: {
@@ -60,7 +60,7 @@ const t = {
     ctaButton: '生成 AI 部位分析',
     loading: 'GEMINI 正在分析中...',
     answer: 'AI 專業執行總結',
-    instructionLabel: '自定義分析指令 / 提問',
+    instructionLabel: '自定義分析指令',
     instructionPlaceholder: '例如：如果未來半年台幣持續升值，我的部位應如何調整？',
     noApiKey: '請在環境設定中配置 Gemini API Key。'
   }
@@ -152,12 +152,12 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 flex-1 max-w-xl w-full">
             <div className="w-full space-y-2">
-              <label className="pro-label tracking-[0.2em] flex items-center gap-3 ml-1 mb-2">
+              <label className="pro-label tracking-[0.2em] flex items-center gap-3 ml-1 mb-2 text-slate-500">
                 <MessageSquare className="w-4 h-4" /> {lang.instructionLabel}
               </label>
               <Textarea 
                 placeholder={lang.instructionPlaceholder}
-                className="text-sm min-h-[80px] bg-zinc-900 text-zinc-100 border-2 border-zinc-800 focus:ring-black focus:border-zinc-700 rounded-xl p-4 font-bold placeholder:text-zinc-600 transition-all shadow-inner"
+                className="text-sm min-h-[80px] bg-white text-slate-900 border-2 border-slate-200 focus:ring-0 focus:border-black rounded-xl p-4 font-bold placeholder:text-slate-300 transition-all shadow-sm"
                 value={userQuestion}
                 onChange={(e) => setUserQuestion(e.target.value)}
               />
