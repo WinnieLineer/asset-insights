@@ -147,7 +147,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
               <div className="p-3 bg-black rounded-lg shrink-0 shadow-lg"><Brain className="w-6 h-6 text-white" /></div>
               <h3 className="pro-label">{lang.title}</h3>
             </div>
-            <div className="text-[12px] sm:text-[14px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.desc}</div>
+            <div className="text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.desc}</div>
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 flex-1 max-w-xl w-full">

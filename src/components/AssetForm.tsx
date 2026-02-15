@@ -125,6 +125,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const categoryValue = form.watch('category');
   const symbolValue = form.watch('symbol');
   const showTickerField = !['Savings', 'Bank'].includes(categoryValue);
+  const showCurrencyField = !showTickerField;
   
   useEffect(() => {
     if (!isManualTyping.current || !symbolValue || symbolValue.length < 1) {
@@ -288,16 +289,18 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
         )} />
 
         <div className="grid grid-cols-2 gap-3">
-          <FormField control={form.control} name="currency" render={({ field }) => (
-            <FormItem className={cn(!showTickerField ? "block" : "hidden")}>
-              <FormLabel className="pro-label text-[10px] opacity-60">{lang.currency}</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl><SelectTrigger className="h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
-                <SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-[13px] font-bold">{c}</SelectItem>)}</SelectContent>
-              </Select>
-            </FormItem>
-          )} />
-          <FormItem className={cn(!showTickerField ? "" : "col-span-2")}>
+          {showCurrencyField ? (
+            <FormField control={form.control} name="currency" render={({ field }) => (
+              <FormItem>
+                <FormLabel className="pro-label text-[10px] opacity-60">{lang.currency}</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl><SelectTrigger className="h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
+                  <SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-[13px] font-bold">{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </FormItem>
+            )} />
+          ) : null}
+          <FormItem className={cn(showCurrencyField ? "" : "col-span-2")}>
             <FormField control={form.control} name="amount" render={({ field }) => (
               <>
                 <FormLabel className="pro-label text-[10px] opacity-60">{lang.amount}</FormLabel>

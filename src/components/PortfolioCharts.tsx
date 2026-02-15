@@ -53,23 +53,23 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
   
-  // Adjusted for mobile screens to avoid cutting off
-  const offset = typeof window !== 'undefined' && window.innerWidth < 768 ? 5 : 15;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const offset = isMobile ? 8 : 15;
   const sx = cx + (outerRadius + 2) * cos;
   const sy = cy + (outerRadius + 2) * sin;
   const mx = cx + (outerRadius + offset) * cos;
   const my = cy + (outerRadius + offset) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * 8;
+  const ex = mx + (cos >= 0 ? 1 : -1) * (isMobile ? 5 : 8);
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
   return (
     <g>
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#cbd5e1" strokeWidth={1} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={-2} textAnchor={textAnchor} fill="#64748b" fontSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 8 : 10} fontWeight={900} className="uppercase tracking-widest">
+      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={-2} textAnchor={textAnchor} fill="#64748b" fontSize={isMobile ? 8 : 10} fontWeight={900} className="uppercase tracking-widest">
         {langCategories[name] || name}
       </text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={typeof window !== 'undefined' && window.innerWidth < 768 ? 8 : 9} fontWeight={700}>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={isMobile ? 8 : 9} fontWeight={700}>
         {`${(percent * 100).toFixed(1)}%`}
       </text>
     </g>
