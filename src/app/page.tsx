@@ -884,7 +884,7 @@ export default function AssetInsightsPage() {
             </div>
           </div>
           <DialogFooter className="flex flex-row gap-3">
-            <Button variant="ghost" onClick={() => setEditingAsset(null)} className="h-10 flex-1 font-black uppercase text-xs">{t.cancel}</Button>
+            <Button variant="ghost" onClick={() => { setEditingAsset(null); }} className="h-10 flex-1 font-black uppercase text-xs">{t.cancel}</Button>
             <Button onClick={() => {
               const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, amount: editAmount, acquisitionDate: editDate, endDate: editEndDate || undefined } : a);
               setAssets(updated); setEditingAsset(null); updateAllData(updated);
