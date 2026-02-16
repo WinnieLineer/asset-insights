@@ -8,6 +8,7 @@ import {
 } from 'recharts';
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 const getCategoryColor = (cat: string) => {
   const COLORS: Record<string, string> = {

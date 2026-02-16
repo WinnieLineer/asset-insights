@@ -104,7 +104,7 @@ const translations = {
     int1mo: 'Monthly',
     dataUpdated: 'Market data synced.',
     acqDate: 'Start Date',
-    posEndDate: 'Closed',
+    posEndDate: 'Closed Date',
     exportData: 'Export',
     importData: 'Import',
     importSuccess: 'Data imported successfully.',
@@ -352,25 +352,31 @@ export default function AssetInsightsPage() {
     // Sort timeline to process chronologically
     const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
 
+    // Forward fill logic: Ensure we only have one entry per day, and missing days use previous known prices.
     sortedTimeline.forEach((point: any) => {
       const pointTime = point.timestamp * 1000;
       const dateObj = new Date(pointTime);
       const dateKey = dateObj.toISOString().split('T')[0];
       
+      // Update price for this specific asset if it exists in the point
+      Object.entries(point.assets).forEach(([id, price]) => {
+        lastKnownPrices[id] = price as number;
+      });
+
       let pointTotalTWD = 0;
       const categories: Record<string, number> = {};
 
       processedAssets.forEach(asset => {
         const acqTime = new Date(asset.acquisitionDate).getTime();
         const endTimeStr = asset.endDate || '9999-12-31';
+        
+        // Skip if date is before acquisition or after closing
         if (pointTime < acqTime || dateKey > endTimeStr) return; 
 
-        // Update price for this specific asset if it exists in the point
-        if (point.assets[asset.id] !== undefined) {
-          lastKnownPrices[asset.id] = point.assets[asset.id];
-        }
-
         let priceAtT = lastKnownPrices[asset.id];
+        
+        // If price is missing for this day, but it's a market asset, we hope lastKnownPrices has it from previous trading days.
+        // For cash/bank assets, price is implicitly 1 relative to its own currency.
         if (priceAtT === undefined) {
           if (!asset.symbol || asset.symbol.trim() === '') priceAtT = 1;
           else return; 
@@ -403,7 +409,7 @@ export default function AssetInsightsPage() {
           item[cat] = val * (displayRate / rateTWD); 
         });
         
-        // Always overwrite with the latest point of that day
+        // Overwrite so we only have one entry per day (the latest one in the timeline)
         dayAggregator[dateKey] = item;
       }
     });
@@ -489,8 +495,11 @@ export default function AssetInsightsPage() {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
+    
+    // Prevent starting long press if text is being selected
     if (window.getSelection()?.toString().length) return;
     
+    // Check for interactive elements or text-like elements to allow selection
     if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item, a, label, h1, h2, h3, h4, p, span')) return;
     
     const startX = 'clientX' in e ? e.clientX : e.touches[0].clientX;
@@ -499,6 +508,7 @@ export default function AssetInsightsPage() {
     const onMove = (me: MouseEvent | TouchEvent) => {
       const curX = 'clientX' in me ? me.clientX : (me as TouchEvent).touches[0].clientX;
       const curY = 'clientY' in me ? me.clientY : (me as TouchEvent).touches[0].clientY;
+      // If user moved significantly, cancel long press (they might be selecting text or scrolling)
       if (Math.abs(curX - startX) > 5 || Math.abs(curY - startY) > 5) {
         cleanup();
       }
@@ -518,6 +528,7 @@ export default function AssetInsightsPage() {
     window.addEventListener('touchmove', onMove);
 
     longPressTimer.current = setTimeout(() => { 
+      // Final check for text selection before entering reorder mode
       if (window.getSelection()?.toString().length) {
         cleanup();
         return;
@@ -634,7 +645,7 @@ export default function AssetInsightsPage() {
                       <SelectItem value="180">{t.days180}</SelectItem>
                       <SelectItem value="365">{t.days365}</SelectItem>
                       <SelectItem value="max">{t.maxRange}</SelectItem>
-                      <SelectItem value="max">{t.customRange}</SelectItem>
+                      <SelectItem value="custom">{t.customRange}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -889,6 +900,7 @@ export default function AssetInsightsPage() {
                 value={editAmount} 
                 onFocus={(e) => {
                   const target = e.currentTarget;
+                  // Safari compatible selection
                   setTimeout(() => target.select(), 10);
                 }} 
                 onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} 

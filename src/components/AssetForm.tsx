@@ -331,6 +331,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                     {...field} 
                     onFocus={(e) => {
                       const target = e.currentTarget;
+                      // Safari compatible selection
                       setTimeout(() => target.select(), 10);
                     }} 
                     onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
