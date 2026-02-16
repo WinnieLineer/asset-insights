@@ -94,6 +94,8 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
   const isManualTyping = useRef(false);
   const suggestionRef = useRef<HTMLDivElement>(null);
 
+  const startOfYear = `${new Date().getFullYear()}-01-01`;
+
   const formSchema = useMemo(() => z.object({
     name: z.string().min(2, { message: lang.errors.nameTooShort }),
     symbol: z.string().optional(),
@@ -117,7 +119,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
       category: 'Stock', 
       amount: 0, 
       currency: 'TWD',
-      acquisitionDate: new Date().toISOString().split('T')[0],
+      acquisitionDate: startOfYear,
       endDate: ''
     },
   });
