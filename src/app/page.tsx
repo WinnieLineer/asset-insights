@@ -348,6 +348,8 @@ export default function AssetInsightsPage() {
 
     const dayAggregator: Record<string, any> = {};
     const lastKnownPrices: Record<string, number> = {};
+    
+    // Sort timeline to process chronologically
     const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
 
     sortedTimeline.forEach((point: any) => {
@@ -363,6 +365,7 @@ export default function AssetInsightsPage() {
         const endTimeStr = asset.endDate || '9999-12-31';
         if (pointTime < acqTime || dateKey > endTimeStr) return; 
 
+        // Update price for this specific asset if it exists in the point
         if (point.assets[asset.id] !== undefined) {
           lastKnownPrices[asset.id] = point.assets[asset.id];
         }
@@ -399,6 +402,8 @@ export default function AssetInsightsPage() {
         Object.entries(categories).forEach(([cat, val]) => { 
           item[cat] = val * (displayRate / rateTWD); 
         });
+        
+        // Always overwrite with the latest point of that day
         dayAggregator[dateKey] = item;
       }
     });
@@ -629,7 +634,7 @@ export default function AssetInsightsPage() {
                       <SelectItem value="180">{t.days180}</SelectItem>
                       <SelectItem value="365">{t.days365}</SelectItem>
                       <SelectItem value="max">{t.maxRange}</SelectItem>
-                      <SelectItem value="custom">{t.customRange}</SelectItem>
+                      <SelectItem value="max">{t.customRange}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

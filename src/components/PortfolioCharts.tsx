@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip
+  Tooltip, Legend
 } from 'recharts';
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -49,7 +49,6 @@ const t = {
 
 const CustomTooltip = ({ active, payload, label, symbol, langCategories }: any) => {
   if (active && payload && payload.length) {
-    // 過濾出數值大於 0 的類別數據
     const categories = payload.filter((p: any) => p.dataKey !== 'totalValue' && p.value > 0);
     const totalEntry = payload.find((p: any) => p.dataKey === 'totalValue');
 
@@ -118,6 +117,7 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
 export function HistoricalTrendChart({ historicalData, displayCurrency, language, loading, height }: any) {
   const lang = t[language as keyof typeof t] || t.zh;
   const symbol = SYMBOLS[displayCurrency as Currency] || '$';
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   
   if (loading && historicalData.length === 0) return <Skeleton className="w-full rounded-2xl" style={{ height: height || 250 }} />;
 
@@ -149,6 +149,31 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               tickFormatter={formatYAxis} 
             />
             <Tooltip content={(props) => <CustomTooltip {...props} symbol={symbol} langCategories={lang.categories} />} />
+            <Legend 
+              verticalAlign="top" 
+              align="right" 
+              iconType="circle"
+              content={({ payload }) => (
+                <div className="flex justify-end gap-3 mb-4">
+                  {payload?.map((entry: any, index: number) => (
+                    <div 
+                      key={index} 
+                      className={cn(
+                        "flex items-center gap-1.5 cursor-pointer transition-opacity",
+                        hoveredCategory && hoveredCategory !== entry.value ? "opacity-30" : "opacity-100"
+                      )}
+                      onMouseEnter={() => setHoveredCategory(entry.value)}
+                      onMouseLeave={() => setHoveredCategory(null)}
+                    >
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                        {lang.categories[entry.value as keyof typeof lang.categories] || entry.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            />
             {activeCategoriesInHistory.map((cat) => (
               <Bar 
                 key={cat} 
@@ -158,6 +183,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                 fill={getCategoryColor(cat)} 
                 barSize={12} 
                 isAnimationActive={false}
+                opacity={hoveredCategory && hoveredCategory !== cat ? 0.3 : 1}
               />
             ))}
             <Line 
@@ -168,6 +194,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               strokeWidth={2} 
               dot={false} 
               isAnimationActive={false}
+              opacity={hoveredCategory ? 0.1 : 1}
             />
           </ComposedChart>
         </ResponsiveContainer>
