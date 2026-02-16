@@ -181,7 +181,6 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     else if (rawType.includes('OPTION') || rawType.includes('選擇權')) targetCat = 'Option';
     else if (rawType.includes('EQUITY') || rawType.includes('權益') || rawType.includes('股票')) targetCat = 'Stock';
     else if (s.typeDisp) {
-      // 確保如果 API 回傳了特定的類型名稱，也能正確對應到我們預定義的 Key
       const typeKey = PREDEFINED_CATEGORIES.find(c => c.toUpperCase() === rawType);
       targetCat = typeKey || s.typeDisp;
     }
@@ -314,7 +313,14 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
               <>
                 <FormLabel className="pro-label text-[10px] opacity-60">{lang.amount}</FormLabel>
                 <FormControl>
-                  <Input type="number" step="any" {...field} onFocus={(e) => e.target.select()} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" />
+                  <Input 
+                    type="number" 
+                    step="any" 
+                    {...field} 
+                    onFocus={(e) => e.target.select()} 
+                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
+                    className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" 
+                  />
                 </FormControl>
                 <FormMessage />
               </>

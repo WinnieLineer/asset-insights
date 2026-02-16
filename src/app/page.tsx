@@ -481,10 +481,8 @@ export default function AssetInsightsPage() {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
-    // 嚴格防止在交互元件或文字區域上進入調整模式
     if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item, a, label, p, span, h1, h2, h3, h4')) return;
     
-    // 如果目前有選取文字，不要觸發長按
     const selection = window.getSelection();
     if (selection && selection.toString().length > 0) return;
 
@@ -494,7 +492,6 @@ export default function AssetInsightsPage() {
     const onMove = (me: MouseEvent | TouchEvent) => {
       const curX = 'clientX' in me ? me.clientX : (me as TouchEvent).touches[0].clientX;
       const curY = 'clientY' in me ? me.clientY : (me as TouchEvent).touches[0].clientY;
-      // 如果移動超過 5 像素（例如在選取文字），則取消長按計時器
       if (Math.abs(curX - startX) > 5 || Math.abs(curY - startY) > 5) {
         cleanup();
       }
@@ -514,7 +511,6 @@ export default function AssetInsightsPage() {
     window.addEventListener('touchmove', onMove);
 
     longPressTimer.current = setTimeout(() => { 
-      // 再次檢查是否有選取文字，有的話不進入模式
       const finalSelection = window.getSelection();
       if (finalSelection && finalSelection.toString().length > 0) {
         cleanup();
@@ -880,7 +876,7 @@ export default function AssetInsightsPage() {
             <div className="space-y-1"><Label className="pro-label text-[10px]">{t.assetName}</Label><div className="p-3 bg-slate-50 rounded-lg font-black text-sm">{editingAsset?.name}</div></div>
             <div className="space-y-1">
               <Label htmlFor="amount" className="pro-label text-[10px]">{t.holdings}</Label>
-              <Input id="amount" type="number" step="any" value={editAmount} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-9 font-black text-sm rounded-lg" />
+              <Input id="amount" type="number" step="any" value={editAmount} onFocus={(e) => e.target.select()} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-9 font-black text-sm rounded-lg" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1"><Label className="pro-label text-[10px]">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div>
