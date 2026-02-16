@@ -37,8 +37,8 @@ const t = {
     customCategory: 'Custom Category',
     currency: 'Currency',
     amount: 'Holdings',
-    date: 'Start Date',
-    endDate: 'Closed (Opt)',
+    date: 'Starting Holding Date',
+    endDate: 'Closed Date (Opt)',
     submit: 'Add Position',
     categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Future: 'Future', Custom: 'Custom...' },
     errors: { 
@@ -172,7 +172,6 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     
     const rawType = (s.typeDisp || '').trim().toUpperCase();
     let targetCat = 'Stock';
-    let unknownCategory = false;
     
     if (rawType.includes('ETF') || rawType.includes('交易所買賣基金')) targetCat = 'ETF';
     else if (rawType.includes('CRYPTO') || rawType.includes('加密貨幣')) targetCat = 'Crypto';
@@ -181,21 +180,6 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     else if (rawType.includes('FUTURE') || rawType.includes('期貨')) targetCat = 'Future';
     else if (rawType.includes('OPTION') || rawType.includes('選擇權')) targetCat = 'Option';
     else if (rawType.includes('EQUITY') || rawType.includes('權益') || rawType.includes('股票')) targetCat = 'Stock';
-    else if (s.typeDisp) {
-      const typeKey = PREDEFINED_CATEGORIES.find(c => c.toUpperCase() === rawType);
-      if (typeKey) {
-        targetCat = typeKey;
-      } else {
-        targetCat = s.typeDisp;
-        unknownCategory = true;
-      }
-    }
-
-    if (unknownCategory) {
-      setIsCustomCategory(true);
-    } else {
-      setIsCustomCategory(false);
-    }
 
     form.setValue('category', targetCat);
     setTickerFound(true);
@@ -331,7 +315,6 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                     {...field} 
                     onFocus={(e) => {
                       const target = e.currentTarget;
-                      // Safari compatible selection
                       setTimeout(() => target.select(), 10);
                     }} 
                     onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 

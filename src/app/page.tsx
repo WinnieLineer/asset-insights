@@ -103,7 +103,7 @@ const translations = {
     int1wk: 'Weekly',
     int1mo: 'Monthly',
     dataUpdated: 'Market data synced.',
-    acqDate: 'Start Date',
+    acqDate: 'Starting Holding Date',
     posEndDate: 'Closed Date',
     exportData: 'Export',
     importData: 'Import',
@@ -376,7 +376,6 @@ export default function AssetInsightsPage() {
         let priceAtT = lastKnownPrices[asset.id];
         
         // If price is missing for this day, but it's a market asset, we hope lastKnownPrices has it from previous trading days.
-        // For cash/bank assets, price is implicitly 1 relative to its own currency.
         if (priceAtT === undefined) {
           if (!asset.symbol || asset.symbol.trim() === '') priceAtT = 1;
           else return; 
@@ -409,7 +408,6 @@ export default function AssetInsightsPage() {
           item[cat] = val * (displayRate / rateTWD); 
         });
         
-        // Overwrite so we only have one entry per day (the latest one in the timeline)
         dayAggregator[dateKey] = item;
       }
     });
@@ -495,11 +493,7 @@ export default function AssetInsightsPage() {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
-    
-    // Prevent starting long press if text is being selected
     if (window.getSelection()?.toString().length) return;
-    
-    // Check for interactive elements or text-like elements to allow selection
     if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item, a, label, h1, h2, h3, h4, p, span')) return;
     
     const startX = 'clientX' in e ? e.clientX : e.touches[0].clientX;
@@ -508,7 +502,6 @@ export default function AssetInsightsPage() {
     const onMove = (me: MouseEvent | TouchEvent) => {
       const curX = 'clientX' in me ? me.clientX : (me as TouchEvent).touches[0].clientX;
       const curY = 'clientY' in me ? me.clientY : (me as TouchEvent).touches[0].clientY;
-      // If user moved significantly, cancel long press (they might be selecting text or scrolling)
       if (Math.abs(curX - startX) > 5 || Math.abs(curY - startY) > 5) {
         cleanup();
       }
@@ -528,11 +521,7 @@ export default function AssetInsightsPage() {
     window.addEventListener('touchmove', onMove);
 
     longPressTimer.current = setTimeout(() => { 
-      // Final check for text selection before entering reorder mode
-      if (window.getSelection()?.toString().length) {
-        cleanup();
-        return;
-      }
+      if (window.getSelection()?.toString().length) { cleanup(); return; }
       setIsReordering(true); 
       toast({ title: t.reorderHint });
       cleanup(); 
@@ -900,7 +889,6 @@ export default function AssetInsightsPage() {
                 value={editAmount} 
                 onFocus={(e) => {
                   const target = e.currentTarget;
-                  // Safari compatible selection
                   setTimeout(() => target.select(), 10);
                 }} 
                 onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} 
@@ -917,7 +905,7 @@ export default function AssetInsightsPage() {
             <Button onClick={() => {
               const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, amount: editAmount, acquisitionDate: editDate, endDate: editEndDate || undefined } : a);
               setAssets(updated); setEditingAsset(null); updateAllData(updated);
-            }} className="bg-black text-white h-10 flex-1 font-black uppercase text-xs shadow-md">{t.saveChanges}</Button>
+            }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[12px] px-3 shadow-md">{t.saveChanges}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

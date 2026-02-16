@@ -156,22 +156,25 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               iconType="circle"
               content={({ payload }) => (
                 <div className="flex justify-end gap-3 mb-4">
-                  {payload?.map((entry: any, index: number) => (
-                    <div 
-                      key={index} 
-                      className={cn(
-                        "flex items-center gap-1.5 cursor-pointer transition-opacity",
-                        hoveredCategory && hoveredCategory !== entry.value ? "opacity-30" : "opacity-100"
-                      )}
-                      onMouseEnter={() => setHoveredCategory(entry.value)}
-                      onMouseLeave={() => setHoveredCategory(null)}
-                    >
-                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                        {lang.categories[entry.value as keyof typeof lang.categories] || entry.value}
-                      </span>
-                    </div>
-                  ))}
+                  {payload?.map((entry: any, index: number) => {
+                    if (entry.value === 'totalValue') return null;
+                    return (
+                      <div 
+                        key={index} 
+                        className={cn(
+                          "flex items-center gap-1.5 cursor-pointer transition-opacity",
+                          hoveredCategory && hoveredCategory !== entry.value ? "opacity-30" : "opacity-100"
+                        )}
+                        onMouseEnter={() => setHoveredCategory(entry.value)}
+                        onMouseLeave={() => setHoveredCategory(null)}
+                      >
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                          {lang.categories[entry.value as keyof typeof lang.categories] || entry.value}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             />
