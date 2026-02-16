@@ -40,7 +40,7 @@ const t = {
     date: 'Acquired',
     endDate: 'Closed (Opt)',
     submit: 'Add Position',
-    categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Custom: 'Custom...' },
+    categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Future: 'Future', Custom: 'Custom...' },
     errors: { 
       nameTooShort: 'Min 2 characters', 
       invalidAmount: 'Invalid amount', 
@@ -60,7 +60,7 @@ const t = {
     date: '持有日期',
     endDate: '結清日期 (選填)',
     submit: '新增部位',
-    categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數', Custom: '自定義...' },
+    categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數', Future: '期貨', Custom: '自定義...' },
     errors: { 
       nameTooShort: '至少 2 個字', 
       invalidAmount: '請輸入有效的正數', 
@@ -83,7 +83,7 @@ interface Suggestion {
   typeDisp: string;
 }
 
-const PREDEFINED_CATEGORIES = ['Stock', 'ETF', 'Crypto', 'Fund', 'Index', 'Option', 'Savings', 'Bank'];
+const PREDEFINED_CATEGORIES = ['Stock', 'ETF', 'Crypto', 'Fund', 'Index', 'Future', 'Option', 'Savings', 'Bank'];
 
 export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProps) {
   const lang = t[language];
@@ -177,9 +177,14 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     else if (rawType.includes('CRYPTO') || rawType.includes('加密貨幣')) targetCat = 'Crypto';
     else if (rawType.includes('FUND') || rawType.includes('基金')) targetCat = 'Fund';
     else if (rawType.includes('INDEX') || rawType.includes('指數')) targetCat = 'Index';
+    else if (rawType.includes('FUTURE') || rawType.includes('期貨')) targetCat = 'Future';
     else if (rawType.includes('OPTION') || rawType.includes('選擇權')) targetCat = 'Option';
     else if (rawType.includes('EQUITY') || rawType.includes('權益') || rawType.includes('股票')) targetCat = 'Stock';
-    else if (s.typeDisp) targetCat = s.typeDisp;
+    else if (s.typeDisp) {
+      // 確保如果 API 回傳了特定的類型名稱，也能正確對應到我們預定義的 Key
+      const typeKey = PREDEFINED_CATEGORIES.find(c => c.toUpperCase() === rawType);
+      targetCat = typeKey || s.typeDisp;
+    }
 
     form.setValue('category', targetCat);
     setTickerFound(true);
@@ -242,6 +247,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                 <Button variant="ghost" className="h-9 px-3 font-black text-slate-400" onClick={() => { setIsCustomCategory(false); field.onChange('Stock'); }}>X</Button>
               </div>
             )}
+            <FormMessage className="text-[10px] font-bold text-rose-500" />
           </FormItem>
         )} />
 

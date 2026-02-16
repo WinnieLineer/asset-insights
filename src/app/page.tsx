@@ -113,7 +113,7 @@ const translations = {
     layoutHint: 'Hint: Long press card to adjust layout',
     lastUpdated: 'Last Updated',
     allCategories: 'All',
-    categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index' }
+    categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Future: 'Future' }
   },
   zh: {
     title: 'ASSET INSIGHTS PRO',
@@ -153,7 +153,7 @@ const translations = {
     layoutHint: '提示：長按卡片區塊可調整佈局',
     lastUpdated: '最後更新',
     allCategories: '全部類別',
-    categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數' }
+    categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數', Future: '期貨' }
   }
 };
 
@@ -481,9 +481,13 @@ export default function AssetInsightsPage() {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
-    // 嚴格防止在交互元件或文字區塊上進入調整模式
+    // 嚴格防止在交互元件或文字區域上進入調整模式
     if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item, a, label, p, span, h1, h2, h3, h4')) return;
     
+    // 如果目前有選取文字，不要觸發長按
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) return;
+
     const startX = 'clientX' in e ? e.clientX : e.touches[0].clientX;
     const startY = 'clientY' in e ? e.clientY : e.touches[0].clientY;
 
@@ -510,6 +514,12 @@ export default function AssetInsightsPage() {
     window.addEventListener('touchmove', onMove);
 
     longPressTimer.current = setTimeout(() => { 
+      // 再次檢查是否有選取文字，有的話不進入模式
+      const finalSelection = window.getSelection();
+      if (finalSelection && finalSelection.toString().length > 0) {
+        cleanup();
+        return;
+      }
       setIsReordering(true); 
       toast({ title: t.reorderHint });
       cleanup(); 
@@ -530,7 +540,7 @@ export default function AssetInsightsPage() {
   const renderSection = (id: string, index: number) => {
     const config = layoutConfigs[id] || { width: 12, height: 400 };
     const controls = isReordering && (
-      <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full shadow-2xl border border-white/20 scale-90 sm:scale-100 ring-4 ring-black/5">
+      <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full shadow-2xl border border-white/20 scale-90 sm:scale-100 ring-4 ring-black/5">
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'up')} disabled={index === 0}><ChevronUp className="w-5 h-5" /></Button>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'down')} disabled={index === sections.length - 1}><ChevronDown className="w-5 h-5" /></Button>
         <div className="w-px h-6 bg-white/20 mx-1" />

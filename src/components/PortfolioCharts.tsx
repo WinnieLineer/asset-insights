@@ -17,6 +17,7 @@ const getCategoryColor = (cat: string) => {
     'Option': '#7c3aed',
     'Fund': '#2563eb',
     'Index': '#4338ca',
+    'Future': '#f59e0b',
     'Bank': '#064e3b',
     'Savings': '#78350f'
   };
@@ -36,13 +37,13 @@ const t = {
     allocation: 'CURRENT ALLOCATION', 
     trend: 'ASSET EVOLUTION', 
     total: 'TOTAL', 
-    categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF', 'Option': 'Option', 'Fund': 'Fund', 'Index': 'Index' }
+    categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF', 'Option': 'Option', 'Fund': 'Fund', 'Index': 'Index', 'Future': 'Future' }
   },
   zh: { 
     allocation: '當前資產配置比例', 
     trend: '歷史資產演變走勢', 
     total: '投資組合總計', 
-    categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款', 'ETF': 'ETF', 'Option': '選擇權', 'Fund': '基金', 'Index': '指數' }
+    categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款', 'ETF': 'ETF', 'Option': '選擇權', 'Fund': '基金', 'Index': '指數', 'Future': '期貨' }
   }
 };
 
