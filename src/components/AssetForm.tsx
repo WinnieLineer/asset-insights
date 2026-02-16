@@ -73,6 +73,7 @@ const t = {
 interface AssetFormProps {
   onAdd: (asset: Omit<Asset, 'id'>) => void;
   language: 'en' | 'zh';
+  hideSubmit?: boolean;
 }
 
 interface Suggestion {
@@ -84,7 +85,7 @@ interface Suggestion {
 
 const PREDEFINED_CATEGORIES = ['Stock', 'ETF', 'Crypto', 'Fund', 'Index', 'Option', 'Savings', 'Bank'];
 
-export function AssetForm({ onAdd, language }: AssetFormProps) {
+export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProps) {
   const lang = t[language];
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -202,7 +203,7 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+      <form id="add-asset-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
         
         <FormField control={form.control} name="category" render={({ field }) => (
           <FormItem>
@@ -265,9 +266,9 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
               {showSuggestions && suggestions.length > 0 && (
                 <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border border-slate-200 rounded-lg shadow-xl max-h-[200px] overflow-auto no-scrollbar">
                   {suggestions.map((s, idx) => (
-                    <div key={idx} onClick={() => selectSuggestion(s)} className="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0">
-                      <div className="font-black text-xs text-slate-900 leading-tight">{s.name}</div>
-                      <div className="flex items-center justify-between mt-1">
+                    <div key={idx} onClick={() => selectSuggestion(s)} className="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 suggestion-item">
+                      <div className="font-black text-xs text-slate-900 leading-tight pointer-events-none">{s.name}</div>
+                      <div className="flex items-center justify-between mt-1 pointer-events-none">
                         <span className="text-[11px] font-black text-blue-600 uppercase">{s.symbol}</span>
                         <span className="text-[10px] font-bold text-slate-400">{s.typeDisp}</span>
                       </div>
@@ -330,9 +331,11 @@ export function AssetForm({ onAdd, language }: AssetFormProps) {
           )} />
         </div>
         
-        <Button type="submit" className="w-full h-10 bg-slate-900 hover:bg-black text-white font-black rounded-lg text-xs uppercase tracking-widest shadow-md transition-all active:scale-[0.98] mt-2">
-          {lang.submit}
-        </Button>
+        {!hideSubmit && (
+          <Button type="submit" className="w-full h-10 bg-slate-900 hover:bg-black text-white font-black rounded-lg text-xs uppercase tracking-widest shadow-md transition-all active:scale-[0.98] mt-2">
+            {lang.submit}
+          </Button>
+        )}
       </form>
     </Form>
   );

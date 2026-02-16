@@ -480,7 +480,10 @@ export default function AssetInsightsPage() {
   };
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
-    if ((e.target as HTMLElement).closest('button, input, select, [role="tab"], .recharts-surface, .lucide, textarea, th')) return;
+    const target = e.target as HTMLElement;
+    // 嚴格防止在交互元件上進入調整模式
+    if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item')) return;
+    
     const cleanup = () => {
       if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
       window.removeEventListener('mouseup', cleanup);
@@ -509,7 +512,7 @@ export default function AssetInsightsPage() {
   const renderSection = (id: string, index: number) => {
     const config = layoutConfigs[id] || { width: 12, height: 400 };
     const controls = isReordering && (
-      <div className="absolute -top-14 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full shadow-2xl border border-white/20 scale-90 sm:scale-100">
+      <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full shadow-2xl border border-white/20 scale-90 sm:scale-100 ring-4 ring-black/5">
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'up')} disabled={index === 0}><ChevronUp className="w-5 h-5" /></Button>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'down')} disabled={index === sections.length - 1}><ChevronDown className="w-5 h-5" /></Button>
         <div className="w-px h-6 bg-white/20 mx-1" />
@@ -637,13 +640,21 @@ export default function AssetInsightsPage() {
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
             <Card className="modern-card bg-white h-full flex flex-col overflow-hidden">
-              <CardHeader className="px-5 py-3 border-b border-slate-50 shrink-0">
+              <CardHeader className="px-5 py-3 border-b border-slate-50 shrink-0 flex flex-row items-center justify-between">
                 <h3 className="pro-label text-sm">
                   <Plus className="w-4 h-4" /> {t.addAsset}
                 </h3>
+                <Button 
+                  form="add-asset-form" 
+                  type="submit" 
+                  size="sm" 
+                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[10px] uppercase tracking-widest h-8 px-4"
+                >
+                  {t.saveChanges}
+                </Button>
               </CardHeader>
               <CardContent className="p-5 flex-1 overflow-auto no-scrollbar">
-                <AssetForm language={language} onAdd={(a) => { const newAsset = { ...a, id: crypto.randomUUID() }; setAssets(prev => [...prev, newAsset]); updateAllData([...assets, newAsset]); }} />
+                <AssetForm language={language} hideSubmit onAdd={(a) => { const newAsset = { ...a, id: crypto.randomUUID() }; setAssets(prev => [...prev, newAsset]); updateAllData([...assets, newAsset]); }} />
               </CardContent>
             </Card>
           </div>
