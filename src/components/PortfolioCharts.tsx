@@ -47,6 +47,32 @@ const t = {
   }
 };
 
+const CustomTooltip = ({ active, payload, label, symbol, langCategories }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-4 shadow-2xl rounded-xl z-[1000]">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">{label}</p>
+        <div className="space-y-2">
+          {payload.map((entry: any, index: number) => (
+            <div key={index} className="flex items-center justify-between gap-8">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.color || entry.fill }} />
+                <span className="text-[11px] font-black text-slate-600 uppercase tracking-tight">
+                  {entry.name === 'totalValue' ? 'Portfolio Total' : (langCategories[entry.name] || entry.name)}
+                </span>
+              </div>
+              <span className="text-[11px] font-black text-slate-900 tabular-nums">
+                {symbol}{Math.round(entry.value).toLocaleString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
   if (!percent || percent < 0.01) return null; 
   
@@ -55,22 +81,22 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   const cos = Math.cos(-RADIAN * midAngle);
   
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const offset = isMobile ? 8 : 15;
+  const offset = isMobile ? 4 : 12;
   const sx = cx + (outerRadius + 2) * cos;
   const sy = cy + (outerRadius + 2) * sin;
   const mx = cx + (outerRadius + offset) * cos;
   const my = cy + (outerRadius + offset) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * (isMobile ? 5 : 8);
+  const ex = mx + (cos >= 0 ? 1 : -1) * (isMobile ? 3 : 8);
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
   return (
     <g>
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#cbd5e1" strokeWidth={1} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={-2} textAnchor={textAnchor} fill="#64748b" fontSize={isMobile ? 8 : 10} fontWeight={900} className="uppercase tracking-widest">
+      <text x={ex + (cos >= 0 ? 1 : -1) * 3} y={ey} dy={-2} textAnchor={textAnchor} fill="#64748b" fontSize={isMobile ? 8 : 10} fontWeight={900} className="uppercase tracking-widest">
         {langCategories[name] || name}
       </text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 4} y={ey} dy={10} textAnchor={textAnchor} fill="#94a3b8" fontSize={isMobile ? 8 : 9} fontWeight={700}>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 3} y={ey} dy={8} textAnchor={textAnchor} fill="#94a3b8" fontSize={isMobile ? 8 : 9} fontWeight={700}>
         {`${(percent * 100).toFixed(1)}%`}
       </text>
     </g>
@@ -110,6 +136,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               tick={{ fontSize: 11, fill: '#cbd5e1', fontWeight: 700 }} 
               tickFormatter={formatYAxis} 
             />
+            <Tooltip content={(props) => <CustomTooltip {...props} symbol={symbol} langCategories={lang.categories} />} />
             {activeCategoriesInHistory.map((cat) => (
               <Bar 
                 key={cat} 
@@ -128,7 +155,6 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               dot={false} 
               isAnimationActive={false}
             />
-            <Tooltip content={() => null} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -183,7 +209,6 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
                   />
                 ))}
               </Pie>
-              <Tooltip content={() => null} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -193,7 +218,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
             {displayLabel}
           </p>
           <div className="flex items-baseline gap-0.5">
-             <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter leading-none">{displayPercent}</span>
+             <span className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tighter leading-none">{displayPercent}</span>
              <span className="text-[12px] font-black text-slate-400">%</span>
           </div>
           <div className="mt-2 text-[10px] font-black text-white bg-slate-900 px-3 py-1 rounded-full shadow-lg border border-white/10 whitespace-nowrap overflow-hidden text-ellipsis max-w-full">

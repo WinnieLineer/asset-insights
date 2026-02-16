@@ -329,7 +329,10 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                     type="number" 
                     step="any" 
                     {...field} 
-                    onFocus={(e) => e.target.select()} 
+                    onFocus={(e) => {
+                      // 針對 Safari 優化，確保聚焦時全選
+                      e.currentTarget.select();
+                    }} 
                     onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
                     className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" 
                   />

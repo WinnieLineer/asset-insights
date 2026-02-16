@@ -294,7 +294,7 @@ export default function AssetInsightsPage() {
       const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
       setLastUpdated(timestamp);
       
-      if (typeof window !== 'undefined' && window.innerWidth > 768) {
+      if (typeof window !== 'undefined' && window.innerWidth > 1024) {
         toast({ title: t.dataUpdated });
       }
     } catch (error) {
@@ -481,8 +481,10 @@ export default function AssetInsightsPage() {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
-    if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item, a, label, p, span, h1, h2, h3, h4')) return;
+    // 強化排除清單：排除所有表單、按鈕、選單、建議清單
+    if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item, a, label, h1, h2, h3, h4')) return;
     
+    // 檢查目前是否正在選取文字
     const selection = window.getSelection();
     if (selection && selection.toString().length > 0) return;
 
@@ -492,6 +494,7 @@ export default function AssetInsightsPage() {
     const onMove = (me: MouseEvent | TouchEvent) => {
       const curX = 'clientX' in me ? me.clientX : (me as TouchEvent).touches[0].clientX;
       const curY = 'clientY' in me ? me.clientY : (me as TouchEvent).touches[0].clientY;
+      // 如果發生位移（通常是選取文字或滾動），則取消計時器
       if (Math.abs(curX - startX) > 5 || Math.abs(curY - startY) > 5) {
         cleanup();
       }
@@ -511,6 +514,7 @@ export default function AssetInsightsPage() {
     window.addEventListener('touchmove', onMove);
 
     longPressTimer.current = setTimeout(() => { 
+      // 最後再次檢查是否有文字被選取
       const finalSelection = window.getSelection();
       if (finalSelection && finalSelection.toString().length > 0) {
         cleanup();
@@ -536,7 +540,7 @@ export default function AssetInsightsPage() {
   const renderSection = (id: string, index: number) => {
     const config = layoutConfigs[id] || { width: 12, height: 400 };
     const controls = isReordering && (
-      <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[300] flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full shadow-2xl border border-white/20 scale-90 sm:scale-100 ring-4 ring-black/5">
+      <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full shadow-2xl border border-white/20 scale-90 sm:scale-100 ring-4 ring-black/5">
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'up')} disabled={index === 0}><ChevronUp className="w-5 h-5" /></Button>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'down')} disabled={index === sections.length - 1}><ChevronDown className="w-5 h-5" /></Button>
         <div className="w-px h-6 bg-white/20 mx-1" />
@@ -552,7 +556,7 @@ export default function AssetInsightsPage() {
 
     const commonClass = cn(
       "relative transition-all duration-300",
-      isReordering && "ring-4 ring-black ring-offset-2 rounded-2xl z-[150] shadow-2xl scale-[0.98]",
+      isReordering && "ring-4 ring-black ring-offset-2 rounded-2xl z-[900] shadow-2xl scale-[0.98]",
       config.width === 4 && "xl:col-span-4",
       config.width === 6 && "xl:col-span-6",
       config.width === 8 && "xl:col-span-8",
@@ -876,7 +880,17 @@ export default function AssetInsightsPage() {
             <div className="space-y-1"><Label className="pro-label text-[10px]">{t.assetName}</Label><div className="p-3 bg-slate-50 rounded-lg font-black text-sm">{editingAsset?.name}</div></div>
             <div className="space-y-1">
               <Label htmlFor="amount" className="pro-label text-[10px]">{t.holdings}</Label>
-              <Input id="amount" type="number" step="any" value={editAmount} onFocus={(e) => e.target.select()} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-9 font-black text-sm rounded-lg" />
+              <Input 
+                id="amount" 
+                type="number" 
+                step="any" 
+                value={editAmount} 
+                onFocus={(e) => {
+                  e.currentTarget.select();
+                }} 
+                onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} 
+                className="h-9 font-black text-sm rounded-lg" 
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1"><Label className="pro-label text-[10px]">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div>
