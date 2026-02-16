@@ -172,6 +172,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     
     const rawType = (s.typeDisp || '').trim().toUpperCase();
     let targetCat = 'Stock';
+    let unknownCategory = false;
     
     if (rawType.includes('ETF') || rawType.includes('交易所買賣基金')) targetCat = 'ETF';
     else if (rawType.includes('CRYPTO') || rawType.includes('加密貨幣')) targetCat = 'Crypto';
@@ -182,7 +183,18 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     else if (rawType.includes('EQUITY') || rawType.includes('權益') || rawType.includes('股票')) targetCat = 'Stock';
     else if (s.typeDisp) {
       const typeKey = PREDEFINED_CATEGORIES.find(c => c.toUpperCase() === rawType);
-      targetCat = typeKey || s.typeDisp;
+      if (typeKey) {
+        targetCat = typeKey;
+      } else {
+        targetCat = s.typeDisp;
+        unknownCategory = true;
+      }
+    }
+
+    if (unknownCategory) {
+      setIsCustomCategory(true);
+    } else {
+      setIsCustomCategory(false);
     }
 
     form.setValue('category', targetCat);
