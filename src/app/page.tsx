@@ -481,16 +481,34 @@ export default function AssetInsightsPage() {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
-    // 嚴格防止在交互元件上進入調整模式
-    if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item')) return;
+    // 嚴格防止在交互元件或文字區塊上進入調整模式
+    if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item, a, label, p, span, h1, h2, h3, h4')) return;
     
+    const startX = 'clientX' in e ? e.clientX : e.touches[0].clientX;
+    const startY = 'clientY' in e ? e.clientY : e.touches[0].clientY;
+
+    const onMove = (me: MouseEvent | TouchEvent) => {
+      const curX = 'clientX' in me ? me.clientX : (me as TouchEvent).touches[0].clientX;
+      const curY = 'clientY' in me ? me.clientY : (me as TouchEvent).touches[0].clientY;
+      // 如果移動超過 5 像素（例如在選取文字），則取消長按計時器
+      if (Math.abs(curX - startX) > 5 || Math.abs(curY - startY) > 5) {
+        cleanup();
+      }
+    };
+
     const cleanup = () => {
       if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
       window.removeEventListener('mouseup', cleanup);
       window.removeEventListener('touchend', cleanup);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('touchmove', onMove);
     };
+
     window.addEventListener('mouseup', cleanup);
     window.addEventListener('touchend', cleanup);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchmove', onMove);
+
     longPressTimer.current = setTimeout(() => { 
       setIsReordering(true); 
       toast({ title: t.reorderHint });
@@ -528,7 +546,7 @@ export default function AssetInsightsPage() {
 
     const commonClass = cn(
       "relative transition-all duration-300",
-      isReordering && "ring-4 ring-black ring-offset-2 rounded-2xl z-[105] shadow-2xl scale-[0.98]",
+      isReordering && "ring-4 ring-black ring-offset-2 rounded-2xl z-[150] shadow-2xl scale-[0.98]",
       config.width === 4 && "xl:col-span-4",
       config.width === 6 && "xl:col-span-6",
       config.width === 8 && "xl:col-span-8",
