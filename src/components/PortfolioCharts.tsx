@@ -49,16 +49,19 @@ const t = {
 
 const CustomTooltip = ({ active, payload, label, symbol, langCategories }: any) => {
   if (active && payload && payload.length) {
+    const categories = payload.filter((p: any) => p.dataKey !== 'totalValue' && p.value > 0);
+    const totalEntry = payload.find((p: any) => p.dataKey === 'totalValue');
+
     return (
-      <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-4 shadow-2xl rounded-xl z-[1000]">
+      <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-4 shadow-2xl rounded-xl z-[1000] min-w-[200px]">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">{label}</p>
         <div className="space-y-2">
-          {payload.map((entry: any, index: number) => (
+          {categories.map((entry: any, index: number) => (
             <div key={index} className="flex items-center justify-between gap-8">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.color || entry.fill }} />
                 <span className="text-[11px] font-black text-slate-600 uppercase tracking-tight">
-                  {entry.name === 'totalValue' ? 'Portfolio Total' : (langCategories[entry.name] || entry.name)}
+                  {langCategories[entry.name] || entry.name}
                 </span>
               </div>
               <span className="text-[11px] font-black text-slate-900 tabular-nums">
@@ -66,6 +69,14 @@ const CustomTooltip = ({ active, payload, label, symbol, langCategories }: any) 
               </span>
             </div>
           ))}
+          {totalEntry && (
+            <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between gap-8">
+              <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">Portfolio Total</span>
+              <span className="text-[11px] font-black text-slate-900 tabular-nums">
+                {symbol}{Math.round(totalEntry.value).toLocaleString()}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -81,12 +92,12 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   const cos = Math.cos(-RADIAN * midAngle);
   
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const offset = isMobile ? 4 : 12;
+  const offset = isMobile ? 2 : 12;
   const sx = cx + (outerRadius + 2) * cos;
   const sy = cy + (outerRadius + 2) * sin;
   const mx = cx + (outerRadius + offset) * cos;
   const my = cy + (outerRadius + offset) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * (isMobile ? 3 : 8);
+  const ex = mx + (cos >= 0 ? 1 : -1) * (isMobile ? 2 : 8);
   const ey = my;
   const textAnchor = cos >= 0 ? 'start' : 'end';
 
@@ -141,6 +152,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               <Bar 
                 key={cat} 
                 dataKey={cat} 
+                name={cat}
                 stackId="a" 
                 fill={getCategoryColor(cat)} 
                 barSize={12} 
@@ -150,6 +162,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
             <Line 
               type="monotone" 
               dataKey="totalValue" 
+              name="totalValue"
               stroke="#000000" 
               strokeWidth={2} 
               dot={false} 

@@ -481,10 +481,8 @@ export default function AssetInsightsPage() {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
-    // 強化排除清單：排除所有表單、按鈕、選單、建議清單
-    if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item, a, label, h1, h2, h3, h4')) return;
+    if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item, a, label, h1, h2, h3, h4, p, span')) return;
     
-    // 檢查目前是否正在選取文字
     const selection = window.getSelection();
     if (selection && selection.toString().length > 0) return;
 
@@ -494,7 +492,6 @@ export default function AssetInsightsPage() {
     const onMove = (me: MouseEvent | TouchEvent) => {
       const curX = 'clientX' in me ? me.clientX : (me as TouchEvent).touches[0].clientX;
       const curY = 'clientY' in me ? me.clientY : (me as TouchEvent).touches[0].clientY;
-      // 如果發生位移（通常是選取文字或滾動），則取消計時器
       if (Math.abs(curX - startX) > 5 || Math.abs(curY - startY) > 5) {
         cleanup();
       }
@@ -514,7 +511,6 @@ export default function AssetInsightsPage() {
     window.addEventListener('touchmove', onMove);
 
     longPressTimer.current = setTimeout(() => { 
-      // 最後再次檢查是否有文字被選取
       const finalSelection = window.getSelection();
       if (finalSelection && finalSelection.toString().length > 0) {
         cleanup();
@@ -835,7 +831,7 @@ export default function AssetInsightsPage() {
               {isReordering && (
                 <Button 
                   onClick={() => setIsReordering(false)} 
-                  className="bg-black text-white hover:bg-slate-800 h-7 px-4 rounded-full font-black text-[11px] flex items-center gap-2 shadow-lg animate-fade-in"
+                  className="bg-black text-white hover:bg-slate-800 h-7 px-4 rounded-full font-black text-[11px] flex items-center gap-2 shadow-lg animate-fade-in relative z-[150]"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" /> {t.saveLayout}
                 </Button>
@@ -886,7 +882,8 @@ export default function AssetInsightsPage() {
                 step="any" 
                 value={editAmount} 
                 onFocus={(e) => {
-                  e.currentTarget.select();
+                  const target = e.currentTarget;
+                  setTimeout(() => target.select(), 0);
                 }} 
                 onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} 
                 className="h-9 font-black text-sm rounded-lg" 
