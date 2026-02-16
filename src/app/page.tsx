@@ -103,7 +103,7 @@ const translations = {
     int1wk: 'Weekly',
     int1mo: 'Monthly',
     dataUpdated: 'Market data synced.',
-    acqDate: 'Acquired',
+    acqDate: 'Start Date',
     posEndDate: 'Closed',
     exportData: 'Export',
     importData: 'Import',
@@ -143,7 +143,7 @@ const translations = {
     int1wk: '週線',
     int1mo: '月線',
     dataUpdated: '市場數據已更新',
-    acqDate: '持有日期',
+    acqDate: '起始持有日期',
     posEndDate: '結清日期',
     exportData: '匯出',
     importData: '匯入',
@@ -346,7 +346,7 @@ export default function AssetInsightsPage() {
       return { ...asset, isClosed, valueInDisplay, priceInDisplay: unitPriceInDisplay };
     });
 
-    const historyData: any[] = [];
+    const dayAggregator: Record<string, any> = {};
     const lastKnownPrices: Record<string, number> = {};
     const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
 
@@ -354,6 +354,7 @@ export default function AssetInsightsPage() {
       const pointTime = point.timestamp * 1000;
       const dateObj = new Date(pointTime);
       const dateKey = dateObj.toISOString().split('T')[0];
+      
       let pointTotalTWD = 0;
       const categories: Record<string, number> = {};
 
@@ -398,9 +399,11 @@ export default function AssetInsightsPage() {
         Object.entries(categories).forEach(([cat, val]) => { 
           item[cat] = val * (displayRate / rateTWD); 
         });
-        historyData.push(item);
+        dayAggregator[dateKey] = item;
       }
     });
+
+    const historyData = Object.keys(dayAggregator).sort().map(key => dayAggregator[key]);
 
     return { 
       processedAssets, 
@@ -481,11 +484,10 @@ export default function AssetInsightsPage() {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
+    if (window.getSelection()?.toString().length) return;
+    
     if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item, a, label, h1, h2, h3, h4, p, span')) return;
     
-    const selection = window.getSelection();
-    if (selection && selection.toString().length > 0) return;
-
     const startX = 'clientX' in e ? e.clientX : e.touches[0].clientX;
     const startY = 'clientY' in e ? e.clientY : e.touches[0].clientY;
 
@@ -511,8 +513,7 @@ export default function AssetInsightsPage() {
     window.addEventListener('touchmove', onMove);
 
     longPressTimer.current = setTimeout(() => { 
-      const finalSelection = window.getSelection();
-      if (finalSelection && finalSelection.toString().length > 0) {
+      if (window.getSelection()?.toString().length) {
         cleanup();
         return;
       }
@@ -612,7 +613,7 @@ export default function AssetInsightsPage() {
         );
       case 'controls':
         return (
-          <div key={id} className={commonClass} style={wrapperStyle}>
+          <div key={id} className={cn(commonClass, isReordering && "z-[950]")} style={wrapperStyle}>
             {controls}
             <section className="bg-slate-50/80 backdrop-blur-md p-4 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-center gap-3 shadow-sm h-full overflow-hidden">
               <div className="w-full md:w-auto flex items-center justify-between md:justify-start gap-3 flex-wrap sm:flex-nowrap">
@@ -672,7 +673,7 @@ export default function AssetInsightsPage() {
                   form="add-asset-form" 
                   type="submit" 
                   size="sm" 
-                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[10px] uppercase tracking-widest h-8 px-4"
+                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[12px] uppercase tracking-widest h-8 px-3"
                 >
                   {t.saveChanges}
                 </Button>
@@ -831,7 +832,7 @@ export default function AssetInsightsPage() {
               {isReordering && (
                 <Button 
                   onClick={() => setIsReordering(false)} 
-                  className="bg-black text-white hover:bg-slate-800 h-7 px-4 rounded-full font-black text-[11px] flex items-center gap-2 shadow-lg animate-fade-in relative z-[150]"
+                  className="bg-black text-white hover:bg-slate-800 h-7 px-4 rounded-full font-black text-[11px] flex items-center gap-2 shadow-lg animate-fade-in relative z-[1000]"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" /> {t.saveLayout}
                 </Button>
@@ -883,7 +884,7 @@ export default function AssetInsightsPage() {
                 value={editAmount} 
                 onFocus={(e) => {
                   const target = e.currentTarget;
-                  setTimeout(() => target.select(), 0);
+                  setTimeout(() => target.select(), 10);
                 }} 
                 onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} 
                 className="h-9 font-black text-sm rounded-lg" 

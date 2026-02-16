@@ -37,7 +37,7 @@ const t = {
     customCategory: 'Custom Category',
     currency: 'Currency',
     amount: 'Holdings',
-    date: 'Acquired',
+    date: 'Start Date',
     endDate: 'Closed (Opt)',
     submit: 'Add Position',
     categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Future: 'Future', Custom: 'Custom...' },
@@ -57,7 +57,7 @@ const t = {
     customCategory: '自定義類別名稱',
     currency: '持有幣別',
     amount: '持有數量',
-    date: '持有日期',
+    date: '起始持有日期',
     endDate: '結清日期 (選填)',
     submit: '新增部位',
     categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數', Future: '期貨', Custom: '自定義...' },
@@ -331,7 +331,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                     {...field} 
                     onFocus={(e) => {
                       const target = e.currentTarget;
-                      setTimeout(() => target.select(), 0);
+                      setTimeout(() => target.select(), 10);
                     }} 
                     onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
                     className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" 

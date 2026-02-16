@@ -49,6 +49,7 @@ const t = {
 
 const CustomTooltip = ({ active, payload, label, symbol, langCategories }: any) => {
   if (active && payload && payload.length) {
+    // 過濾出數值大於 0 的類別數據
     const categories = payload.filter((p: any) => p.dataKey !== 'totalValue' && p.value > 0);
     const totalEntry = payload.find((p: any) => p.dataKey === 'totalValue');
 
