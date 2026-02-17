@@ -38,7 +38,7 @@ const t = {
     currency: 'Currency',
     amount: 'Holdings',
     date: 'Starting Holding Date',
-    endDate: 'Closed Date (Opt)',
+    endDate: 'Closed Date',
     submit: 'Add Position',
     categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Future: 'Future', Forex: 'Forex', Custom: 'Custom...' },
     errors: { 
@@ -58,7 +58,7 @@ const t = {
     currency: '持有幣別',
     amount: '持有數量',
     date: '起始持有日期',
-    endDate: '結清日期 (選填)',
+    endDate: '結清日期',
     submit: '新增部位',
     categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數', Future: '期貨', Forex: '外匯', Custom: '自定義...' },
     errors: { 
@@ -108,6 +108,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   }).refine((data) => {
     const noMarketCats = ['Savings', 'Bank'];
     if (noMarketCats.includes(data.category)) return true;
+    if (data.category && !PREDEFINED_CATEGORIES.includes(data.category)) return true; // Custom categories don't require symbols
     if (!data.symbol || data.symbol.trim() === '') return false;
     return true;
   }, { message: lang.errors.tickerRequired, path: ['symbol'] }), [lang]);
@@ -127,7 +128,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
 
   const categoryValue = form.watch('category');
   const symbolValue = form.watch('symbol');
-  const showTickerField = !['Savings', 'Bank'].includes(categoryValue);
+  const showTickerField = !['Savings', 'Bank'].includes(categoryValue) && (PREDEFINED_CATEGORIES.includes(categoryValue) || categoryValue === '');
   const showCurrencyField = !showTickerField;
   
   useEffect(() => {
@@ -173,14 +174,13 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     const rawType = (s.typeDisp || '').trim().toUpperCase();
     let targetCat = 'Stock';
     
-    if (rawType.includes('ETF') || rawType.includes('交易所買賣基金')) targetCat = 'ETF';
-    else if (rawType.includes('CRYPTO') || rawType.includes('加密貨幣')) targetCat = 'Crypto';
-    else if (rawType.includes('CURRENCY') || rawType.includes('外匯') || rawType.includes('FOREX')) targetCat = 'Forex';
-    else if (rawType.includes('FUND') || rawType.includes('基金')) targetCat = 'Fund';
-    else if (rawType.includes('INDEX') || rawType.includes('指數')) targetCat = 'Index';
-    else if (rawType.includes('FUTURE') || rawType.includes('期貨')) targetCat = 'Future';
-    else if (rawType.includes('OPTION') || rawType.includes('選擇權')) targetCat = 'Option';
-    else if (rawType.includes('EQUITY') || rawType.includes('權益') || rawType.includes('股票')) targetCat = 'Stock';
+    if (rawType.includes('ETF')) targetCat = 'ETF';
+    else if (rawType.includes('CRYPTO')) targetCat = 'Crypto';
+    else if (rawType.includes('CURRENCY') || rawType.includes('FOREX')) targetCat = 'Forex';
+    else if (rawType.includes('FUND')) targetCat = 'Fund';
+    else if (rawType.includes('INDEX')) targetCat = 'Index';
+    else if (rawType.includes('FUTURE')) targetCat = 'Future';
+    else if (rawType.includes('OPTION')) targetCat = 'Option';
 
     form.setValue('category', targetCat);
     setTickerFound(true);

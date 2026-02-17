@@ -111,7 +111,7 @@ const translations = {
     importData: 'Import',
     importSuccess: 'Data imported successfully.',
     reorderHint: 'REORDER MODE ACTIVE',
-    saveLayout: 'SAVE LAYOUT',
+    saveLayout: 'SAVE LAYOUT CONFIG',
     layoutHint: 'Hint: Long press card to adjust layout',
     lastUpdated: 'Last Updated',
     allCategories: 'All',
@@ -323,6 +323,11 @@ export default function AssetInsightsPage() {
     const displayRate = marketData.rates[displayCurrency] || 1;
     const todayStr = new Date().toISOString().split('T')[0];
 
+    // Forward fill logic for historical chart
+    const lastKnownPrices: Record<string, number> = {};
+    const dayAggregator: Record<string, any> = {};
+    const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
+
     const processedAssets = assets.map(asset => {
       const marketInfo = marketData.assetMarketPrices[asset.id];
       const nativePrice = marketInfo?.price || 0;
@@ -349,30 +354,21 @@ export default function AssetInsightsPage() {
         ? (nativePrice * (rateTWD / apiCurrencyRate)) * (displayRate / rateTWD)
         : (rateTWD / (marketData.rates[asset.currency] || 1)) * (displayRate / rateTWD);
 
-      // Calculate Change from previous trading day
       let changePercent = 0;
-      if (marketTimeline.length >= 2) {
-        const sorted = [...marketTimeline].sort((a, b) => b.timestamp - a.timestamp);
-        const currentP = sorted[0]?.assets?.[asset.id];
-        const previousP = sorted[1]?.assets?.[asset.id];
-        if (currentP && previousP) {
-          changePercent = ((currentP - previousP) / previousP) * 100;
-        }
+      const timelineForAsset = sortedTimeline.filter(p => p.assets[asset.id] !== undefined);
+      if (timelineForAsset.length >= 2) {
+        const last = timelineForAsset[timelineForAsset.length - 1].assets[asset.id];
+        const prev = timelineForAsset[timelineForAsset.length - 2].assets[asset.id];
+        if (last && prev) changePercent = ((last - prev) / prev) * 100;
       }
 
       return { ...asset, isClosed, valueInDisplay, priceInDisplay: unitPriceInDisplay, changePercent };
     });
 
-    const dayAggregator: Record<string, any> = {};
-    const lastKnownPrices: Record<string, number> = {};
-    
-    // Day-by-day forward fill logic for chart
-    const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
-
     if (sortedTimeline.length > 0) {
       const firstTs = sortedTimeline[0].timestamp;
-      const lastTs = sortedTimeline[sortedTimeline.length - 1].timestamp;
-
+      const lastTs = Math.floor(Date.now() / 1000);
+      
       const apiByDay: Record<string, any[]> = {};
       sortedTimeline.forEach(p => {
         const d = new Date(p.timestamp * 1000).toISOString().split('T')[0];
@@ -385,23 +381,19 @@ export default function AssetInsightsPage() {
       
       while (currentD <= endD) {
         const dateKey = currentD.toISOString().split('T')[0];
-        
         if (apiByDay[dateKey]) {
-          apiByDay[dateKey].forEach(p => {
-            Object.entries(p.assets).forEach(([id, price]) => {
-              lastKnownPrices[id] = price as number;
-            });
+          const lastPointOfDay = apiByDay[dateKey][apiByDay[dateKey].length - 1];
+          Object.entries(lastPointOfDay.assets).forEach(([id, price]) => {
+            lastKnownPrices[id] = price as number;
           });
         }
 
         let pointTotalTWD = 0;
         const categories: Record<string, number> = {};
-
         processedAssets.forEach(asset => {
           const acqTime = new Date(asset.acquisitionDate).getTime();
           const endTimeStr = asset.endDate || '9999-12-31';
           const currentT = currentD.getTime();
-          
           if (currentT < acqTime || dateKey > endTimeStr) return; 
 
           let priceAtT = lastKnownPrices[asset.id];
@@ -413,13 +405,10 @@ export default function AssetInsightsPage() {
           const apiCurrency = marketData.assetMarketPrices[asset.id]?.currency || asset.currency || 'TWD';
           const apiCurrencyRate = marketData.rates[apiCurrency as Currency] || 1;
           const priceInTWDAtT = priceAtT * (rateTWD / apiCurrencyRate);
-          
           let valInTWD = asset.amount * priceInTWDAtT;
           if (!asset.symbol || asset.symbol.trim() === '') {
-            const assetCurrencyRate = marketData.rates[asset.currency] || 1;
-            valInTWD = asset.amount * (rateTWD / assetCurrencyRate);
+            valInTWD = asset.amount * (rateTWD / (marketData.rates[asset.currency] || 1));
           }
-          
           pointTotalTWD += valInTWD;
           categories[asset.category] = (categories[asset.category] || 0) + valInTWD;
         });
@@ -464,9 +453,7 @@ export default function AssetInsightsPage() {
 
   const sortedActiveAssets = useMemo(() => {
     let filtered = assetCalculations.activeAssets;
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter(a => a.category === categoryFilter);
-    }
+    if (categoryFilter !== 'all') filtered = filtered.filter(a => a.category === categoryFilter);
     return getSortedItems(filtered, activeSort);
   }, [assetCalculations.activeAssets, activeSort, getSortedItems, categoryFilter]);
 
@@ -517,7 +504,9 @@ export default function AssetInsightsPage() {
   };
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
-    if (window.getSelection()?.toString().length) return;
+    const selection = window.getSelection();
+    if (selection && selection.toString().length > 0) return;
+
     const target = e.target as HTMLElement;
     if (target.closest('button, input, select, [role="combobox"], textarea, th, td, a, label, h1, h2, h3, h4, p, span')) return;
     
@@ -527,7 +516,7 @@ export default function AssetInsightsPage() {
     const onMove = (me: MouseEvent | TouchEvent) => {
       const curX = 'clientX' in me ? me.clientX : (me as TouchEvent).touches[0].clientX;
       const curY = 'clientY' in me ? me.clientY : (me as TouchEvent).touches[0].clientY;
-      if (Math.abs(curX - startX) > 5 || Math.abs(curY - startY) > 5) cleanup();
+      if (Math.abs(curX - startX) > 8 || Math.abs(curY - startY) > 8) cleanup();
     };
 
     const cleanup = () => {
@@ -544,7 +533,8 @@ export default function AssetInsightsPage() {
     window.addEventListener('touchmove', onMove);
 
     longPressTimer.current = setTimeout(() => { 
-      if (window.getSelection()?.toString().length) { cleanup(); return; }
+      const finalSelection = window.getSelection();
+      if (finalSelection && finalSelection.toString().length > 0) { cleanup(); return; }
       setIsReordering(true); 
       toast({ title: t.reorderHint });
       cleanup(); 
@@ -591,7 +581,7 @@ export default function AssetInsightsPage() {
     );
 
     const wrapperStyle = { 
-      minHeight: isDesktop ? `${config.height}px` : (['historicalTrend', 'allocation'].includes(id) ? '250px' : 'auto'), 
+      minHeight: isDesktop ? `${config.height}px` : (['historicalTrend', 'allocation'].includes(id) ? '280px' : 'auto'), 
       height: isDesktop ? `${config.height}px` : 'auto' 
     };
 
@@ -701,7 +691,7 @@ export default function AssetInsightsPage() {
                   form="add-asset-form" 
                   type="submit" 
                   size="sm" 
-                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[13px] uppercase tracking-widest h-8 px-3"
+                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[13px] uppercase tracking-widest h-8 px-4"
                 >
                   {t.saveChanges}
                 </Button>
@@ -716,14 +706,14 @@ export default function AssetInsightsPage() {
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <HistoricalTrendChart language={language} historicalData={assetCalculations.chartData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? config.height : 250} />
+            <HistoricalTrendChart language={language} historicalData={assetCalculations.chartData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? config.height : 280} />
           </div>
         );
       case 'allocation':
         return (
           <div key={id} className={commonClass} style={wrapperStyle}>
             {controls}
-            <AllocationPieChart language={language} allocationData={assetCalculations.allocationData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? config.height : 250} />
+            <AllocationPieChart language={language} allocationData={assetCalculations.allocationData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? config.height : 280} />
           </div>
         );
       case 'list':
@@ -853,7 +843,7 @@ export default function AssetInsightsPage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50/30 text-black pb-24 overflow-x-hidden" onMouseDown={handleMouseDown}>
+    <div className="min-h-screen bg-slate-50/30 text-black pb-32 overflow-x-hidden" onMouseDown={handleMouseDown}>
       <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl shadow-sm h-auto flex flex-col justify-center">
         <div className="max-w-[1900px] mx-auto w-full px-4 sm:px-10 py-2 sm:py-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-6">
@@ -882,24 +872,6 @@ export default function AssetInsightsPage() {
             </div>
             
             <div className="flex items-center justify-between md:justify-end gap-2 sm:gap-4">
-              {isReordering && (
-                <Button 
-                  onClick={() => setIsReordering(false)} 
-                  className="bg-black text-white hover:bg-slate-800 h-7 px-4 rounded-full font-black text-[11px] flex items-center gap-2 shadow-lg animate-fade-in relative z-[1000]"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" /> {t.saveLayout}
-                </Button>
-              )}
-              <div className="md:hidden flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-                 {Object.entries(marketData.rates).slice(0, 3).map(([cur, rate]) => {
-                   const baseRate = marketData.rates[displayCurrency] || 1;
-                   return (
-                     <div key={cur} className="flex items-center gap-1 whitespace-nowrap bg-slate-100 px-2 py-0.5 rounded text-[9px] font-bold">
-                       <span>{cur}</span><span className="text-emerald-600">{(rate/baseRate).toFixed(3)}</span>
-                     </div>
-                   );
-                 })}
-              </div>
               <div className="flex items-center gap-2 shrink-0">
                 <div className="flex bg-slate-100 p-0.5 rounded-md">
                   <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[11px]">繁</Button>
@@ -922,6 +894,17 @@ export default function AssetInsightsPage() {
           {sections.map((id, index) => renderSection(id, index))}
         </div>
       </main>
+
+      {isReordering && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[2000] animate-fade-in pointer-events-auto">
+          <Button 
+            onClick={() => setIsReordering(false)} 
+            className="bg-black text-white hover:bg-slate-800 h-14 px-10 rounded-full font-black text-[15px] flex items-center gap-3 shadow-[0_20px_60px_rgba(0,0,0,0.4)] ring-4 ring-white/10 border border-white/20 transition-all active:scale-95"
+          >
+            <CheckCircle2 className="w-5 h-5" /> {t.saveLayout}
+          </Button>
+        </div>
+      )}
 
       <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
         <DialogContent className="max-w-[95vw] sm:max-w-[480px] bg-white rounded-3xl p-6">
@@ -953,7 +936,7 @@ export default function AssetInsightsPage() {
             <Button onClick={() => {
               const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, amount: editAmount, acquisitionDate: editDate, endDate: editEndDate || undefined } : a);
               setAssets(updated); setEditingAsset(null); updateAllData(updated);
-            }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[13px] px-3 shadow-md">{t.saveChanges}</Button>
+            }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[13px] px-4 shadow-md">{t.saveChanges}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
