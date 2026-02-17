@@ -182,10 +182,15 @@ export default function AssetInsightsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  
+  // 編輯狀態
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [editName, setEditName] = useState<string>('');
   const [editAmount, setEditAmount] = useState<number>(0);
   const [editDate, setEditDate] = useState<string>('');
   const [editEndDate, setEditEndDate] = useState<string>('');
+  const [editCurrency, setEditCurrency] = useState<Currency>('TWD');
+
   const [trackingDays, setTrackingDays] = useState<string>("30");
   const [interval, setInterval] = useState<string>("1d");
   const [marketTimeline, setMarketTimeline] = useState<any[]>([]);
@@ -783,9 +788,11 @@ export default function AssetInsightsPage() {
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100">
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
                               setEditingAsset(asset); 
+                              setEditName(asset.name);
                               setEditAmount(asset.amount); 
                               setEditDate(asset.acquisitionDate); 
                               setEditEndDate(asset.endDate || ''); 
+                              setEditCurrency(asset.currency);
                             }}><Edit2 className="w-3.5 h-3.5" /></Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button>
                           </div>
@@ -906,7 +913,16 @@ export default function AssetInsightsPage() {
         <DialogContent className="max-w-[95vw] sm:max-w-[480px] bg-white rounded-3xl p-6">
           <DialogHeader><DialogTitle className="text-xl font-black uppercase flex items-center gap-3"><Edit2 className="w-5 h-5 text-primary" /> {t.editAsset}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="space-y-1"><Label className="pro-label text-[10px]">{t.assetName}</Label><div className="p-3 bg-slate-50 rounded-lg font-black text-sm">{editingAsset?.name}</div></div>
+            <div className="space-y-1">
+              <Label htmlFor="edit-name" className="pro-label text-[10px]">{t.assetName}</Label>
+              <Input 
+                id="edit-name"
+                value={editName}
+                onFocus={(e) => { const target = e.currentTarget; setTimeout(() => target.select(), 50); }}
+                onChange={(e) => setEditName(e.target.value)}
+                className="h-9 font-black text-sm rounded-lg"
+              />
+            </div>
             <div className="space-y-1">
               <Label htmlFor="edit-amount" className="pro-label text-[10px]">{t.holdings}</Label>
               <Input 
@@ -922,6 +938,15 @@ export default function AssetInsightsPage() {
                 className="h-9 font-black text-sm rounded-lg" 
               />
             </div>
+            {editingAsset && (!editingAsset.symbol || editingAsset.symbol.trim() === '') && (
+              <div className="space-y-1">
+                <Label className="pro-label text-[10px]">{t.currency}</Label>
+                <Select value={editCurrency} onValueChange={(v) => setEditCurrency(v as Currency)}>
+                  <SelectTrigger className="h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg"><SelectValue /></SelectTrigger>
+                  <SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-[13px] font-bold">{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1"><Label className="pro-label text-[10px]">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div>
               <div className="space-y-1"><Label className="pro-label text-[10px]">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div>
@@ -930,7 +955,14 @@ export default function AssetInsightsPage() {
           <DialogFooter className="flex flex-row gap-3">
             <Button variant="ghost" onClick={() => { setEditingAsset(null); }} className="h-10 flex-1 font-black uppercase text-xs">{t.cancel}</Button>
             <Button onClick={() => {
-              const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, amount: editAmount, acquisitionDate: editDate, endDate: editEndDate || undefined } : a);
+              const updated = assets.map(a => a.id === editingAsset?.id ? { 
+                ...a, 
+                name: editName,
+                amount: editAmount, 
+                acquisitionDate: editDate, 
+                endDate: editEndDate || undefined,
+                currency: editCurrency
+              } : a);
               setAssets(updated); setEditingAsset(null); updateAllData(updated);
             }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[13px] px-3 shadow-md">{t.saveChanges}</Button>
           </DialogFooter>

@@ -108,11 +108,8 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
-    // 存款、其他資產、自定義類別不強制檢核代碼
     const skipValidation = ['Savings', 'Bank'].includes(data.category) || isCustomCategory;
     if (skipValidation) return true;
-    
-    // 其餘市場類別必須填寫代碼且代碼必須有在搜尋結果中
     if (!data.symbol || data.symbol.trim() === '') return false;
     if (tickerFound === false) return false;
     return true;
@@ -134,8 +131,8 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   const categoryValue = form.watch('category');
   const symbolValue = form.watch('symbol');
   
-  const showTickerField = !['Savings', 'Bank'].includes(categoryValue);
-  const showCurrencyField = !showTickerField || ['Savings', 'Bank'].includes(categoryValue) || isCustomCategory;
+  // 如果有資產代碼，就不需要手動填入持有幣別
+  const showCurrencyField = !symbolValue || symbolValue.trim() === '';
   
   useEffect(() => {
     if (!isManualTyping.current || !symbolValue || symbolValue.length < 1) {
@@ -261,41 +258,39 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
           </FormItem>
         )} />
 
-        {showTickerField && (
-          <FormField control={form.control} name="symbol" render={({ field }) => (
-            <FormItem>
-              <FormLabel className="pro-label text-[10px] opacity-60">{lang.symbol}</FormLabel>
-              <div className="relative">
-                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10">
-                  {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" /> : <Search className="w-3.5 h-3.5 text-slate-400" />}
-                </div>
-                <FormControl>
-                  <Input 
-                    placeholder={lang.symbolPlaceholder} 
-                    {...field} 
-                    autoComplete="off"
-                    onChange={(e) => { isManualTyping.current = true; field.onChange(e); }}
-                    className={cn("bg-slate-50 border-slate-200 h-9 text-[13px] font-bold uppercase focus:border-black rounded-lg pl-9", tickerFound === false && !isCustomCategory && "border-rose-300")} 
-                  />
-                </FormControl>
+        <FormField control={form.control} name="symbol" render={({ field }) => (
+          <FormItem>
+            <FormLabel className="pro-label text-[10px] opacity-60">{lang.symbol}</FormLabel>
+            <div className="relative">
+              <div className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+                {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" /> : <Search className="w-3.5 h-3.5 text-slate-400" />}
               </div>
-              {showSuggestions && suggestions.length > 0 && (
-                <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border border-slate-200 rounded-lg shadow-xl max-h-[200px] overflow-auto no-scrollbar">
-                  {suggestions.map((s, idx) => (
-                    <div key={idx} onClick={() => selectSuggestion(s)} className="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0">
-                      <div className="font-black text-xs text-slate-900 leading-tight">{s.name}</div>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-[11px] font-black text-blue-600 uppercase">{s.symbol}</span>
-                        <span className="text-[10px] font-bold text-slate-400">{s.typeDisp}</span>
-                      </div>
+              <FormControl>
+                <Input 
+                  placeholder={lang.symbolPlaceholder} 
+                  {...field} 
+                  autoComplete="off"
+                  onChange={(e) => { isManualTyping.current = true; field.onChange(e); }}
+                  className={cn("bg-slate-50 border-slate-200 h-9 text-[13px] font-bold uppercase focus:border-black rounded-lg pl-9", tickerFound === false && !isCustomCategory && "border-rose-300")} 
+                />
+              </FormControl>
+            </div>
+            {showSuggestions && suggestions.length > 0 && (
+              <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border border-slate-200 rounded-lg shadow-xl max-h-[200px] overflow-auto no-scrollbar">
+                {suggestions.map((s, idx) => (
+                  <div key={idx} onClick={() => selectSuggestion(s)} className="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0">
+                    <div className="font-black text-xs text-slate-900 leading-tight">{s.name}</div>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[11px] font-black text-blue-600 uppercase">{s.symbol}</span>
+                      <span className="text-[10px] font-bold text-slate-400">{s.typeDisp}</span>
                     </div>
-                  ))}
-                </div>
-              )}
-              <FormMessage className="text-[10px] font-bold text-rose-500" />
-            </FormItem>
-          )} />
-        )}
+                  </div>
+                ))}
+              </div>
+            )}
+            <FormMessage className="text-[10px] font-bold text-rose-500" />
+          </FormItem>
+        )} />
 
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
