@@ -106,6 +106,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
+    // These categories do not require a ticker
     const noMarketCats = ['Savings', 'Bank', 'Forex'];
     if (isCustomCategory) return true;
     if (noMarketCats.includes(data.category)) return true;
@@ -187,6 +188,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
       setIsCustomCategory(false);
       form.setValue('category', targetCat);
     } else {
+      // If category is not in our predefined list, switch to custom and use the typeDisp
       setIsCustomCategory(true);
       form.setValue('category', s.typeDisp || targetCat);
     }
@@ -322,6 +324,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                   {...field} 
                   onFocus={(e) => {
                     const target = e.currentTarget;
+                    // Safari Fix: using setTimeout to ensure selection happens after focus completes
                     setTimeout(() => target.select(), 50);
                   }}
                   onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
