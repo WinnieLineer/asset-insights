@@ -106,12 +106,16 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
+    // 如果是自定義類別、儲蓄或銀行，不強制要求代碼
     const noMarketCats = ['Savings', 'Bank'];
+    if (isCustomCategory) return true;
     if (noMarketCats.includes(data.category)) return true;
     if (data.category && !PREDEFINED_CATEGORIES.includes(data.category)) return true; 
+    
+    // 其餘預設市場類別必須有代碼
     if (!data.symbol || data.symbol.trim() === '') return false;
     return true;
-  }, { message: lang.errors.tickerRequired, path: ['symbol'] }), [lang]);
+  }, { message: lang.errors.tickerRequired, path: ['symbol'] }), [lang, isCustomCategory]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -128,7 +132,9 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
 
   const categoryValue = form.watch('category');
   const symbolValue = form.watch('symbol');
-  const showTickerField = !['Savings', 'Bank'].includes(categoryValue) && (PREDEFINED_CATEGORIES.includes(categoryValue) || categoryValue === '');
+  
+  // 判斷是否顯示代碼欄位：除了儲蓄銀行外，如果是預設類別或空類別則顯示
+  const showTickerField = !['Savings', 'Bank'].includes(categoryValue) && !isCustomCategory;
   const showCurrencyField = !showTickerField;
   
   useEffect(() => {
@@ -182,7 +188,16 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     else if (rawType.includes('FUTURE')) targetCat = 'Future';
     else if (rawType.includes('OPTION')) targetCat = 'Option';
 
-    form.setValue('category', targetCat);
+    // 檢查目標類別是否在預設清單中
+    if (PREDEFINED_CATEGORIES.includes(targetCat)) {
+      setIsCustomCategory(false);
+      form.setValue('category', targetCat);
+    } else {
+      // 如果不在清單中，自動開啟自定義輸入
+      setIsCustomCategory(true);
+      form.setValue('category', s.typeDisp || targetCat);
+    }
+    
     setTickerFound(true);
     setShowSuggestions(false);
     setSuggestions([]);
@@ -229,9 +244,6 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                       {lang.categories[c as keyof typeof lang.categories] || c}
                     </SelectItem>
                   ))}
-                  {field.value && !PREDEFINED_CATEGORIES.includes(field.value) && (
-                    <SelectItem value={field.value} className="text-[13px] font-bold">{lang.categories[field.value as keyof typeof lang.categories] || field.value}</SelectItem>
-                  )}
                   <SelectItem value="CUSTOM_ENTRY" className="text-[13px] font-black text-blue-600 border-t border-slate-100">
                     <div className="flex items-center gap-2"><Plus className="w-3.5 h-3.5" /> {lang.categories.Custom}</div>
                   </SelectItem>
@@ -344,7 +356,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
         </div>
         
         {!hideSubmit && (
-          <Button type="submit" className="w-full h-10 bg-slate-900 hover:bg-black text-white font-black rounded-lg text-xs uppercase tracking-widest shadow-md transition-all active:scale-[0.98] mt-2">
+          <Button type="submit" className="w-full h-10 bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[13px] uppercase tracking-widest shadow-md transition-all active:scale-[0.98] mt-2">
             {lang.submit}
           </Button>
         )}
