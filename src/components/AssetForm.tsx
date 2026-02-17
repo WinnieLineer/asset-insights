@@ -106,7 +106,6 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
-    // These categories do not require a ticker
     const noMarketCats = ['Savings', 'Bank', 'Forex'];
     if (isCustomCategory) return true;
     if (noMarketCats.includes(data.category)) return true;
@@ -174,22 +173,24 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     form.setValue('name', s.name);
     
     const rawType = (s.typeDisp || '').trim().toUpperCase();
-    let targetCat = 'Stock';
     
-    if (rawType.includes('ETF')) targetCat = 'ETF';
-    else if (rawType.includes('CRYPTO')) targetCat = 'Crypto';
-    else if (rawType.includes('CURRENCY') || rawType.includes('FOREX')) targetCat = 'Forex';
-    else if (rawType.includes('FUND')) targetCat = 'Fund';
-    else if (rawType.includes('INDEX')) targetCat = 'Index';
-    else if (rawType.includes('FUTURE')) targetCat = 'Future';
-    else if (rawType.includes('OPTION')) targetCat = 'Option';
+    let candidateCat = 'Stock';
+    if (rawType.includes('ETF')) candidateCat = 'ETF';
+    else if (rawType.includes('CRYPTO')) candidateCat = 'Crypto';
+    else if (rawType.includes('CURRENCY') || rawType.includes('FOREX')) candidateCat = 'Forex';
+    else if (rawType.includes('FUND')) candidateCat = 'Fund';
+    else if (rawType.includes('INDEX')) candidateCat = 'Index';
+    else if (rawType.includes('FUTURE')) candidateCat = 'Future';
+    else if (rawType.includes('OPTION')) candidateCat = 'Option';
+    else if (rawType.includes('EQUITY') || rawType.includes('STOCK')) candidateCat = 'Stock';
+    else candidateCat = s.typeDisp || 'Stock';
 
-    if (PREDEFINED_CATEGORIES.includes(targetCat)) {
+    if (PREDEFINED_CATEGORIES.includes(candidateCat)) {
       setIsCustomCategory(false);
-      form.setValue('category', targetCat);
+      form.setValue('category', candidateCat);
     } else {
       setIsCustomCategory(true);
-      form.setValue('category', s.typeDisp || targetCat);
+      form.setValue('category', candidateCat);
     }
     
     setTickerFound(true);
@@ -276,9 +277,9 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
               {showSuggestions && suggestions.length > 0 && (
                 <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border border-slate-200 rounded-lg shadow-xl max-h-[200px] overflow-auto no-scrollbar">
                   {suggestions.map((s, idx) => (
-                    <div key={idx} onClick={() => selectSuggestion(s)} className="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0 suggestion-item">
-                      <div className="font-black text-xs text-slate-900 leading-tight pointer-events-none">{s.name}</div>
-                      <div className="flex items-center justify-between mt-1 pointer-events-none">
+                    <div key={idx} onClick={() => selectSuggestion(s)} className="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0">
+                      <div className="font-black text-xs text-slate-900 leading-tight">{s.name}</div>
+                      <div className="flex items-center justify-between mt-1">
                         <span className="text-[11px] font-black text-blue-600 uppercase">{s.symbol}</span>
                         <span className="text-[10px] font-bold text-slate-400">{s.typeDisp}</span>
                       </div>
