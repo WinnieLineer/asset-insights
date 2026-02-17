@@ -317,7 +317,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                     onFocus={(e) => {
                       const target = e.currentTarget;
                       setTimeout(() => target.select(), 10);
-                    }} 
+                    }}
                     onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
                     className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" 
                   />

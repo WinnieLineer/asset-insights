@@ -32,7 +32,9 @@ import {
   Maximize2,
   Minimize2,
   Plus,
-  CheckCircle2
+  CheckCircle2,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { 
   Card, 
@@ -113,6 +115,8 @@ const translations = {
     layoutHint: 'Hint: Long press card to adjust layout',
     lastUpdated: 'Last Updated',
     allCategories: 'All',
+    unitPrice: 'UNIT PRICE',
+    priceChange: 'CHG',
     categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Future: 'Future', Forex: 'Forex' }
   },
   zh: {
@@ -153,6 +157,8 @@ const translations = {
     layoutHint: '提示：長按卡片區塊可調整佈局',
     lastUpdated: '最後更新',
     allCategories: '全部類別',
+    unitPrice: '單位價值',
+    priceChange: '漲跌',
     categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數', Future: '期貨', Forex: '外匯' }
   }
 };
@@ -343,20 +349,30 @@ export default function AssetInsightsPage() {
         ? (nativePrice * (rateTWD / apiCurrencyRate)) * (displayRate / rateTWD)
         : (rateTWD / (marketData.rates[asset.currency] || 1)) * (displayRate / rateTWD);
 
-      return { ...asset, isClosed, valueInDisplay, priceInDisplay: unitPriceInDisplay };
+      // Calculate Change from previous trading day
+      let changePercent = 0;
+      if (marketTimeline.length >= 2) {
+        const sorted = [...marketTimeline].sort((a, b) => b.timestamp - a.timestamp);
+        const currentP = sorted[0]?.assets?.[asset.id];
+        const previousP = sorted[1]?.assets?.[asset.id];
+        if (currentP && previousP) {
+          changePercent = ((currentP - previousP) / previousP) * 100;
+        }
+      }
+
+      return { ...asset, isClosed, valueInDisplay, priceInDisplay: unitPriceInDisplay, changePercent };
     });
 
     const dayAggregator: Record<string, any> = {};
     const lastKnownPrices: Record<string, number> = {};
     
-    // Sort timeline to process chronologically
+    // Day-by-day forward fill logic for chart
     const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
 
     if (sortedTimeline.length > 0) {
       const firstTs = sortedTimeline[0].timestamp;
       const lastTs = sortedTimeline[sortedTimeline.length - 1].timestamp;
 
-      // Group API data by day to avoid multiple points per day
       const apiByDay: Record<string, any[]> = {};
       sortedTimeline.forEach(p => {
         const d = new Date(p.timestamp * 1000).toISOString().split('T')[0];
@@ -364,14 +380,12 @@ export default function AssetInsightsPage() {
         apiByDay[d].push(p);
       });
 
-      // Loop day by day and Forward Fill missing prices (e.g. holidays)
       let currentD = new Date(firstTs * 1000);
       const endD = new Date(lastTs * 1000);
       
       while (currentD <= endD) {
         const dateKey = currentD.toISOString().split('T')[0];
         
-        // Update prices if we have API data for this day
         if (apiByDay[dateKey]) {
           apiByDay[dateKey].forEach(p => {
             Object.entries(p.assets).forEach(([id, price]) => {
@@ -391,7 +405,6 @@ export default function AssetInsightsPage() {
           if (currentT < acqTime || dateKey > endTimeStr) return; 
 
           let priceAtT = lastKnownPrices[asset.id];
-          
           if (priceAtT === undefined) {
             if (!asset.symbol || asset.symbol.trim() === '') priceAtT = 1;
             else return; 
@@ -420,7 +433,6 @@ export default function AssetInsightsPage() {
             ...Object.fromEntries(Object.entries(categories).map(([c, v]) => [c, v * (displayRate / rateTWD)]))
           };
         }
-        
         currentD.setDate(currentD.getDate() + 1);
       }
     }
@@ -505,10 +517,9 @@ export default function AssetInsightsPage() {
   };
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
-    const target = e.target as HTMLElement;
-    // CRITICAL: Prevent reordering when selecting text
     if (window.getSelection()?.toString().length) return;
-    if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item, a, label, h1, h2, h3, h4, p, span')) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('button, input, select, [role="combobox"], textarea, th, td, a, label, h1, h2, h3, h4, p, span')) return;
     
     const startX = 'clientX' in e ? e.clientX : e.touches[0].clientX;
     const startY = 'clientY' in e ? e.clientY : e.touches[0].clientY;
@@ -516,9 +527,7 @@ export default function AssetInsightsPage() {
     const onMove = (me: MouseEvent | TouchEvent) => {
       const curX = 'clientX' in me ? me.clientX : (me as TouchEvent).touches[0].clientX;
       const curY = 'clientY' in me ? me.clientY : (me as TouchEvent).touches[0].clientY;
-      if (Math.abs(curX - startX) > 5 || Math.abs(curY - startY) > 5) {
-        cleanup();
-      }
+      if (Math.abs(curX - startX) > 5 || Math.abs(curY - startY) > 5) cleanup();
     };
 
     const cleanup = () => {
@@ -692,7 +701,7 @@ export default function AssetInsightsPage() {
                   form="add-asset-form" 
                   type="submit" 
                   size="sm" 
-                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[12px] uppercase tracking-widest h-8 px-3"
+                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[13px] uppercase tracking-widest h-8 px-3"
                 >
                   {t.saveChanges}
                 </Button>
@@ -736,7 +745,7 @@ export default function AssetInsightsPage() {
                 </div>
               </div>
               <CardContent className="p-0 flex-1 overflow-hidden relative">
-                <Table className="min-w-[1000px] border-separate border-spacing-0" wrapperClassName="h-full overflow-auto">
+                <Table className="min-w-[1200px] border-separate border-spacing-0" wrapperClassName="h-full overflow-auto no-scrollbar">
                   <TableHeader className="relative z-30">
                     <TableRow className="hover:bg-transparent border-none">
                       <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md px-6 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'name')}>
@@ -745,11 +754,20 @@ export default function AssetInsightsPage() {
                       <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'category')}>
                         <div className="flex items-center text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.category} <SortIcon config={activeSort} columnKey="category" /></div>
                       </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'acquisitionDate')}>
+                        <div className="flex items-center text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.acqDate} <SortIcon config={activeSort} columnKey="acquisitionDate" /></div>
+                      </TableHead>
                       <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'amount')}>
                         <div className="flex items-center text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.holdings} <SortIcon config={activeSort} columnKey="amount" /></div>
                       </TableHead>
-                      <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'valueInDisplay')}>
+                      <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30 text-right" onClick={() => requestSort('active', 'priceInDisplay')}>
+                        <div className="flex items-center justify-end text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.unitPrice} <SortIcon config={activeSort} columnKey="priceInDisplay" /></div>
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30 text-right" onClick={() => requestSort('active', 'valueInDisplay')}>
                         <div className="flex items-center justify-end text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.valuation} <SortIcon config={activeSort} columnKey="valueInDisplay" /></div>
+                      </TableHead>
+                      <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30 text-right" onClick={() => requestSort('active', 'changePercent')}>
+                        <div className="flex items-center justify-end text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.priceChange} <SortIcon config={activeSort} columnKey="changePercent" /></div>
                       </TableHead>
                       <TableHead className="sticky top-0 bg-white/95 w-[60px] border-b border-slate-100 z-30"></TableHead>
                     </TableRow>
@@ -762,8 +780,19 @@ export default function AssetInsightsPage() {
                           <div className="text-[12px] font-black text-slate-400 uppercase tracking-[0.1em] mt-0.5">{asset.symbol || asset.category}</div>
                         </TableCell>
                         <TableCell><Badge variant="outline" className="text-[10px] font-black uppercase px-2 py-0.5">{t.categoryNames[asset.category as AssetCategory] || asset.category}</Badge></TableCell>
+                        <TableCell><span className="text-[13px] font-black text-slate-500">{asset.acquisitionDate}</span></TableCell>
                         <TableCell><span className="text-[14px] font-black text-slate-700">{formatNumber(asset.amount)}</span></TableCell>
-                        <TableCell className="text-right"><div className="font-black text-base"><span className="text-slate-300 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div></TableCell>
+                        <TableCell className="text-right"><div className="font-black text-[13px] text-slate-700"><span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 4 })}</div></TableCell>
+                        <TableCell className="text-right"><div className="font-black text-base text-slate-900"><span className="text-slate-200 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div></TableCell>
+                        <TableCell className="text-right">
+                          <div className={cn(
+                            "inline-flex items-center gap-1 font-black text-[13px]",
+                            asset.changePercent > 0 ? "text-emerald-500" : asset.changePercent < 0 ? "text-rose-500" : "text-slate-400"
+                          )}>
+                            {asset.changePercent > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : asset.changePercent < 0 ? <TrendingDown className="w-3.5 h-3.5" /> : null}
+                            {asset.changePercent.toFixed(2)}%
+                          </div>
+                        </TableCell>
                         <TableCell className="pr-6 text-right">
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100">
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
@@ -909,7 +938,7 @@ export default function AssetInsightsPage() {
                 onFocus={(e) => {
                   const target = e.currentTarget;
                   setTimeout(() => target.select(), 10);
-                }} 
+                }}
                 onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} 
                 className="h-9 font-black text-sm rounded-lg" 
               />
@@ -924,7 +953,7 @@ export default function AssetInsightsPage() {
             <Button onClick={() => {
               const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, amount: editAmount, acquisitionDate: editDate, endDate: editEndDate || undefined } : a);
               setAssets(updated); setEditingAsset(null); updateAllData(updated);
-            }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[12px] px-3 shadow-md">{t.saveChanges}</Button>
+            }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[13px] px-3 shadow-md">{t.saveChanges}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
