@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Asset, Currency } from '@/app/lib/types';
+import { Asset } from '@/app/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -106,12 +106,9 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
-    // 如果是自定義類別、儲蓄、銀行或外匯，不強制要求代碼 (使用者可能手動輸入匯率)
     const noMarketCats = ['Savings', 'Bank', 'Forex'];
     if (isCustomCategory) return true;
     if (noMarketCats.includes(data.category)) return true;
-    
-    // 其餘預設市場類別必須有代碼以便抓取數據
     if (!data.symbol || data.symbol.trim() === '') return false;
     return true;
   }, { message: lang.errors.tickerRequired, path: ['symbol'] }), [lang, isCustomCategory]);
@@ -215,7 +212,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
 
   return (
     <Form {...form}>
-      <form id="add-asset-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+      <form id="add-asset-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         
         <FormField control={form.control} name="category" render={({ field }) => (
           <FormItem>
@@ -248,7 +245,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
             ) : (
               <div className="flex gap-2">
                 <Input placeholder={lang.customCategory} autoFocus value={field.value} onChange={(e) => field.onChange(e.target.value)} className="bg-slate-50 border-slate-200 h-9 text-[13px] font-bold rounded-lg" />
-                <Button variant="ghost" className="h-9 px-3 font-black text-slate-400" onClick={() => { setIsCustomCategory(false); field.onChange('Stock'); }}>X</Button>
+                <Button variant="ghost" type="button" className="h-9 px-3 font-black text-slate-400" onClick={() => { setIsCustomCategory(false); field.onChange('Stock'); }}>X</Button>
               </div>
             )}
             <FormMessage className="text-[10px] font-bold text-rose-500" />
@@ -313,27 +310,25 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
               </FormItem>
             )} />
           ) : null}
-          <FormItem className={cn(showCurrencyField ? "" : "col-span-2")}>
-            <FormField control={form.control} name="amount" render={({ field }) => (
-              <>
-                <FormLabel className="pro-label text-[10px] opacity-60">{lang.amount}</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="number" 
-                    step="any" 
-                    {...field} 
-                    onFocus={(e) => {
-                      const target = e.currentTarget;
-                      setTimeout(() => target.select(), 50);
-                    }}
-                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
-                    className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" 
-                  />
-                </FormControl>
-                <FormMessage />
-              </>
-            )} />
-          </FormItem>
+          <FormField control={form.control} name="amount" render={({ field }) => (
+            <FormItem className={cn(showCurrencyField ? "" : "col-span-2")}>
+              <FormLabel className="pro-label text-[10px] opacity-60">{lang.amount}</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  step="any" 
+                  {...field} 
+                  onFocus={(e) => {
+                    const target = e.currentTarget;
+                    setTimeout(() => target.select(), 50);
+                  }}
+                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
+                  className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
         </div>
 
         <div className="grid grid-cols-2 gap-3">

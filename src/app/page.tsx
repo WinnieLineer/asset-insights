@@ -323,7 +323,6 @@ export default function AssetInsightsPage() {
     const displayRate = marketData.rates[displayCurrency] || 1;
     const todayStr = new Date().toISOString().split('T')[0];
 
-    // Forward fill logic for historical chart
     const lastKnownPrices: Record<string, number> = {};
     const dayAggregator: Record<string, any> = {};
     const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
@@ -804,7 +803,7 @@ export default function AssetInsightsPage() {
         );
       case 'closedList':
         return (
-          <div key={id} className={commonClass} style={wrapperStyle}>
+          <div key={id} className={cn(commonClass, isReordering && "z-[950]")} style={wrapperStyle}>
             {controls}
             <Card className="modern-card bg-white h-full flex flex-col overflow-hidden opacity-80">
               <div className="px-6 py-4 border-b border-slate-50 shrink-0">
@@ -831,7 +830,7 @@ export default function AssetInsightsPage() {
         );
       case 'ai':
         return (
-          <div key={id} className={commonClass} style={wrapperStyle}>
+          <div key={id} className={cn(commonClass, isReordering && "z-[950]")} style={wrapperStyle}>
             {controls}
             <AITipCard language={language} assets={assetCalculations.processedAssets} totalTWD={assetCalculations.totalTWD} />
           </div>
@@ -912,9 +911,9 @@ export default function AssetInsightsPage() {
           <div className="grid gap-4 py-4">
             <div className="space-y-1"><Label className="pro-label text-[10px]">{t.assetName}</Label><div className="p-3 bg-slate-50 rounded-lg font-black text-sm">{editingAsset?.name}</div></div>
             <div className="space-y-1">
-              <Label htmlFor="amount" className="pro-label text-[10px]">{t.holdings}</Label>
+              <Label htmlFor="edit-amount" className="pro-label text-[10px]">{t.holdings}</Label>
               <Input 
-                id="amount" 
+                id="edit-amount" 
                 type="number" 
                 step="any" 
                 value={editAmount} 
