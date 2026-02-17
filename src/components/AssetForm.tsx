@@ -46,6 +46,7 @@ const t = {
       invalidAmount: 'Invalid amount', 
       required: 'Required', 
       tickerRequired: 'Symbol required for market assets',
+      invalidTicker: 'Invalid symbol or not found'
     }
   },
   zh: {
@@ -66,6 +67,7 @@ const t = {
       invalidAmount: '請輸入有效的正數', 
       required: '必填', 
       tickerRequired: '此類別必須填寫代號',
+      invalidTicker: '無效的資產代碼或查無此代號'
     }
   }
 };
@@ -106,12 +108,15 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
-    const noMarketCats = ['Savings', 'Bank', 'Forex'];
-    if (isCustomCategory) return true;
-    if (noMarketCats.includes(data.category)) return true;
+    // 存款、其他資產、自定義類別不強制檢核代碼
+    const skipValidation = ['Savings', 'Bank'].includes(data.category) || isCustomCategory;
+    if (skipValidation) return true;
+    
+    // 其餘市場類別必須填寫代碼且代碼必須有在搜尋結果中 (tickerFound)
     if (!data.symbol || data.symbol.trim() === '') return false;
+    if (tickerFound === false) return false;
     return true;
-  }, { message: lang.errors.tickerRequired, path: ['symbol'] }), [lang, isCustomCategory]);
+  }, { message: lang.errors.tickerRequired, path: ['symbol'] }), [lang, isCustomCategory, tickerFound]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -129,8 +134,9 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   const categoryValue = form.watch('category');
   const symbolValue = form.watch('symbol');
   
-  const showTickerField = !['Savings', 'Bank', 'Forex'].includes(categoryValue) && !isCustomCategory;
-  const showCurrencyField = !showTickerField;
+  // 自定義類別現在也要顯示代碼框，只是不強制檢核
+  const showTickerField = !['Savings', 'Bank'].includes(categoryValue);
+  const showCurrencyField = !showTickerField || ['Savings', 'Bank'].includes(categoryValue) || isCustomCategory;
   
   useEffect(() => {
     if (!isManualTyping.current || !symbolValue || symbolValue.length < 1) {
@@ -186,7 +192,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     else if (rawType.includes('EQUITY') || rawType.includes('STOCK')) candidateCat = 'Stock';
     else candidateCat = s.typeDisp || 'Stock';
 
-    // 若分類不在預設清單中，自動啟動自定義模式
+    // 若分類不在預設清單中，自動啟動自定義模式並填入名稱
     if (PREDEFINED_CATEGORIES.includes(candidateCat)) {
       setIsCustomCategory(false);
       form.setValue('category', candidateCat);
@@ -272,7 +278,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                     {...field} 
                     autoComplete="off"
                     onChange={(e) => { isManualTyping.current = true; field.onChange(e); }}
-                    className={cn("bg-slate-50 border-slate-200 h-9 text-[13px] font-bold uppercase focus:border-black rounded-lg pl-9", tickerFound === false && "border-rose-300")} 
+                    className={cn("bg-slate-50 border-slate-200 h-9 text-[13px] font-bold uppercase focus:border-black rounded-lg pl-9", tickerFound === false && !isCustomCategory && "border-rose-300")} 
                   />
                 </FormControl>
               </div>

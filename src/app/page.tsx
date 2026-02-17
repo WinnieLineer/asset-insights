@@ -381,6 +381,7 @@ export default function AssetInsightsPage() {
       while (currentD <= endD) {
         const dateKey = currentD.toISOString().split('T')[0];
         
+        // 價格沿用 (Forward Fill) 核心邏輯
         if (apiByDay[dateKey]) {
           const lastPointOfDay = apiByDay[dateKey][apiByDay[dateKey].length - 1];
           Object.entries(lastPointOfDay.assets).forEach(([id, price]) => {
@@ -622,7 +623,7 @@ export default function AssetInsightsPage() {
                 >
                   <div className="flex items-center gap-3">
                     <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-                    <span className="text-[13px] tracking-[0.2em] uppercase font-black">{loading ? t.fetching : t.syncMarket}</span>
+                    <span className="text-[12px] tracking-[0.2em] uppercase font-black">{loading ? t.fetching : t.syncMarket}</span>
                   </div>
                   {lastUpdated && !loading && (
                     <span className="text-[10px] opacity-60 font-bold uppercase tracking-widest mt-1">
