@@ -128,10 +128,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     },
   });
 
-  const categoryValue = form.watch('category');
   const symbolValue = form.watch('symbol');
-  
-  // 如果有資產代碼，就不需要手動填入持有幣別
   const showCurrencyField = !symbolValue || symbolValue.trim() === '';
   
   useEffect(() => {
@@ -175,7 +172,6 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     form.setValue('name', s.name);
     
     const rawType = (s.typeDisp || '').trim().toUpperCase();
-    
     let candidateCat = '';
     if (rawType.includes('ETF')) candidateCat = 'ETF';
     else if (rawType.includes('CRYPTO')) candidateCat = 'Crypto';
@@ -296,7 +292,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
           <FormItem>
             <FormLabel className="pro-label text-[10px] opacity-60">{lang.name}</FormLabel>
             <FormControl>
-              <Input placeholder={lang.namePlaceholder} {...field} className="bg-slate-50 border-slate-200 h-9 text-[13px] font-bold rounded-lg" />
+              <Input placeholder={lang.namePlaceholder} {...field} onFocus={(e) => { const target = e.currentTarget; setTimeout(() => target.select(), 50); }} className="bg-slate-50 border-slate-200 h-9 text-[13px] font-bold rounded-lg" />
             </FormControl>
             <FormMessage />
           </FormItem>
