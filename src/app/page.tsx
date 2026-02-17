@@ -690,7 +690,7 @@ export default function AssetInsightsPage() {
                   form="add-asset-form" 
                   type="submit" 
                   size="sm" 
-                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[12px] uppercase tracking-widest h-8 px-3"
+                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[13px] uppercase tracking-widest h-8 px-3"
                 >
                   {t.saveChanges}
                 </Button>

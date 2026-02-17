@@ -244,7 +244,9 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
               </Select>
             ) : (
               <div className="flex gap-2">
-                <Input placeholder={lang.customCategory} autoFocus value={field.value} onChange={(e) => field.onChange(e.target.value)} className="bg-slate-50 border-slate-200 h-9 text-[13px] font-bold rounded-lg" />
+                <FormControl>
+                  <Input placeholder={lang.customCategory} autoFocus value={field.value} onChange={(e) => field.onChange(e.target.value)} className="bg-slate-50 border-slate-200 h-9 text-[13px] font-bold rounded-lg" />
+                </FormControl>
                 <Button variant="ghost" type="button" className="h-9 px-3 font-black text-slate-400" onClick={() => { setIsCustomCategory(false); field.onChange('Stock'); }}>X</Button>
               </div>
             )}
@@ -256,11 +258,11 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
           <FormField control={form.control} name="symbol" render={({ field }) => (
             <FormItem className="relative">
               <FormLabel className="pro-label text-[10px] opacity-60">{lang.symbol}</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <div className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10">
-                    {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" /> : <Search className="w-3.5 h-3.5 text-slate-400" />}
-                  </div>
+              <div className="relative">
+                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10">
+                  {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" /> : <Search className="w-3.5 h-3.5 text-slate-400" />}
+                </div>
+                <FormControl>
                   <Input 
                     placeholder={lang.symbolPlaceholder} 
                     {...field} 
@@ -268,8 +270,8 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                     onChange={(e) => { isManualTyping.current = true; field.onChange(e); }}
                     className={cn("bg-slate-50 border-slate-200 h-9 text-[13px] font-bold uppercase focus:border-black rounded-lg pl-9", tickerFound === false && "border-rose-300")} 
                   />
-                </div>
-              </FormControl>
+                </FormControl>
+              </div>
               {showSuggestions && suggestions.length > 0 && (
                 <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border border-slate-200 rounded-lg shadow-xl max-h-[200px] overflow-auto no-scrollbar">
                   {suggestions.map((s, idx) => (
