@@ -263,7 +263,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
 
         {showTickerField && (
           <FormField control={form.control} name="symbol" render={({ field }) => (
-            <FormItem className="relative">
+            <FormItem>
               <FormLabel className="pro-label text-[10px] opacity-60">{lang.symbol}</FormLabel>
               <div className="relative">
                 <div className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10">

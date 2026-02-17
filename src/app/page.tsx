@@ -145,8 +145,9 @@ const translations = {
     int1wk: '週線',
     int1mo: '月線',
     dataUpdated: '市場數據已更新',
-    acqDate: '起始持有日期',
-    posEndDate: '結清日期',
+    allCategories: '全部類別',
+    unitPrice: '單位價值',
+    priceChange: '漲跌',
     exportData: '匯出',
     importData: '匯入',
     importSuccess: '資產資料已成功匯入。',
@@ -154,9 +155,8 @@ const translations = {
     saveLayout: '儲存佈局配置',
     layoutHint: '提示：長按卡片區塊可調整佈局',
     lastUpdated: '最後更新',
-    allCategories: '全部類別',
-    unitPrice: '單位價值',
-    priceChange: '漲跌',
+    acqDate: '起始持有日期',
+    posEndDate: '結清日期',
     categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數', Future: '期貨', Forex: '外匯' }
   }
 };
@@ -687,7 +687,7 @@ export default function AssetInsightsPage() {
                   form="add-asset-form" 
                   type="submit" 
                   size="sm" 
-                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[12px] uppercase tracking-widest h-8 px-3"
+                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[13px] uppercase tracking-widest h-8 px-3"
                 >
                   {t.saveChanges}
                 </Button>
