@@ -129,7 +129,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   const categoryValue = form.watch('category');
   const symbolValue = form.watch('symbol');
   
-  const showTickerField = !['Savings', 'Bank'].includes(categoryValue) && !isCustomCategory;
+  const showTickerField = !['Savings', 'Bank', 'Forex'].includes(categoryValue) && !isCustomCategory;
   const showCurrencyField = !showTickerField;
   
   useEffect(() => {
@@ -174,7 +174,8 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     
     const rawType = (s.typeDisp || '').trim().toUpperCase();
     
-    let candidateCat = 'Stock';
+    // 智慧分類映射
+    let candidateCat = '';
     if (rawType.includes('ETF')) candidateCat = 'ETF';
     else if (rawType.includes('CRYPTO')) candidateCat = 'Crypto';
     else if (rawType.includes('CURRENCY') || rawType.includes('FOREX')) candidateCat = 'Forex';
@@ -185,6 +186,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     else if (rawType.includes('EQUITY') || rawType.includes('STOCK')) candidateCat = 'Stock';
     else candidateCat = s.typeDisp || 'Stock';
 
+    // 若分類不在預設清單中，自動啟動自定義模式
     if (PREDEFINED_CATEGORIES.includes(candidateCat)) {
       setIsCustomCategory(false);
       form.setValue('category', candidateCat);
