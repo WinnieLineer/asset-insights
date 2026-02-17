@@ -188,7 +188,6 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
       setIsCustomCategory(false);
       form.setValue('category', targetCat);
     } else {
-      // If category is not in our predefined list, switch to custom and use the typeDisp
       setIsCustomCategory(true);
       form.setValue('category', s.typeDisp || targetCat);
     }
@@ -308,7 +307,11 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
               <FormItem>
                 <FormLabel className="pro-label text-[10px] opacity-60">{lang.currency}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger className="h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg"><SelectValue /></SelectTrigger></FormControl>
+                  <FormControl>
+                    <SelectTrigger className="h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg">
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
                   <SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-[13px] font-bold">{c}</SelectItem>)}</SelectContent>
                 </Select>
               </FormItem>
@@ -324,7 +327,6 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                   {...field} 
                   onFocus={(e) => {
                     const target = e.currentTarget;
-                    // Safari Fix: using setTimeout to ensure selection happens after focus completes
                     setTimeout(() => target.select(), 50);
                   }}
                   onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
@@ -340,13 +342,17 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
           <FormField control={form.control} name="acquisitionDate" render={({ field }) => (
             <FormItem>
               <FormLabel className="pro-label text-[10px] opacity-60">{lang.date}</FormLabel>
-              <FormControl><Input type="date" {...field} className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" /></FormControl>
+              <FormControl>
+                <Input type="date" {...field} className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" />
+              </FormControl>
             </FormItem>
           )} />
           <FormField control={form.control} name="endDate" render={({ field }) => (
             <FormItem>
               <FormLabel className="pro-label text-[10px] opacity-60">{lang.endDate}</FormLabel>
-              <FormControl><Input type="date" {...field} value={field.value || ''} className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" /></FormControl>
+              <FormControl>
+                <Input type="date" {...field} value={field.value || ''} className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" />
+              </FormControl>
             </FormItem>
           )} />
         </div>

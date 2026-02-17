@@ -323,7 +323,6 @@ export default function AssetInsightsPage() {
     const displayRate = marketData.rates[displayCurrency] || 1;
     const todayStr = new Date().toISOString().split('T')[0];
 
-    // Maintain a map of the last known price for each asset for "Forward Fill"
     const lastKnownPrices: Record<string, number> = {};
     const dayAggregator: Record<string, any> = {};
     const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
@@ -354,7 +353,6 @@ export default function AssetInsightsPage() {
         ? (nativePrice * (rateTWD / apiCurrencyRate)) * (displayRate / rateTWD)
         : (rateTWD / (marketData.rates[asset.currency] || 1)) * (displayRate / rateTWD);
 
-      // Simple calculation for 1-day change
       let changePercent = 0;
       const timelineForAsset = sortedTimeline.filter(p => p.assets[asset.id] !== undefined);
       if (timelineForAsset.length >= 2) {
@@ -366,12 +364,10 @@ export default function AssetInsightsPage() {
       return { ...asset, isClosed, valueInDisplay, priceInDisplay: unitPriceInDisplay, changePercent };
     });
 
-    // Unified daily node aggregator for Historical Chart (Forward Fill logic)
     if (sortedTimeline.length > 0) {
       const firstTs = sortedTimeline[0].timestamp;
       const lastTs = Math.floor(Date.now() / 1000);
       
-      // Group API data points by YYYY-MM-DD
       const apiByDay: Record<string, any[]> = {};
       sortedTimeline.forEach(p => {
         const d = new Date(p.timestamp * 1000).toISOString().split('T')[0];
@@ -385,7 +381,6 @@ export default function AssetInsightsPage() {
       while (currentD <= endD) {
         const dateKey = currentD.toISOString().split('T')[0];
         
-        // If we have API data for this specific day, update last known prices
         if (apiByDay[dateKey]) {
           const lastPointOfDay = apiByDay[dateKey][apiByDay[dateKey].length - 1];
           Object.entries(lastPointOfDay.assets).forEach(([id, price]) => {
@@ -401,15 +396,13 @@ export default function AssetInsightsPage() {
           const endTimeStr = asset.endDate || '9999-12-31';
           const currentT = currentD.getTime();
 
-          // Only count if within holding period
           if (currentT < acqTime || dateKey > endTimeStr) return; 
 
           let priceAtT = lastKnownPrices[asset.id];
           
-          // Forward Fill Logic: if no price yet but it's a manual entry (no symbol), price is assumed 1 (relative to its currency rate)
           if (priceAtT === undefined) {
             if (!asset.symbol || asset.symbol.trim() === '') priceAtT = 1;
-            else return; // Skip if no known market price yet for a symbol-based asset
+            else return; 
           }
 
           const apiCurrency = marketData.assetMarketPrices[asset.id]?.currency || asset.currency || 'TWD';
@@ -418,7 +411,6 @@ export default function AssetInsightsPage() {
           
           let valInTWD = asset.amount * priceInTWDAtT;
           if (!asset.symbol || asset.symbol.trim() === '') {
-            // Manual fixed currency assets
             valInTWD = asset.amount * (rateTWD / (marketData.rates[asset.currency] || 1));
           }
 
@@ -630,7 +622,7 @@ export default function AssetInsightsPage() {
                 >
                   <div className="flex items-center gap-3">
                     <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-                    <span className="text-[12px] tracking-[0.2em] uppercase font-black">{loading ? t.fetching : t.syncMarket}</span>
+                    <span className="text-[13px] tracking-[0.2em] uppercase font-black">{loading ? t.fetching : t.syncMarket}</span>
                   </div>
                   {lastUpdated && !loading && (
                     <span className="text-[10px] opacity-60 font-bold uppercase tracking-widest mt-1">
@@ -704,7 +696,7 @@ export default function AssetInsightsPage() {
                   form="add-asset-form" 
                   type="submit" 
                   size="sm" 
-                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[12px] uppercase tracking-widest h-8 px-3"
+                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[13px] uppercase tracking-widest h-8 px-3"
                 >
                   {t.saveChanges}
                 </Button>
@@ -933,7 +925,6 @@ export default function AssetInsightsPage() {
                 value={editAmount} 
                 onFocus={(e) => {
                   const target = e.currentTarget;
-                  // Safari Fix: using setTimeout to ensure selection happens after focus completes
                   setTimeout(() => target.select(), 50);
                 }}
                 onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} 
