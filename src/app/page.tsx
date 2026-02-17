@@ -100,7 +100,6 @@ const translations = {
     days180: '180 Days',
     days365: '365 Days',
     maxRange: 'Max',
-    customRange: 'Custom',
     int1d: 'Daily',
     int1wk: 'Weekly',
     int1mo: 'Monthly',
@@ -142,7 +141,6 @@ const translations = {
     days180: '180 天',
     days365: '365 天',
     maxRange: '最長',
-    customRange: '自定義',
     int1d: '日線',
     int1wk: '週線',
     int1mo: '月線',
@@ -189,8 +187,6 @@ export default function AssetInsightsPage() {
   const [editDate, setEditDate] = useState<string>('');
   const [editEndDate, setEditEndDate] = useState<string>('');
   const [trackingDays, setTrackingDays] = useState<string>("30");
-  const [customStartDate, setCustomStartDate] = useState<string>(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
-  const [customEndDate, setCustomEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [interval, setInterval] = useState<string>("1d");
   const [marketTimeline, setMarketTimeline] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -285,9 +281,6 @@ export default function AssetInsightsPage() {
         } else {
           p1 = 0;
         }
-      } else if (trackingDays === 'custom') {
-        p1 = Math.floor(new Date(customStartDate).getTime() / 1000);
-        p2 = Math.floor(new Date(customEndDate).getTime() / 1000);
       } else {
         p1 = p2 - (parseInt(trackingDays) * 24 * 60 * 60);
       }
@@ -308,13 +301,13 @@ export default function AssetInsightsPage() {
     } finally {
       setLoading(false);
     }
-  }, [mounted, trackingDays, customStartDate, customEndDate, interval, t.dataUpdated, loading, toast]);
+  }, [mounted, trackingDays, interval, t.dataUpdated, loading, toast]);
 
   useEffect(() => {
     if (mounted && assets.length > 0) {
       updateAllData(assets);
     }
-  }, [mounted, trackingDays, interval, customStartDate, customEndDate, assets.length]);
+  }, [mounted, trackingDays, interval, assets.length]);
 
   const assetCalculations = useMemo(() => {
     let totalTWD = 0;
@@ -381,7 +374,6 @@ export default function AssetInsightsPage() {
       while (currentD <= endD) {
         const dateKey = currentD.toISOString().split('T')[0];
         
-        // 價格沿用 (Forward Fill) 核心邏輯
         if (apiByDay[dateKey]) {
           const lastPointOfDay = apiByDay[dateKey][apiByDay[dateKey].length - 1];
           Object.entries(lastPointOfDay.assets).forEach(([id, price]) => {
@@ -400,7 +392,6 @@ export default function AssetInsightsPage() {
           if (currentT < acqTime || dateKey > endTimeStr) return; 
 
           let priceAtT = lastKnownPrices[asset.id];
-          
           if (priceAtT === undefined) {
             if (!asset.symbol || asset.symbol.trim() === '') priceAtT = 1;
             else return; 
@@ -561,7 +552,7 @@ export default function AssetInsightsPage() {
   const renderSection = (id: string, index: number) => {
     const config = layoutConfigs[id] || { width: 12, height: 400 };
     const controls = isReordering && (
-      <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full shadow-2xl border border-white/20 scale-90 sm:scale-100 ring-4 ring-black/5">
+      <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[2000] flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full shadow-2xl border border-white/20 scale-90 sm:scale-100 ring-4 ring-black/5">
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'up')} disabled={index === 0}><ChevronUp className="w-5 h-5" /></Button>
         <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => moveSection(index, 'down')} disabled={index === sections.length - 1}><ChevronDown className="w-5 h-5" /></Button>
         <div className="w-px h-6 bg-white/20 mx-1" />
@@ -653,7 +644,6 @@ export default function AssetInsightsPage() {
                       <SelectItem value="180">{t.days180}</SelectItem>
                       <SelectItem value="365">{t.days365}</SelectItem>
                       <SelectItem value="max">{t.maxRange}</SelectItem>
-                      <SelectItem value="custom">{t.customRange}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

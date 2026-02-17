@@ -112,7 +112,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     const skipValidation = ['Savings', 'Bank'].includes(data.category) || isCustomCategory;
     if (skipValidation) return true;
     
-    // 其餘市場類別必須填寫代碼且代碼必須有在搜尋結果中 (tickerFound)
+    // 其餘市場類別必須填寫代碼且代碼必須有在搜尋結果中
     if (!data.symbol || data.symbol.trim() === '') return false;
     if (tickerFound === false) return false;
     return true;
@@ -134,7 +134,6 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   const categoryValue = form.watch('category');
   const symbolValue = form.watch('symbol');
   
-  // 自定義類別現在也要顯示代碼框，只是不強制檢核
   const showTickerField = !['Savings', 'Bank'].includes(categoryValue);
   const showCurrencyField = !showTickerField || ['Savings', 'Bank'].includes(categoryValue) || isCustomCategory;
   
@@ -180,7 +179,6 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     
     const rawType = (s.typeDisp || '').trim().toUpperCase();
     
-    // 智慧分類映射
     let candidateCat = '';
     if (rawType.includes('ETF')) candidateCat = 'ETF';
     else if (rawType.includes('CRYPTO')) candidateCat = 'Crypto';
@@ -190,15 +188,14 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     else if (rawType.includes('FUTURE')) candidateCat = 'Future';
     else if (rawType.includes('OPTION')) candidateCat = 'Option';
     else if (rawType.includes('EQUITY') || rawType.includes('STOCK')) candidateCat = 'Stock';
-    else candidateCat = s.typeDisp || 'Stock';
+    else candidateCat = s.typeDisp || '';
 
-    // 若分類不在預設清單中，自動啟動自定義模式並填入名稱
     if (PREDEFINED_CATEGORIES.includes(candidateCat)) {
       setIsCustomCategory(false);
       form.setValue('category', candidateCat);
     } else {
       setIsCustomCategory(true);
-      form.setValue('category', candidateCat);
+      form.setValue('category', candidateCat || 'Custom');
     }
     
     setTickerFound(true);
