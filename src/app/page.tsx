@@ -171,8 +171,11 @@ interface SortConfig {
   direction: 'asc' | 'desc' | null;
 }
 
-const formatNumber = (num: number) => {
-  return parseFloat(num.toFixed(5)).toString();
+const formatNumber = (num: any) => {
+  if (num === null || num === undefined) return "0";
+  const val = typeof num === 'string' ? parseFloat(num) : num;
+  if (isNaN(val)) return "0";
+  return parseFloat(val.toFixed(5)).toString();
 };
 
 export default function AssetInsightsPage() {

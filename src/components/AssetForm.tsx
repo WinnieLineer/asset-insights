@@ -245,7 +245,14 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
             ) : (
               <div className="flex gap-2">
                 <FormControl>
-                  <Input placeholder={lang.customCategory} autoFocus value={field.value} onChange={(e) => field.onChange(e.target.value)} className="bg-slate-50 border-slate-200 h-9 text-[13px] font-bold rounded-lg" />
+                  <Input 
+                    placeholder={lang.customCategory} 
+                    autoFocus 
+                    value={field.value} 
+                    onFocus={(e) => { const target = e.currentTarget; setTimeout(() => target.select(), 50); }}
+                    onChange={(e) => field.onChange(e.target.value)} 
+                    className="bg-slate-50 border-slate-200 h-9 text-[13px] font-bold rounded-lg" 
+                  />
                 </FormControl>
                 <Button variant="ghost" type="button" className="h-9 px-3 font-black text-slate-400" onClick={() => { setIsCustomCategory(false); field.onChange('Stock'); }}>X</Button>
               </div>
@@ -267,6 +274,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                   {...field} 
                   autoComplete="off"
                   onChange={(e) => { isManualTyping.current = true; field.onChange(e); }}
+                  onFocus={(e) => { const target = e.currentTarget; setTimeout(() => target.select(), 50); }}
                   className={cn("bg-slate-50 border-slate-200 h-9 text-[13px] font-bold uppercase focus:border-black rounded-lg pl-9", tickerFound === false && !isCustomCategory && "border-rose-300")} 
                 />
               </FormControl>
@@ -292,7 +300,12 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
           <FormItem>
             <FormLabel className="pro-label text-[10px] opacity-60">{lang.name}</FormLabel>
             <FormControl>
-              <Input placeholder={lang.namePlaceholder} {...field} onFocus={(e) => { const target = e.currentTarget; setTimeout(() => target.select(), 50); }} className="bg-slate-50 border-slate-200 h-9 text-[13px] font-bold rounded-lg" />
+              <Input 
+                placeholder={lang.namePlaceholder} 
+                {...field} 
+                onFocus={(e) => { const target = e.currentTarget; setTimeout(() => target.select(), 50); }} 
+                className="bg-slate-50 border-slate-200 h-9 text-[13px] font-bold rounded-lg" 
+              />
             </FormControl>
             <FormMessage />
           </FormItem>

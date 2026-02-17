@@ -85,7 +85,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
     setLoading(true);
     
     const portfolioSummary = assets.map(a => 
-      `${a.name} (${a.symbol || a.category}): ${a.amount.toFixed(5)} ${a.currency}, Value: ${a.valueInTWD.toFixed(0)} TWD`
+      `${a.name} (${a.symbol || a.category}): ${(a.amount ?? 0).toFixed(5)} ${a.currency}, Value: ${(a.valueInTWD ?? 0).toFixed(0)} TWD`
     ).join('\n');
 
     const promptText = `
@@ -93,7 +93,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
       
       PORTFOLIO DATA:
       ${portfolioSummary}
-      Total Value (TWD): ${totalTWD.toFixed(0)}
+      Total Value (TWD): ${(totalTWD ?? 0).toFixed(0)}
       Current Context: ${marketConditions}
       User Custom Inquiry: "${userQuestion || 'Full portfolio analysis'}"
       
@@ -132,7 +132,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
   };
 
   const getRiskColor = (level: string) => {
-    const l = level.toLowerCase();
+    const l = (level || '').toLowerCase();
     if (l.includes('low') || l.includes('低')) return 'bg-black text-white';
     if (l.includes('high') || l.includes('高')) return 'bg-rose-600 text-white';
     return 'bg-zinc-800 text-white';
