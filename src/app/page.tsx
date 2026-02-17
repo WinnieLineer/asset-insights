@@ -113,7 +113,7 @@ const translations = {
     layoutHint: 'Hint: Long press card to adjust layout',
     lastUpdated: 'Last Updated',
     allCategories: 'All',
-    categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Future: 'Future' }
+    categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Future: 'Future', Forex: 'Forex' }
   },
   zh: {
     title: 'ASSET INSIGHTS PRO',
@@ -153,7 +153,7 @@ const translations = {
     layoutHint: '提示：長按卡片區塊可調整佈局',
     lastUpdated: '最後更新',
     allCategories: '全部類別',
-    categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數', Future: '期貨' }
+    categoryNames: { Stock: '股票', Crypto: '加密貨幣', Bank: '其他資產', Savings: '存款', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數', Future: '期貨', Forex: '外匯' }
   }
 };
 
@@ -352,65 +352,78 @@ export default function AssetInsightsPage() {
     // Sort timeline to process chronologically
     const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
 
-    // Forward fill logic: Ensure we only have one entry per day, and missing days use previous known prices.
-    sortedTimeline.forEach((point: any) => {
-      const pointTime = point.timestamp * 1000;
-      const dateObj = new Date(pointTime);
-      const dateKey = dateObj.toISOString().split('T')[0];
+    if (sortedTimeline.length > 0) {
+      const firstTs = sortedTimeline[0].timestamp;
+      const lastTs = sortedTimeline[sortedTimeline.length - 1].timestamp;
+
+      // Group API data by day to avoid multiple points per day
+      const apiByDay: Record<string, any[]> = {};
+      sortedTimeline.forEach(p => {
+        const d = new Date(p.timestamp * 1000).toISOString().split('T')[0];
+        if (!apiByDay[d]) apiByDay[d] = [];
+        apiByDay[d].push(p);
+      });
+
+      // Loop day by day and Forward Fill missing prices (e.g. holidays)
+      let currentD = new Date(firstTs * 1000);
+      const endD = new Date(lastTs * 1000);
       
-      // Update price for this specific asset if it exists in the point
-      Object.entries(point.assets).forEach(([id, price]) => {
-        lastKnownPrices[id] = price as number;
-      });
-
-      let pointTotalTWD = 0;
-      const categories: Record<string, number> = {};
-
-      processedAssets.forEach(asset => {
-        const acqTime = new Date(asset.acquisitionDate).getTime();
-        const endTimeStr = asset.endDate || '9999-12-31';
+      while (currentD <= endD) {
+        const dateKey = currentD.toISOString().split('T')[0];
         
-        // Skip if date is before acquisition or after closing
-        if (pointTime < acqTime || dateKey > endTimeStr) return; 
-
-        let priceAtT = lastKnownPrices[asset.id];
-        
-        // If price is missing for this day, but it's a market asset, we hope lastKnownPrices has it from previous trading days.
-        if (priceAtT === undefined) {
-          if (!asset.symbol || asset.symbol.trim() === '') priceAtT = 1;
-          else return; 
+        // Update prices if we have API data for this day
+        if (apiByDay[dateKey]) {
+          apiByDay[dateKey].forEach(p => {
+            Object.entries(p.assets).forEach(([id, price]) => {
+              lastKnownPrices[id] = price as number;
+            });
+          });
         }
 
-        const apiCurrency = marketData.assetMarketPrices[asset.id]?.currency || asset.currency || 'TWD';
-        const apiCurrencyRate = marketData.rates[apiCurrency as Currency] || 1;
-        const priceInTWDAtT = priceAtT * (rateTWD / apiCurrencyRate);
-        
-        let valInTWD = 0;
-        if (asset.symbol && asset.symbol.trim() !== '') {
-          valInTWD = asset.amount * priceInTWDAtT;
-        } else {
-          const assetCurrencyRate = marketData.rates[asset.currency] || 1;
-          valInTWD = asset.amount * (rateTWD / assetCurrencyRate);
-        }
-        
-        pointTotalTWD += valInTWD;
-        categories[asset.category] = (categories[asset.category] || 0) + valInTWD;
-      });
+        let pointTotalTWD = 0;
+        const categories: Record<string, number> = {};
 
-      if (pointTotalTWD > 0) {
-        const item = { 
-          timestamp: point.timestamp, 
-          displayDate: dateObj.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
-          shortDate: dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-          totalValue: pointTotalTWD * (displayRate / rateTWD) 
-        };
-        Object.entries(categories).forEach(([cat, val]) => { 
-          item[cat] = val * (displayRate / rateTWD); 
+        processedAssets.forEach(asset => {
+          const acqTime = new Date(asset.acquisitionDate).getTime();
+          const endTimeStr = asset.endDate || '9999-12-31';
+          const currentT = currentD.getTime();
+          
+          if (currentT < acqTime || dateKey > endTimeStr) return; 
+
+          let priceAtT = lastKnownPrices[asset.id];
+          
+          if (priceAtT === undefined) {
+            if (!asset.symbol || asset.symbol.trim() === '') priceAtT = 1;
+            else return; 
+          }
+
+          const apiCurrency = marketData.assetMarketPrices[asset.id]?.currency || asset.currency || 'TWD';
+          const apiCurrencyRate = marketData.rates[apiCurrency as Currency] || 1;
+          const priceInTWDAtT = priceAtT * (rateTWD / apiCurrencyRate);
+          
+          let valInTWD = asset.amount * priceInTWDAtT;
+          if (!asset.symbol || asset.symbol.trim() === '') {
+            const assetCurrencyRate = marketData.rates[asset.currency] || 1;
+            valInTWD = asset.amount * (rateTWD / assetCurrencyRate);
+          }
+          
+          pointTotalTWD += valInTWD;
+          categories[asset.category] = (categories[asset.category] || 0) + valInTWD;
         });
+
+        if (pointTotalTWD > 0) {
+          dayAggregator[dateKey] = { 
+            timestamp: currentD.getTime() / 1000, 
+            displayDate: currentD.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+            shortDate: currentD.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+            totalValue: pointTotalTWD * (displayRate / rateTWD),
+            ...Object.fromEntries(Object.entries(categories).map(([c, v]) => [c, v * (displayRate / rateTWD)]))
+          };
+        }
         
-        dayAggregator[dateKey] = item;
+        currentD.setDate(currentD.getDate() + 1);
       }
-    });
+    }
 
     const historyData = Object.keys(dayAggregator).sort().map(key => dayAggregator[key]);
 
@@ -493,6 +506,7 @@ export default function AssetInsightsPage() {
 
   const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
     const target = e.target as HTMLElement;
+    // CRITICAL: Prevent reordering when selecting text
     if (window.getSelection()?.toString().length) return;
     if (target.closest('button, input, select, [role="combobox"], [role="listbox"], [role="option"], [role="tab"], .recharts-surface, .lucide, textarea, th, td, .suggestion-item, a, label, h1, h2, h3, h4, p, span')) return;
     
@@ -752,7 +766,12 @@ export default function AssetInsightsPage() {
                         <TableCell className="text-right"><div className="font-black text-base"><span className="text-slate-300 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div></TableCell>
                         <TableCell className="pr-6 text-right">
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingAsset(asset); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); setEditEndDate(asset.endDate || ''); }}><Edit2 className="w-3.5 h-3.5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
+                              setEditingAsset(asset); 
+                              setEditAmount(asset.amount); 
+                              setEditDate(asset.acquisitionDate); 
+                              setEditEndDate(asset.endDate || ''); 
+                            }}><Edit2 className="w-3.5 h-3.5" /></Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button>
                           </div>
                         </TableCell>
