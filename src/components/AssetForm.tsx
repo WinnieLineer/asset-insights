@@ -108,7 +108,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   }).refine((data) => {
     const noMarketCats = ['Savings', 'Bank'];
     if (noMarketCats.includes(data.category)) return true;
-    if (data.category && !PREDEFINED_CATEGORIES.includes(data.category)) return true; // Custom categories don't require symbols
+    if (data.category && !PREDEFINED_CATEGORIES.includes(data.category)) return true; 
     if (!data.symbol || data.symbol.trim() === '') return false;
     return true;
   }, { message: lang.errors.tickerRequired, path: ['symbol'] }), [lang]);
@@ -316,7 +316,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                     {...field} 
                     onFocus={(e) => {
                       const target = e.currentTarget;
-                      setTimeout(() => target.select(), 10);
+                      setTimeout(() => target.select(), 50);
                     }}
                     onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
                     className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" 

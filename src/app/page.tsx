@@ -691,7 +691,7 @@ export default function AssetInsightsPage() {
                   form="add-asset-form" 
                   type="submit" 
                   size="sm" 
-                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[13px] uppercase tracking-widest h-8 px-4"
+                  className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[12px] uppercase tracking-widest h-8 px-3"
                 >
                   {t.saveChanges}
                 </Button>
@@ -920,7 +920,7 @@ export default function AssetInsightsPage() {
                 value={editAmount} 
                 onFocus={(e) => {
                   const target = e.currentTarget;
-                  setTimeout(() => target.select(), 10);
+                  setTimeout(() => target.select(), 50);
                 }}
                 onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} 
                 className="h-9 font-black text-sm rounded-lg" 
@@ -936,7 +936,7 @@ export default function AssetInsightsPage() {
             <Button onClick={() => {
               const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, amount: editAmount, acquisitionDate: editDate, endDate: editEndDate || undefined } : a);
               setAssets(updated); setEditingAsset(null); updateAllData(updated);
-            }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[13px] px-4 shadow-md">{t.saveChanges}</Button>
+            }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[13px] px-3 shadow-md">{t.saveChanges}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
