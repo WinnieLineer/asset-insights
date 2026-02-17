@@ -106,13 +106,12 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
-    // 如果是自定義類別、儲蓄或銀行，不強制要求代碼
-    const noMarketCats = ['Savings', 'Bank'];
+    // 如果是自定義類別、儲蓄、銀行或外匯，不強制要求代碼 (使用者可能手動輸入匯率)
+    const noMarketCats = ['Savings', 'Bank', 'Forex'];
     if (isCustomCategory) return true;
     if (noMarketCats.includes(data.category)) return true;
-    if (data.category && !PREDEFINED_CATEGORIES.includes(data.category)) return true; 
     
-    // 其餘預設市場類別必須有代碼
+    // 其餘預設市場類別必須有代碼以便抓取數據
     if (!data.symbol || data.symbol.trim() === '') return false;
     return true;
   }, { message: lang.errors.tickerRequired, path: ['symbol'] }), [lang, isCustomCategory]);
@@ -133,7 +132,6 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   const categoryValue = form.watch('category');
   const symbolValue = form.watch('symbol');
   
-  // 判斷是否顯示代碼欄位：除了儲蓄銀行外，如果是預設類別或空類別則顯示
   const showTickerField = !['Savings', 'Bank'].includes(categoryValue) && !isCustomCategory;
   const showCurrencyField = !showTickerField;
   
@@ -188,12 +186,10 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     else if (rawType.includes('FUTURE')) targetCat = 'Future';
     else if (rawType.includes('OPTION')) targetCat = 'Option';
 
-    // 檢查目標類別是否在預設清單中
     if (PREDEFINED_CATEGORIES.includes(targetCat)) {
       setIsCustomCategory(false);
       form.setValue('category', targetCat);
     } else {
-      // 如果不在清單中，自動開啟自定義輸入
       setIsCustomCategory(true);
       form.setValue('category', s.typeDisp || targetCat);
     }

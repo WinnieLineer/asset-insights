@@ -936,7 +936,7 @@ export default function AssetInsightsPage() {
             <Button onClick={() => {
               const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, amount: editAmount, acquisitionDate: editDate, endDate: editEndDate || undefined } : a);
               setAssets(updated); setEditingAsset(null); updateAllData(updated);
-            }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[13px] px-3 shadow-md">{t.saveChanges}</Button>
+            }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[12px] px-3 shadow-md">{t.saveChanges}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
