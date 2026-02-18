@@ -38,7 +38,7 @@ interface AITipCardProps {
 const t = {
   en: {
     title: 'GEMINI ASSET POSITION ANALYSIS',
-    desc: 'ADVANCED PORTFOLIO INTELLIGENCE POWERED BY GEMINI 2.0 FLASH.',
+    desc: 'ADVANCED PORTFOLIO INTELLIGENCE POWERED BY GEMINI POWER.',
     analysis: 'Strategic Position Review',
     risk: 'Portfolio Risk Index',
     diversification: 'Diversification Health',
@@ -52,7 +52,7 @@ const t = {
   },
   zh: {
     title: 'GEMINI 資產部位分析',
-    desc: '整合 GEMINI 2.0 FLASH 提供專業級資產配置優化與戰略建議。',
+    desc: '整合 GEMINI 2.5 FLASH LITE 提供專業級資產配置優化與戰略建議。',
     analysis: '資產配置與核心戰略評估',
     risk: '當前部位風險等級',
     diversification: '資產分散健康評分',
@@ -111,7 +111,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
     `;
 
     try {
-      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent", {
+      const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
