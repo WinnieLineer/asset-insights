@@ -4,9 +4,8 @@ const BATCH_STOCK_PROXY_URL = 'https://script.google.com/macros/s/AKfycbyQ12dBns
 const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
 function formatSymbol(s: string, category: string) {
+  if (!s) return '';
   const upper = s.toUpperCase();
-  // Crypto symbols from pre-search API are already standard (e.g., BTC-USD), 
-  // so we don't need additional logic for them.
   if (/^\d+$/.test(upper)) return `${upper}.TW`; // Taiwan stocks
   if (upper.endsWith('.SI')) return upper; // Singapore
   if (upper.length <= 4 && !upper.includes('.')) return upper; // US
@@ -32,16 +31,20 @@ export async function fetchMarketData(
     const erResponse = await fetch(EXCHANGE_RATE_API);
     if (erResponse.ok) {
       const data = await erResponse.json();
-      rates = { 
-        TWD: data.rates.TWD, 
-        CNY: data.rates.CNY, 
-        USD: 1, 
-        SGD: data.rates.SGD 
-      };
+      if (data && data.rates) {
+        rates = { 
+          TWD: data.rates.TWD || 32.5, 
+          CNY: data.rates.CNY || 7.2, 
+          USD: 1, 
+          SGD: data.rates.SGD || 1.35 
+        };
+      }
     }
-  } catch (e) { console.error('Rates fetch error:', e); }
+  } catch (e) { 
+    console.error('Rates fetch error:', e); 
+  }
 
-  const fetchableAssets = assets.filter(a => a.symbol && a.symbol.trim() !== '');
+  const fetchableAssets = (assets || []).filter(a => a.symbol && a.symbol.trim() !== '');
   
   if (fetchableAssets.length === 0) {
     return { 
@@ -57,34 +60,36 @@ export async function fetchMarketData(
     const response = await fetch(url);
     if (response.ok) {
       const dataArray = await response.json();
-      const timelineMap: Record<number, any> = {};
+      if (Array.isArray(dataArray)) {
+        const timelineMap: Record<number, any> = {};
 
-      dataArray.forEach((result: any, idx: number) => {
-        const chart = result?.chart?.result?.[0];
-        if (!chart) return;
+        dataArray.forEach((result: any, idx: number) => {
+          const chart = result?.chart?.result?.[0];
+          if (!chart) return;
 
-        const asset = fetchableAssets[idx];
-        const apiCurrency = chart.meta?.currency || (asset.category === 'Crypto' ? 'USD' : 'TWD');
-        const currentPrice = chart.meta?.regularMarketPrice || 0;
-        
-        assetMarketPrices[asset.id] = {
-          price: currentPrice,
-          currency: apiCurrency
-        };
+          const asset = fetchableAssets[idx];
+          const apiCurrency = chart.meta?.currency || (asset.category === 'Crypto' ? 'USD' : 'TWD');
+          const currentPrice = chart.meta?.regularMarketPrice || 0;
+          
+          assetMarketPrices[asset.id] = {
+            price: currentPrice,
+            currency: apiCurrency
+          };
 
-        const timestamps = chart.timestamp || [];
-        const prices = chart.indicators?.adjclose?.[0]?.adjclose || chart.indicators?.quote?.[0]?.close || [];
+          const timestamps = chart.timestamp || [];
+          const prices = chart.indicators?.adjclose?.[0]?.adjclose || chart.indicators?.quote?.[0]?.close || [];
 
-        timestamps.forEach((ts: number, i: number) => {
-          const price = prices[i];
-          if (price === null || price === undefined) return;
-          if (!timelineMap[ts]) timelineMap[ts] = { timestamp: ts, assets: {} };
-          timelineMap[ts].assets[asset.id] = price;
+          timestamps.forEach((ts: number, i: number) => {
+            const price = prices[i];
+            if (price === null || price === undefined) return;
+            if (!timelineMap[ts]) timelineMap[ts] = { timestamp: ts, assets: {} };
+            timelineMap[ts].assets[asset.id] = price;
+          });
         });
-      });
 
-      const sortedTimeline = Object.values(timelineMap).sort((a: any, b: any) => a.timestamp - b.timestamp);
-      historicalTimeline.push(...sortedTimeline);
+        const sortedTimeline = Object.values(timelineMap).sort((a: any, b: any) => a.timestamp - b.timestamp);
+        historicalTimeline.push(...sortedTimeline);
+      }
     }
   } catch (e) {
     console.error('Combined market fetch error:', e);

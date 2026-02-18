@@ -290,9 +290,9 @@ export default function AssetInsightsPage() {
       } else {
         p1 = p2 - (parseInt(trackingDays) * 24 * 60 * 60);
       }
-      const { marketData: newData, historicalTimeline } = await fetchMarketData(currentAssets, p1, p2, interval);
-      setMarketData(newData);
-      setMarketTimeline(historicalTimeline);
+      const result = await fetchMarketData(currentAssets, p1, p2, interval);
+      setMarketData(result.marketData);
+      setMarketTimeline(result.historicalTimeline);
       const now = new Date();
       const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
       setLastUpdated(timestamp);
@@ -300,7 +300,8 @@ export default function AssetInsightsPage() {
         toast({ title: t.dataUpdated });
       }
     } catch (error) {
-      toast({ variant: 'destructive', title: '市場同步失敗' });
+      console.error('Market update error:', error);
+      toast({ variant: 'destructive', title: '市場數據同步失敗' });
     } finally {
       setLoading(false);
     }
@@ -315,18 +316,18 @@ export default function AssetInsightsPage() {
   const assetCalculations = useMemo(() => {
     let totalTWD = 0;
     const allocationMap: Record<string, number> = {};
-    const rateTWD = marketData.rates.TWD || 32.5;
-    const displayRate = marketData.rates[displayCurrency] || 1;
+    const rateTWD = marketData.rates?.TWD || 32.5;
+    const displayRate = marketData.rates?.[displayCurrency] || 1;
     const todayStr = new Date().toISOString().split('T')[0];
     const lastKnownPrices: Record<string, number> = {};
     const dayAggregator: Record<string, any> = {};
     const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
 
     const processedAssets = assets.map(asset => {
-      const marketInfo = marketData.assetMarketPrices[asset.id];
+      const marketInfo = marketData.assetMarketPrices?.[asset.id];
       const nativePrice = marketInfo?.price || 0;
       const apiCurrency = marketInfo?.currency || asset.currency || 'TWD';
-      const apiCurrencyRate = (marketData.rates[apiCurrency as Currency] || 1);
+      const apiCurrencyRate = (marketData.rates?.[apiCurrency as Currency] || 1);
       let valueInTWD = 0;
       const isClosed = asset.endDate ? asset.endDate <= todayStr : false;
       if (!isClosed) {
@@ -334,7 +335,7 @@ export default function AssetInsightsPage() {
           const priceInTWD = nativePrice * (rateTWD / apiCurrencyRate);
           valueInTWD = asset.amount * priceInTWD;
         } else {
-          const assetCurrencyRate = marketData.rates[asset.currency] || 1;
+          const assetCurrencyRate = marketData.rates?.[asset.currency] || 1;
           valueInTWD = asset.amount * (rateTWD / assetCurrencyRate);
         }
         totalTWD += valueInTWD;
@@ -343,9 +344,9 @@ export default function AssetInsightsPage() {
       const valueInDisplay = valueInTWD * (displayRate / rateTWD);
       const unitPriceInDisplay = (asset.symbol && asset.symbol.trim() !== '') 
         ? (nativePrice * (rateTWD / apiCurrencyRate)) * (displayRate / rateTWD)
-        : (rateTWD / (marketData.rates[asset.currency] || 1)) * (displayRate / rateTWD);
+        : (rateTWD / (marketData.rates?.[asset.currency] || 1)) * (displayRate / rateTWD);
       let changePercent = 0;
-      const timelineForAsset = sortedTimeline.filter(p => p.assets[asset.id] !== undefined);
+      const timelineForAsset = sortedTimeline.filter(p => p.assets?.[asset.id] !== undefined);
       if (timelineForAsset.length >= 2) {
         const last = timelineForAsset[timelineForAsset.length - 1].assets[asset.id];
         const prev = timelineForAsset[timelineForAsset.length - 2].assets[asset.id];
@@ -369,7 +370,7 @@ export default function AssetInsightsPage() {
         const dateKey = currentD.toISOString().split('T')[0];
         if (apiByDay[dateKey]) {
           const lastPointOfDay = apiByDay[dateKey][apiByDay[dateKey].length - 1];
-          Object.entries(lastPointOfDay.assets).forEach(([id, price]) => {
+          Object.entries(lastPointOfDay.assets || {}).forEach(([id, price]) => {
             lastKnownPrices[id] = price as number;
           });
         }
@@ -385,12 +386,12 @@ export default function AssetInsightsPage() {
             if (!asset.symbol || asset.symbol.trim() === '') priceAtT = 1;
             else return; 
           }
-          const apiCurrency = marketData.assetMarketPrices[asset.id]?.currency || asset.currency || 'TWD';
-          const apiCurrencyRate = marketData.rates[apiCurrency as Currency] || 1;
+          const apiCurrency = marketData.assetMarketPrices?.[asset.id]?.currency || asset.currency || 'TWD';
+          const apiCurrencyRate = marketData.rates?.[apiCurrency as Currency] || 1;
           const priceInTWDAtT = priceAtT * (rateTWD / apiCurrencyRate);
           let valInTWD = asset.amount * priceInTWDAtT;
           if (!asset.symbol || asset.symbol.trim() === '') {
-            valInTWD = asset.amount * (rateTWD / (marketData.rates[asset.currency] || 1));
+            valInTWD = asset.amount * (rateTWD / (marketData.rates?.[asset.currency] || 1));
           }
           pointTotalTWD += valInTWD;
           categories[asset.category] = (categories[asset.category] || 0) + valInTWD;
@@ -684,9 +685,9 @@ export default function AssetInsightsPage() {
                         <TableCell><Badge variant="outline" className="text-[10px] font-black uppercase px-2 py-0.5">{t.categoryNames[asset.category as AssetCategory] || asset.category}</Badge></TableCell>
                         <TableCell><span className="text-[13px] font-black text-slate-500">{asset.acquisitionDate}</span></TableCell>
                         <TableCell><span className="text-[14px] font-black text-slate-700">{formatNumber(asset.amount)}</span></TableCell>
-                        <TableCell className="text-right"><div className="font-black text-[13px] text-slate-700"><span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.priceInDisplay.toLocaleString(undefined, { maximumFractionDigits: 4 })}</div></TableCell>
-                        <TableCell className="text-right"><div className="font-black text-base text-slate-900"><span className="text-slate-200 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.valueInDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div></TableCell>
-                        <TableCell className="text-right"><div className={cn("inline-flex items-center gap-1 font-black text-[13px]", asset.changePercent > 0 ? "text-emerald-500" : asset.changePercent < 0 ? "text-rose-500" : "text-slate-400")}>{asset.changePercent > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : asset.changePercent < 0 ? <TrendingDown className="w-3.5 h-3.5" /> : null}{asset.changePercent.toFixed(2)}%</div></TableCell>
+                        <TableCell className="text-right"><div className="font-black text-[13px] text-slate-700"><span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.priceInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 4 }) || '0'}</div></TableCell>
+                        <TableCell className="text-right"><div className="font-black text-base text-slate-900"><span className="text-slate-200 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.valueInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0'}</div></TableCell>
+                        <TableCell className="text-right"><div className={cn("inline-flex items-center gap-1 font-black text-[13px]", (asset.changePercent || 0) > 0 ? "text-emerald-500" : (asset.changePercent || 0) < 0 ? "text-rose-500" : "text-slate-400")}>{(asset.changePercent || 0) > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : (asset.changePercent || 0) < 0 ? <TrendingDown className="w-3.5 h-3.5" /> : null}{(asset.changePercent || 0).toFixed(2)}%</div></TableCell>
                         <TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingAsset(asset); setEditName(asset.name); setEditAmount(asset.amount); setEditDate(asset.acquisitionDate); setEditEndDate(asset.endDate || ''); setEditCurrency(asset.currency); }}><Edit2 className="w-3.5 h-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button></div></TableCell>
                       </TableRow>
                     ))}
@@ -723,7 +724,7 @@ export default function AssetInsightsPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-6">
             <div className="flex items-center gap-6 overflow-hidden">
               <div className="flex items-center gap-2 shrink-0"><div className="w-6 h-6 sm:w-7 sm:h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-md"><Activity className="w-3.5 h-3.5 sm:w-4 h-4 text-white" /></div><h1 className="text-[12px] sm:text-[14px] font-black tracking-tighter uppercase leading-tight whitespace-nowrap">{t.title}</h1></div>
-              <div className="hidden md:flex items-center gap-4 overflow-hidden border-l border-slate-100 pl-6 h-6"><div className="flex items-center gap-6 overflow-x-auto no-scrollbar scroll-smooth">{Object.entries(marketData.rates).map(([cur, rate]) => { const baseRate = marketData.rates[displayCurrency] || 1; const relativeRate = rate / baseRate; return (<div key={cur} className="flex items-center gap-1.5 whitespace-nowrap bg-slate-50 px-2 py-0.5 rounded-md"><span className="text-[10px] font-black text-slate-500">{cur}</span><span className="text-[11px] font-black text-emerald-600">{relativeRate.toFixed(3)}</span></div>); })}</div></div>
+              <div className="hidden md:flex items-center gap-4 overflow-hidden border-l border-slate-100 pl-6 h-6"><div className="flex items-center gap-6 overflow-x-auto no-scrollbar scroll-smooth">{Object.entries(marketData.rates || {}).map(([cur, rate]) => { const baseRate = marketData.rates?.[displayCurrency] || 1; const relativeRate = (rate as number) / baseRate; return (<div key={cur} className="flex items-center gap-1.5 whitespace-nowrap bg-slate-50 px-2 py-0.5 rounded-md"><span className="text-[10px] font-black text-slate-500">{cur}</span><span className="text-[11px] font-black text-emerald-600">{relativeRate.toFixed(3)}</span></div>); })}</div></div>
             </div>
             <div className="flex items-center justify-between md:justify-end gap-2 sm:gap-4"><div className="flex items-center gap-2 shrink-0"><div className="flex bg-slate-100 p-0.5 rounded-md"><Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[11px]">繁</Button><Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[11px]">EN</Button></div><Select value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}><SelectTrigger className="h-6 sm:h-7 w-16 sm:w-20 bg-slate-100 border-none font-black text-[10px] sm:text-[11px]"><SelectValue /></SelectTrigger><SelectContent>{(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<SelectItem key={cur} value={cur}>{cur}</SelectItem>))}</SelectContent></Select></div></div>
           </div>

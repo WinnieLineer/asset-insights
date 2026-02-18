@@ -278,20 +278,20 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                   className={cn("bg-slate-50 border-slate-200 h-9 text-[13px] font-bold uppercase focus:border-black rounded-lg pl-9", tickerFound === false && !isCustomCategory && "border-rose-300")} 
                 />
               </FormControl>
-            </div>
-            {showSuggestions && suggestions.length > 0 && (
-              <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border border-slate-200 rounded-lg shadow-xl max-h-[200px] overflow-auto no-scrollbar">
-                {suggestions.map((s, idx) => (
-                  <div key={idx} onClick={() => selectSuggestion(s)} className="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0">
-                    <div className="font-black text-xs text-slate-900 leading-tight">{s.name}</div>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-[11px] font-black text-blue-600 uppercase">{s.symbol}</span>
-                      <span className="text-[10px] font-bold text-slate-400">{s.typeDisp}</span>
+              {showSuggestions && suggestions.length > 0 && (
+                <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border border-slate-200 rounded-lg shadow-xl max-h-[200px] overflow-auto no-scrollbar">
+                  {suggestions.map((s, idx) => (
+                    <div key={idx} onClick={() => selectSuggestion(s)} className="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0">
+                      <div className="font-black text-xs text-slate-900 leading-tight">{s.name}</div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-[11px] font-black text-blue-600 uppercase">{s.symbol}</span>
+                        <span className="text-[10px] font-bold text-slate-400">{s.typeDisp}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
             <FormMessage className="text-[10px] font-bold text-rose-500" />
           </FormItem>
         )} />
