@@ -300,8 +300,7 @@ export default function AssetInsightsPage() {
         toast({ title: t.dataUpdated });
       }
     } catch (error) {
-      console.error('Market update error:', error);
-      toast({ variant: 'destructive', title: '市場數據同步失敗' });
+      console.warn('Market sync failed - continuing with cached data:', error);
     } finally {
       setLoading(false);
     }
@@ -333,10 +332,10 @@ export default function AssetInsightsPage() {
       if (!isClosed) {
         if (asset.symbol && asset.symbol.trim() !== '') {
           const priceInTWD = nativePrice * (rateTWD / apiCurrencyRate);
-          valueInTWD = asset.amount * priceInTWD;
+          valueInTWD = (asset.amount || 0) * priceInTWD;
         } else {
           const assetCurrencyRate = marketData.rates?.[asset.currency] || 1;
-          valueInTWD = asset.amount * (rateTWD / assetCurrencyRate);
+          valueInTWD = (asset.amount || 0) * (rateTWD / assetCurrencyRate);
         }
         totalTWD += valueInTWD;
         allocationMap[asset.category] = (allocationMap[asset.category] || 0) + valueInTWD;
@@ -389,9 +388,9 @@ export default function AssetInsightsPage() {
           const apiCurrency = marketData.assetMarketPrices?.[asset.id]?.currency || asset.currency || 'TWD';
           const apiCurrencyRate = marketData.rates?.[apiCurrency as Currency] || 1;
           const priceInTWDAtT = priceAtT * (rateTWD / apiCurrencyRate);
-          let valInTWD = asset.amount * priceInTWDAtT;
+          let valInTWD = (asset.amount || 0) * priceInTWDAtT;
           if (!asset.symbol || asset.symbol.trim() === '') {
-            valInTWD = asset.amount * (rateTWD / (marketData.rates?.[asset.currency] || 1));
+            valInTWD = (asset.amount || 0) * (rateTWD / (marketData.rates?.[asset.currency] || 1));
           }
           pointTotalTWD += valInTWD;
           categories[asset.category] = (categories[asset.category] || 0) + valInTWD;
@@ -399,7 +398,7 @@ export default function AssetInsightsPage() {
         if (pointTotalTWD > 0) {
           dayAggregator[dateKey] = { 
             timestamp: currentD.getTime() / 1000, 
-            displayDate: currentD.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }),
+            displayDate: currentD.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }),
             shortDate: currentD.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
             totalValue: pointTotalTWD * (displayRate / rateTWD),
             ...Object.fromEntries(Object.entries(categories).map(([c, v]) => [c, v * (displayRate / rateTWD)]))
@@ -572,7 +571,7 @@ export default function AssetInsightsPage() {
               </Card>
               <div className="md:col-span-4 lg:col-span-3 flex items-stretch">
                 <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full bg-slate-900 text-white hover:bg-black font-black flex flex-col items-center justify-center gap-1 rounded-2xl shadow-lg transition-all active:scale-95 py-4 px-6">
-                  <div className="flex items-center gap-3"><RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} /><span className="text-[12px] tracking-[0.2em] uppercase font-black">{loading ? t.fetching : t.syncMarket}</span></div>
+                  <div className="flex items-center gap-3"><RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} /><span className="text-[13px] tracking-[0.2em] uppercase font-black">{loading ? t.fetching : t.syncMarket}</span></div>
                   {lastUpdated && !loading && (<span className="text-[10px] opacity-60 font-bold uppercase tracking-widest mt-1">{lastUpdated}</span>)}
                 </Button>
               </div>

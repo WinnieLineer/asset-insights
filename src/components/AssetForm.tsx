@@ -108,7 +108,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     acquisitionDate: z.string().min(1, { message: lang.errors.required }),
     endDate: z.string().optional(),
   }).refine((data) => {
-    const skipValidation = ['Savings', 'Bank'].includes(data.category) || isCustomCategory;
+    const skipValidation = ['Savings', 'Bank', 'Custom'].includes(data.category) || isCustomCategory;
     if (skipValidation) return true;
     if (!data.symbol || data.symbol.trim() === '') return false;
     if (tickerFound === false) return false;

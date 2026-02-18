@@ -53,10 +53,12 @@ const CustomTooltip = ({ active, payload, label, symbol, langCategories }: any) 
   if (active && payload && payload.length) {
     const categories = payload.filter((p: any) => p.dataKey !== 'totalValue' && p.value > 0);
     const totalEntry = payload.find((p: any) => p.dataKey === 'totalValue');
+    const pointData = payload[0].payload;
+    const fullDate = pointData.displayDate || label;
 
     return (
       <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-4 shadow-2xl rounded-xl z-[1000] min-w-[200px]">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">{label}</p>
+        <p className="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">{fullDate}</p>
         <div className="space-y-2">
           {categories.map((entry: any, index: number) => (
             <div key={index} className="flex items-center justify-between gap-8">

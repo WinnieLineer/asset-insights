@@ -41,7 +41,7 @@ export async function fetchMarketData(
       }
     }
   } catch (e) { 
-    console.error('Rates fetch error:', e); 
+    console.warn('Rates fetch error - using defaults:', e); 
   }
 
   const fetchableAssets = (assets || []).filter(a => a.symbol && a.symbol.trim() !== '');
@@ -92,7 +92,7 @@ export async function fetchMarketData(
       }
     }
   } catch (e) {
-    console.error('Combined market fetch error:', e);
+    console.error('Market sync error:', e);
   }
 
   return { 
