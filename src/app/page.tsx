@@ -204,6 +204,7 @@ export default function AssetInsightsPage() {
   const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
   
+  // 初始佈局順序調整：對齊截圖
   const [sections, setSections] = useState<string[]>(['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'addAsset', 'closedList', 'ai']);
   
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
@@ -708,7 +709,11 @@ export default function AssetInsightsPage() {
         );
       case 'ai':
         return (
-          <div key={id} className={cn(commonClass, isReordering && "z-[950]")} style={wrapperStyle}>{controls}<AITipCard language={language} assets={assetCalculations.processedAssets} totalTWD={assetCalculations.totalTWD} /></div>
+          <div key={id} className={cn(commonClass, isReordering && "z-[950]")} style={wrapperStyle}>
+            {controls}
+            {/* 僅傳送 activeAssets 進行分析 */}
+            <AITipCard language={language} assets={assetCalculations.activeAssets} totalTWD={assetCalculations.totalTWD} />
+          </div>
         );
       default: return null;
     }

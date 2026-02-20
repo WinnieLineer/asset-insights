@@ -54,6 +54,7 @@ const CustomTooltip = ({ active, payload, label, symbol, langCategories }: any) 
     const categories = payload.filter((p: any) => p.dataKey !== 'totalValue' && p.value > 0);
     const totalEntry = payload.find((p: any) => p.dataKey === 'totalValue');
     const pointData = payload[0].payload;
+    // 懸浮卡片日期顯示年份
     const fullDate = pointData.displayDate || label;
 
     return (

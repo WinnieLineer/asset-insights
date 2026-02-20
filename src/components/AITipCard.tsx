@@ -75,6 +75,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
   const lang = t[language];
 
   const callGeminiAPI = async () => {
+    // 僅分析 activeAssets (由 props 傳入時已過濾)
     if (assets.length === 0) return;
     
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
