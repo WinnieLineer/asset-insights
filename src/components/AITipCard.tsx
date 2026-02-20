@@ -16,7 +16,8 @@ interface AssetDetail {
   category: string;
   amount: number;
   currency: string;
-  price?: number;
+  priceInDisplay?: number;
+  valueInDisplay?: number;
   valueInTWD: number;
 }
 
@@ -85,7 +86,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
     setLoading(true);
     
     const portfolioSummary = assets.map(a => 
-      `${a.name} (${a.symbol || a.category}): ${(a.amount ?? 0).toFixed(5)} ${a.currency}, Value: ${(a.valueInTWD ?? 0).toFixed(0)} TWD`
+      `${a.name} (${a.symbol || a.category}): ${(a.amount ?? 0).toFixed(5)} units, Unit Price: ${(a.priceInDisplay ?? 0).toFixed(4)}, Total Value: ${(a.valueInDisplay ?? 0).toFixed(0)}`
     ).join('\n');
 
     const promptText = `
@@ -93,7 +94,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
       
       PORTFOLIO DATA:
       ${portfolioSummary}
-      Total Value (TWD): ${(totalTWD ?? 0).toFixed(0)}
+      Total Portfolio Value (TWD): ${(totalTWD ?? 0).toFixed(0)}
       Current Context: ${marketConditions}
       User Custom Inquiry: "${userQuestion || 'Full portfolio analysis'}"
       
