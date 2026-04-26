@@ -823,10 +823,15 @@ export default function AssetInsightsPage() {
     return (
       <div className="min-h-screen bg-black text-white relative overflow-hidden flex flex-col items-center justify-center p-6">
         <div className="absolute inset-0 z-0">
-          <img src="/aura-bg.png" className="w-full h-full object-cover opacity-40" alt="background" />
+          <img src={`/aura-bg.png?v=${APP_VERSION}`} className="w-full h-full object-cover opacity-40" alt="background" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
         </div>
         
+        <div className="absolute top-8 right-8 z-20 flex bg-white/5 backdrop-blur-xl p-1 rounded-lg border border-white/10 opacity-60 hover:opacity-100 transition-opacity">
+          <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-7 px-3 font-black text-[11px]">繁</Button>
+          <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-7 px-3 font-black text-[11px]">EN</Button>
+        </div>
+
         <div className="relative z-10 max-w-5xl w-full text-center space-y-12 animate-fade-in">
           <div className="space-y-4">
             <h1 className="text-6xl sm:text-8xl font-black tracking-tighter uppercase leading-none italic">{t.title}</h1>
@@ -854,13 +859,6 @@ export default function AssetInsightsPage() {
             <Button onClick={() => setShowIntro(false)} className="bg-white text-black hover:bg-slate-200 h-16 px-12 rounded-full font-black text-xl uppercase tracking-widest shadow-[0_20px_60px_rgba(255,255,255,0.2)] active:scale-95 transition-all">
               {t.startNow} <ArrowRightLeft className="w-6 h-6 ml-3 rotate-90" />
             </Button>
-          </div>
-          
-          <div className="pt-12 flex items-center justify-center gap-8 opacity-40">
-            <div className="flex bg-slate-800 p-1 rounded-md">
-              <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-6 px-3 font-black text-[11px]">繁</Button>
-              <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-6 px-3 font-black text-[11px]">EN</Button>
-            </div>
           </div>
         </div>
       </div>
