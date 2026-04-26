@@ -42,9 +42,12 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
-  DragEndEvent
+  DragEndEvent,
+  DragStartEvent
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -87,7 +90,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
 
-const APP_VERSION = '1.0.3';
+const APP_VERSION = '1.0.4';
 
 const CURRENCY_SYMBOLS: Record<Currency, string> = {
   TWD: 'NT$',
@@ -162,7 +165,7 @@ const translations = {
     syncMarket: '同步市場數據',
     introTitle: '精準掌控，資産脈動',
     introDesc: '體驗次世代資產管理。即時數據同步、AI 智慧分析、以及為現代投資者打造的動態介面。',
-    startNow: '即刻開啟 ASSET INSIGHTS',
+    startNow: '即刻開啓 ASSET INSIGHTS',
     featuresTitle: '平台核心功能',
     f1Title: '即時市場同步',
     f1Desc: '統一追蹤股票、加密貨幣與外匯，並提供即時匯率換算。',
@@ -298,9 +301,13 @@ export default function AssetInsightsPage() {
       localStorage.setItem('app_version', APP_VERSION);
       localStorage.removeItem('sections');
       localStorage.removeItem('layoutConfigs');
+      localStorage.removeItem('has_seen_intro'); // Reset intro on version bump
       window.location.reload();
       return;
     }
+
+    const hasSeenIntro = localStorage.getItem('has_seen_intro');
+    if (hasSeenIntro) setShowIntro(false);
 
     const savedAssets = localStorage.getItem('assets');
     if (savedAssets) setAssets(JSON.parse(savedAssets));
@@ -521,7 +528,8 @@ export default function AssetInsightsPage() {
 
   const resizeSection = (id: string, axis: 'x' | 'y', direction: 'inc' | 'dec') => {
     setLayoutConfigs(prev => {
-      const config = { ...prev[id] };
+      const existing = prev[id] || { width: 12, height: 400 };
+      const config = { ...existing };
       if (axis === 'x') {
         const steps = [4, 6, 8, 10, 12];
         const currentIdx = steps.indexOf(config.width);
@@ -561,8 +569,11 @@ export default function AssetInsightsPage() {
     longPressTimer.current = setTimeout(() => { 
       const finalSelection = window.getSelection();
       if (finalSelection && finalSelection.toString().length > 0) { cleanup(); return; }
-      setIsReordering(true); 
-      toast({ title: t.reorderHint });
+      // Only trigger if not already reordering
+      if (!isReordering) {
+        setIsReordering(true); 
+        toast({ title: t.reorderHint });
+      }
       cleanup(); 
     }, 800);
   };
@@ -579,11 +590,24 @@ export default function AssetInsightsPage() {
   };
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { delay: 300, tolerance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
     const { active, over } = event;
     if (over && active.id !== over.id) {
       setSections((items) => {
@@ -592,6 +616,11 @@ export default function AssetInsightsPage() {
         return arrayMove(items, oldIndex, newIndex);
       });
     }
+  };
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
   };
 
   const SortableSection = ({ id }: { id: string }) => {
@@ -615,38 +644,25 @@ export default function AssetInsightsPage() {
     if (!hasChartData && id === 'historicalTrend') currentHeight = 180;
     if (!hasAllocationData && id === 'allocation') currentHeight = 180;
 
-    const controls = isReordering && (
-      <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[2000] flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full shadow-2xl border border-white/20 scale-90 sm:scale-100 ring-4 ring-black/5" onPointerDown={(e) => e.stopPropagation()}>
-        <div className="hover:bg-white/20 p-2 rounded-md transition-colors opacity-40"><GripHorizontal className="w-5 h-5 text-white" /></div>
-        <div className="w-px h-6 bg-white/20 mx-1" />
-        <span className="text-[14px] font-black uppercase tracking-widest px-1 opacity-60">W</span>
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'dec')}><Minimize2 className="w-5 h-5" /></Button>
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'inc')}><Maximize2 className="w-5 h-5" /></Button>
-        <div className="w-px h-6 bg-white/20 mx-1" />
-        <span className="text-[14px] font-black uppercase tracking-widest px-1 opacity-60">H</span>
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'dec')}><ChevronDown className="w-5 h-5" /></Button>
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'inc')}><ChevronUp className="w-5 h-5" /></Button>
-      </div>
-    );
+
     const commonClass = cn(
-      "relative transition-all duration-300",
-      isReordering && "ring-4 ring-black ring-offset-2 rounded-2xl z-[900] shadow-2xl scale-[0.98]",
-      isReordering && !isDragging && "animate-jiggle",
+      "relative transition-all duration-500 ease-in-out",
+      isReordering && "z-[900]",
       config.width === 4 && "xl:col-span-4",
       config.width === 5 && "xl:col-span-5",
       config.width === 6 && "xl:col-span-6",
       config.width === 7 && "xl:col-span-7",
       config.width === 8 && "xl:col-span-8",
       config.width === 10 && "xl:col-span-10",
-      config.width === 12 && "xl:col-span-12",
-      !isDesktop && "h-auto min-h-[100px]"
+      config.width === 12 && "xl:col-span-12"
     );
     const wrapperStyle = { 
-      minHeight: isDesktop ? (currentHeight === 'auto' ? 'auto' : `${currentHeight}px`) : (['historicalTrend', 'allocation'].includes(id) ? (id === 'historicalTrend' && !hasChartData ? '180px' : id === 'allocation' && !hasAllocationData ? '180px' : '280px') : 'auto'), 
-      height: isDesktop ? (currentHeight === 'auto' ? 'auto' : `${currentHeight}px`) : 'auto',
-      transform: CSS.Transform.toString(transform),
-      transition,
+      minHeight: currentHeight === 'auto' ? 'auto' : `${currentHeight}px`, 
+      height: currentHeight === 'auto' ? 'auto' : `${currentHeight}px`,
+      transform: CSS.Translate.toString(transform),
+      transition: isDragging ? 'none' : transition,
       zIndex: isDragging ? 9999 : (isReordering ? 900 : 1),
+      opacity: isDragging ? 0.4 : 1,
     };
 
     let content = null;
@@ -794,22 +810,28 @@ export default function AssetInsightsPage() {
         style={wrapperStyle} 
         className={cn(commonClass, id === 'summary' && "xl:col-span-12")}
         {...(isReordering ? { ...attributes, ...listeners } : {})}
+        onPointerDown={!isReordering ? handleMouseDown : undefined}
       >
-        {controls}
-        <div className={cn("h-full w-full", isReordering && "pointer-events-none")}>
-          {content}
+        {isDragging && <div className="absolute inset-0 bg-slate-100/30 rounded-2xl border-2 border-dashed border-slate-300 z-0" />}
+        <div className={cn("h-full w-full transition-all duration-300", isReordering && "pointer-events-none", isDragging && "scale-[1.05] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] z-[1000] rotate-[1deg]")}>
+          <div className={cn("h-full w-full rounded-2xl overflow-hidden", isReordering && !isDragging && "ring-2 ring-slate-200 shadow-sm")}>
+            {content}
+          </div>
         </div>
         {isReordering && (
           <div 
-            className="absolute bottom-0 right-0 p-2 cursor-nwse-resize z-[2100] group/resize" 
+            className="absolute bottom-2 right-2 z-[2100] flex flex-col gap-1 bg-black/90 backdrop-blur-xl p-1.5 rounded-xl border border-white/20 shadow-2xl scale-90 sm:scale-100" 
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <div className="flex gap-1">
-              <Button variant="ghost" size="icon" className="h-6 w-6 bg-black text-white hover:bg-slate-800 rounded-md" onClick={() => resizeSection(id, 'x', 'inc')}><Maximize2 className="w-3.5 h-3.5" /></Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6 bg-black text-white hover:bg-slate-800 rounded-md" onClick={() => resizeSection(id, 'y', 'inc')}><ChevronDown className="w-3.5 h-3.5" /></Button>
+            <div className="flex items-center gap-1 border-b border-white/10 pb-1 mb-1">
+              <span className="text-[9px] font-black text-white/40 w-3 text-center">W</span>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'dec')}><Minimize2 className="w-3 h-3" /></Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'inc')}><Maximize2 className="w-3 h-3" /></Button>
             </div>
-            <div className="absolute bottom-0 right-0 w-6 h-6 flex items-end justify-end p-1 pointer-events-none">
-              <div className="w-3 h-3 border-r-2 border-b-2 border-black/20" />
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] font-black text-white/40 w-3 text-center">H</span>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'dec')}><ChevronUp className="w-3 h-3" /></Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'inc')}><ChevronDown className="w-3.5 h-3.5" /></Button>
             </div>
           </div>
         )}
@@ -856,7 +878,13 @@ export default function AssetInsightsPage() {
           </div>
 
           <div className="pt-8">
-            <Button onClick={() => setShowIntro(false)} className="bg-white text-black hover:bg-slate-200 h-16 px-12 rounded-full font-black text-xl uppercase tracking-widest shadow-[0_20px_60px_rgba(255,255,255,0.2)] active:scale-95 transition-all">
+            <Button 
+              onClick={() => {
+                localStorage.setItem('has_seen_intro', 'true');
+                setShowIntro(false);
+              }} 
+              className="bg-white text-black hover:bg-slate-200 h-16 px-12 rounded-full font-black text-xl uppercase tracking-widest shadow-[0_20px_60px_rgba(255,255,255,0.2)] active:scale-95 transition-all"
+            >
               {t.startNow} <ArrowRightLeft className="w-6 h-6 ml-3 rotate-90" />
             </Button>
           </div>
@@ -874,12 +902,40 @@ export default function AssetInsightsPage() {
               <div className="flex items-center gap-2 shrink-0"><div className="w-6 h-6 sm:w-7 sm:h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-md"><Activity className="w-3.5 h-3.5 sm:w-4 h-4 text-white" /></div><h1 className="text-[12px] sm:text-[14px] font-black tracking-tighter uppercase leading-tight whitespace-nowrap">{t.title}</h1></div>
               <div className="hidden md:flex items-center gap-4 overflow-hidden border-l border-slate-100 pl-6 h-6"><div className="flex items-center gap-6 overflow-x-auto no-scrollbar scroll-smooth">{Object.entries(marketData.rates || {}).map(([cur, rate]) => { const baseRate = marketData.rates?.[displayCurrency] || 1; const relativeRate = (rate as number) / baseRate; return (<div key={cur} className="flex items-center gap-1.5 whitespace-nowrap bg-slate-50 px-2 py-0.5 rounded-md"><span className="text-[10px] font-black text-slate-500">{cur}</span><span className="text-[11px] font-black text-emerald-600">{relativeRate.toFixed(3)}</span></div>); })}</div></div>
             </div>
-            <div className="flex items-center justify-between md:justify-end gap-2 sm:gap-4"><div className="flex items-center gap-2 shrink-0"><div className="flex bg-slate-100 p-0.5 rounded-md"><Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[11px]">繁</Button><Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[11px]">EN</Button></div><Select value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}><SelectTrigger className="h-6 sm:h-7 w-16 sm:w-20 bg-slate-100 border-none font-black text-[10px] sm:text-[11px]"><SelectValue /></SelectTrigger><SelectContent>{(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<SelectItem key={cur} value={cur}>{cur}</SelectItem>))}</SelectContent></Select></div></div>
+            <div className="flex items-center justify-between md:justify-end gap-2 sm:gap-4">
+              <div className="flex items-center gap-2 shrink-0">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setShowIntro(true)}
+                  className="h-6 sm:h-7 w-6 sm:w-7 rounded-md hover:bg-slate-100 text-slate-400 hover:text-black transition-colors"
+                >
+                  <Info className="w-3.5 h-3.5" />
+                </Button>
+                <Button 
+                  variant={isReordering ? "default" : "outline"} 
+                  size="sm" 
+                  onClick={() => setIsReordering(!isReordering)}
+                  className={cn("h-6 sm:h-7 px-2 sm:px-3 font-black text-[10px] sm:text-[11px] uppercase gap-1.5 transition-all", isReordering && "bg-black text-white ring-4 ring-black/10")}
+                >
+                  <GripHorizontal className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{isReordering ? 'EXIT LAYOUT' : 'LAYOUT'}</span>
+                </Button>
+                <div className="flex bg-slate-100 p-0.5 rounded-md">
+                  <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[11px]">繁</Button>
+                  <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[11px]">EN</Button>
+                </div>
+                <Select value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
+                  <SelectTrigger className="h-6 sm:h-7 w-16 sm:w-20 bg-slate-100 border-none font-black text-[10px] sm:text-[11px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>{(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<SelectItem key={cur} value={cur}>{cur}</SelectItem>))}</SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </div>
       </header>
       <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-[110px] md:pt-24 pb-20">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <SortableContext items={sections} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-8 items-start">
               {sections.map((id) => <SortableSection key={id} id={id} />)}
@@ -887,7 +943,7 @@ export default function AssetInsightsPage() {
           </SortableContext>
         </DndContext>
       </main>
-      {isReordering && (<div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[2000] animate-fade-in pointer-events-auto"><Button onClick={() => setIsReordering(false)} className="bg-black text-white hover:bg-slate-800 h-14 px-10 rounded-full font-black text-[15px] flex items-center gap-3 shadow-[0_20px_60px_rgba(0,0,0,0.4)] ring-4 ring-white/10 border border-white/20 transition-all active:scale-95"><CheckCircle2 className="w-5 h-5" /> {t.saveLayout}</Button></div>)}
+
       <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
         <DialogContent className="max-w-[95vw] sm:max-w-[480px] bg-white rounded-3xl p-6">
           <DialogHeader><DialogTitle className="text-xl font-black uppercase flex items-center gap-3"><Edit2 className="w-5 h-5 text-primary" /> {t.editAsset}</DialogTitle></DialogHeader>
