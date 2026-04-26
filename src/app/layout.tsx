@@ -7,10 +7,10 @@ export const metadata: Metadata = {
   description: '全方位的個人資產管理與 AI 智慧財務決策系統。',
   icons: {
     icon: [
-      { url: '/icon.png?v=1.0.4' },
-      { url: '/favicon.ico?v=1.0.4', sizes: 'any' },
+      { url: '/app-icon.png?v=1.0.5' },
+      { url: '/favicon.ico?v=1.0.5', sizes: 'any' },
     ],
-    apple: '/icon.png?v=1.0.4',
+    apple: '/app-icon.png?v=1.0.5',
   },
 };
 

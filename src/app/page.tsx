@@ -90,7 +90,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
 
-const APP_VERSION = '1.0.4';
+const APP_VERSION = '1.0.5';
 
 const CURRENCY_SYMBOLS: Record<Currency, string> = {
   TWD: 'NT$',
@@ -845,7 +845,7 @@ export default function AssetInsightsPage() {
     return (
       <div className="min-h-screen bg-black text-white relative overflow-hidden flex flex-col items-center justify-center p-6">
         <div className="absolute inset-0 z-0">
-          <img src={`/aura-bg.png?v=${APP_VERSION}`} className="w-full h-full object-cover opacity-40" alt="background" />
+          <img src={`/bg.png?v=${APP_VERSION}`} className="w-full h-full object-cover opacity-40" alt="background" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
         </div>
         
