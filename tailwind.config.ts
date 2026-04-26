@@ -11,7 +11,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
+        sans: ['Zen Maru Gothic', 'M PLUS Rounded 1c', 'Inter', 'sans-serif'],
+        body: ['Zen Maru Gothic', 'M PLUS Rounded 1c', 'Inter', 'sans-serif'],
         headline: ['Space Grotesk', 'sans-serif'],
         code: ['monospace'],
       },

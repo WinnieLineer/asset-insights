@@ -24,7 +24,7 @@
     --input: 0 0% 89.8%;
     --ring: 0 0% 3.9%;
     --radius: 0.75rem;
-    --app-main-font: 'Inter', sans-serif;
+    --app-main-font: 'Zen Maru Gothic', 'Inter', sans-serif;
   }
 }
 
@@ -81,4 +81,14 @@
 
 .animate-fade-in {
   animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes jiggle {
+  0% { transform: rotate(-0.5deg); }
+  50% { transform: rotate(0.5deg); }
+  100% { transform: rotate(-0.5deg); }
+}
+
+.animate-jiggle {
+  animation: jiggle 0.3s ease-in-out infinite;
 }

@@ -94,6 +94,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [tickerFound, setTickerFound] = useState<boolean | null>(null);
   const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [amountUnit, setAmountUnit] = useState<'share' | 'lot'>('share');
   const isManualTyping = useRef(false);
   const suggestionRef = useRef<HTMLDivElement>(null);
 
@@ -197,7 +198,8 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   };
 
   const onSubmit = (v: z.infer<typeof formSchema>) => {
-    onAdd(v as Omit<Asset, 'id'>);
+    const finalAmount = (v.category === 'Stock' || v.category === 'ETF') && amountUnit === 'lot' ? v.amount * 1000 : v.amount;
+    onAdd({ ...v, amount: finalAmount } as Omit<Asset, 'id'>);
     form.reset({
       ...v,
       name: '',
@@ -208,6 +210,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     setTickerFound(null);
     setIsCustomCategory(false);
     isManualTyping.current = false;
+    setAmountUnit('share');
   };
 
   return (
@@ -330,19 +333,32 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
           <FormField control={form.control} name="amount" render={({ field }) => (
             <FormItem className={cn(showCurrencyField ? "" : "col-span-2")}>
               <FormLabel className="pro-label text-[10px] opacity-60">{lang.amount}</FormLabel>
-              <FormControl>
-                <Input 
-                  type="number" 
-                  step="any" 
-                  {...field} 
-                  onFocus={(e) => {
-                    const target = e.currentTarget;
-                    setTimeout(() => target.select(), 50);
-                  }}
-                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
-                  className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" 
-                />
-              </FormControl>
+              <div className="flex items-center gap-2">
+                <FormControl>
+                  <Input 
+                    type="number" 
+                    step="any" 
+                    {...field} 
+                    onFocus={(e) => {
+                      const target = e.currentTarget;
+                      setTimeout(() => target.select(), 50);
+                    }}
+                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
+                    className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" 
+                  />
+                </FormControl>
+                {(form.watch('category') === 'Stock' || form.watch('category') === 'ETF') && (
+                  <Select value={amountUnit} onValueChange={(val: any) => setAmountUnit(val)}>
+                    <SelectTrigger className="w-20 h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg shrink-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="share">{language === 'zh' ? '股' : 'Shares'}</SelectItem>
+                      <SelectItem value="lot">{language === 'zh' ? '張' : 'Lots'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
               <FormMessage />
             </FormItem>
           )} />

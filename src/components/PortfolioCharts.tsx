@@ -141,9 +141,12 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
       <div className="w-full mb-4 flex items-center justify-between shrink-0">
         <h3 className="pro-label text-xs sm:text-sm">{lang.trend}</h3>
       </div>
-      <div className="w-full flex-1 min-h-[180px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 20 }}>
+      <div className="w-full flex-1 min-h-[120px] relative">
+        {historicalData.length === 0 ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-[12px] font-black uppercase tracking-widest opacity-40">No Data</div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 20 }}>
             <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="shortDate" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 800 }} dy={5} />
             <YAxis 
@@ -206,6 +209,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
             />
           </ComposedChart>
         </ResponsiveContainer>
+        )}
       </div>
     </div>
   );
@@ -231,10 +235,14 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
       <div className="w-full mb-4 text-left shrink-0">
         <h3 className="pro-label text-xs sm:text-sm">{lang.allocation}</h3>
       </div>
-      <div className="flex-1 w-full relative flex items-center justify-center overflow-hidden min-h-[180px]">
-        <div className="absolute inset-0 z-10">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
+      <div className="flex-1 w-full relative flex items-center justify-center overflow-hidden min-h-[120px]">
+        {filteredData.length === 0 ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-[12px] font-black uppercase tracking-widest opacity-40">No Data</div>
+        ) : (
+          <>
+            <div className="absolute inset-0 z-10">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
               <Pie 
                 data={filteredData} 
                 cx="50%" cy="50%" 
@@ -274,6 +282,8 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
             {symbol}{displayValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );
