@@ -162,11 +162,20 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   };
 
   useEffect(() => {
-    if (!symbolValue) {
-      setSuggestions([]);
-      setTickerFound(null);
-      setShowSuggestions(false);
+    if (!isManualTyping.current || !symbolValue || symbolValue.length < 1) {
+      if (!symbolValue) {
+        setSuggestions([]);
+        setTickerFound(null);
+        setShowSuggestions(false);
+      }
+      return;
     }
+
+    const timer = setTimeout(() => {
+      performSearch(symbolValue);
+    }, 3000);
+
+    return () => clearTimeout(timer);
   }, [symbolValue]);
 
   const selectSuggestion = (s: Suggestion) => {
