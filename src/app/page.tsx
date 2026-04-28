@@ -395,6 +395,10 @@ export default function AssetInsightsPage() {
     const displayRate = marketData.rates?.[displayCurrency] || 1;
     const todayStr = new Date().toISOString().split('T')[0];
     const lastKnownPrices: Record<string, number> = {};
+    // 預先填入目前的市場價格，確保走勢圖至少能從目前價格開始計算
+    Object.entries(marketData.assetMarketPrices || {}).forEach(([id, info]) => {
+      lastKnownPrices[id] = info.price;
+    });
     const dayAggregator: Record<string, any> = {};
     const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
 
@@ -404,7 +408,7 @@ export default function AssetInsightsPage() {
       const apiCurrency = marketInfo?.currency || asset.currency || 'TWD';
       const apiCurrencyRate = (marketData.rates?.[apiCurrency as Currency] || 1);
       let valueInTWD = 0;
-      const isClosed = asset.endDate ? asset.endDate <= todayStr : false;
+      const isClosed = asset.endDate ? asset.endDate < todayStr : false;
       if (!isClosed) {
         if (asset.symbol && asset.symbol.trim() !== '') {
           const priceInTWD = nativePrice * (rateTWD / apiCurrencyRate);
