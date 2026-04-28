@@ -810,7 +810,23 @@ export default function AssetInsightsPage() {
                       <TableCell className="text-right"><div className="font-black text-[13px] text-slate-700"><span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.priceInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 4 }) || '0'}</div></TableCell>
                       <TableCell className="text-right"><div className="font-black text-base text-slate-900"><span className="text-slate-200 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.valueInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0'}</div></TableCell>
                       <TableCell className="text-right"><div className={cn("inline-flex items-center gap-1 font-black text-[13px]", (asset.changePercent || 0) > 0 ? "text-emerald-500" : (asset.changePercent || 0) < 0 ? "text-rose-500" : "text-slate-400")}>{(asset.changePercent || 0) > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : (asset.changePercent || 0) < 0 ? <TrendingDown className="w-3.5 h-3.5" /> : null}{(asset.changePercent || 0).toFixed(2)}%</div></TableCell>
-                      <TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditingAsset(asset); setEditName(asset.name); if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) { setEditAmount(asset.amount / 1000); setEditAmountUnit('lot'); } else { setEditAmount(asset.amount); setEditAmountUnit('share'); } setEditDate(asset.acquisitionDate); setEditEndDate(asset.endDate || ''); setEditCurrency(asset.currency); }}><Edit2 className="w-3.5 h-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button></div></TableCell>
+                      <TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
+                        setEditingAsset(asset); 
+                        setEditName(asset.name); 
+                        if (asset.amountUnit) {
+                          setEditAmount(asset.amountUnit === 'lot' ? asset.amount / 1000 : asset.amount);
+                          setEditAmountUnit(asset.amountUnit);
+                        } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) { 
+                          setEditAmount(asset.amount / 1000); 
+                          setEditAmountUnit('lot'); 
+                        } else { 
+                          setEditAmount(asset.amount); 
+                          setEditAmountUnit('share'); 
+                        } 
+                        setEditDate(asset.acquisitionDate); 
+                        setEditEndDate(asset.endDate || ''); 
+                        setEditCurrency(asset.currency); 
+                      }}><Edit2 className="w-3.5 h-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button></div></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -995,7 +1011,7 @@ export default function AssetInsightsPage() {
             {editingAsset && (!editingAsset.symbol || editingAsset.symbol.trim() === '') && (<div className="space-y-1"><Label className="pro-label text-[10px]">{t.currency}</Label><Select value={editCurrency} onValueChange={(v) => setEditCurrency(v as Currency)}><SelectTrigger className="h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg"><SelectValue /></SelectTrigger><SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-[13px] font-bold">{c}</SelectItem>)}</SelectContent></Select></div>)}
             <div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label className="pro-label text-[10px]">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div><div className="space-y-1"><Label className="pro-label text-[10px]">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div></div>
           </div>
-          <DialogFooter className="flex flex-row gap-3"><Button variant="ghost" onClick={() => { setEditingAsset(null); }} className="h-10 flex-1 font-black uppercase text-xs">{t.cancel}</Button><Button onClick={() => { const finalAmount = (editingAsset?.category === 'Stock' || editingAsset?.category === 'ETF') && editAmountUnit === 'lot' ? editAmount * 1000 : editAmount; const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, name: editName, amount: finalAmount, acquisitionDate: editDate, endDate: editEndDate || undefined, currency: editCurrency } : a); setAssets(updated); setEditingAsset(null); updateAllData(updated); }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[13px] px-3 shadow-md">{t.saveChanges}</Button></DialogFooter>
+          <DialogFooter className="flex flex-row gap-3"><Button variant="ghost" onClick={() => { setEditingAsset(null); }} className="h-10 flex-1 font-black uppercase text-xs">{t.cancel}</Button><Button onClick={() => { const finalAmount = (editingAsset?.category === 'Stock' || editingAsset?.category === 'ETF') && editAmountUnit === 'lot' ? editAmount * 1000 : editAmount; const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, name: editName, amount: finalAmount, amountUnit: editAmountUnit as any, acquisitionDate: editDate, endDate: editEndDate || undefined, currency: editCurrency } : a); setAssets(updated); setEditingAsset(null); updateAllData(updated); }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[13px] px-3 shadow-md">{t.saveChanges}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

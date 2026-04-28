@@ -11,6 +11,7 @@ export interface Asset {
   currency: Currency;
   acquisitionDate: string; // YYYY-MM-DD
   endDate?: string;        // YYYY-MM-DD (Optional, if set means position is closed)
+  amountUnit?: 'share' | 'lot';
   price?: number; 
   valueInTWD?: number;
 }

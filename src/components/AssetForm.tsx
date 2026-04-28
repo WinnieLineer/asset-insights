@@ -211,7 +211,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
 
   const onSubmit = (v: z.infer<typeof formSchema>) => {
     const finalAmount = amountUnit === 'lot' ? v.amount * 1000 : v.amount;
-    onAdd({ ...v, amount: finalAmount } as Omit<Asset, 'id'>);
+    onAdd({ ...v, amount: finalAmount, amountUnit } as Omit<Asset, 'id'>);
     form.reset({
       ...v,
       name: '',

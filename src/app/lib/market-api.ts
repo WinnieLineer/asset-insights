@@ -77,7 +77,7 @@ export async function fetchMarketData(
           };
 
           const timestamps = chart.timestamp || [];
-          const prices = chart.indicators?.adjclose?.[0]?.adjclose || chart.indicators?.quote?.[0]?.close || [];
+          const prices = chart.indicators?.quote?.[0]?.close || chart.indicators?.adjclose?.[0]?.adjclose || [];
 
           timestamps.forEach((ts: number, i: number) => {
             const price = prices[i];
