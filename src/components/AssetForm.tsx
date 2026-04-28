@@ -333,7 +333,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
           </FormItem>
         )} />
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {showCurrencyField ? (
             <FormField control={form.control} name="currency" render={({ field }) => (
               <FormItem>
@@ -350,7 +350,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
             )} />
           ) : null}
           <FormField control={form.control} name="amount" render={({ field }) => (
-            <FormItem className={cn(showCurrencyField ? "" : "col-span-2")}>
+            <FormItem className={cn(showCurrencyField ? "" : "sm:col-span-2")}>
               <FormLabel className="pro-label text-[10px] opacity-60">{lang.amount}</FormLabel>
               <div className="flex items-center gap-2">
                 <FormControl>
@@ -381,7 +381,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
           )} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <FormField control={form.control} name="acquisitionDate" render={({ field }) => (
             <FormItem>
               <FormLabel className="pro-label text-[10px] opacity-60">{lang.date}</FormLabel>

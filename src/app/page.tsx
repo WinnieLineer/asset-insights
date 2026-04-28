@@ -657,8 +657,8 @@ export default function AssetInsightsPage() {
         ); break;
       case 'controls':
         content = (
-          <section className="bg-slate-50/80 backdrop-blur-md p-4 border border-slate-100 rounded-2xl flex flex-col md:flex-row items-center gap-3 shadow-sm h-full overflow-hidden">
-            <div className="w-full md:w-auto flex items-center justify-between md:justify-start gap-3 flex-wrap sm:flex-nowrap">
+          <section className="bg-slate-50/80 backdrop-blur-md p-4 border border-slate-100 rounded-2xl flex flex-col xl:flex-row items-center gap-4 shadow-sm h-full overflow-hidden">
+            <div className="w-full xl:w-auto grid grid-cols-2 sm:flex items-center gap-3">
               <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
                 <Label className="pro-label text-[10px] whitespace-nowrap opacity-60 flex items-center gap-1 shrink-0">{t.baseRange}</Label>
                 <Select value={trackingDays} onValueChange={setTrackingDays}>
@@ -859,14 +859,14 @@ export default function AssetInsightsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/30 text-black pb-32 overflow-x-hidden">
-      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl shadow-sm h-auto flex flex-col justify-center">
-        <div className="max-w-[1900px] mx-auto w-full px-4 sm:px-10 py-2 sm:py-3">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-6">
-            <div className="flex items-center gap-6 overflow-hidden">
+      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl shadow-sm h-auto flex flex-col justify-center min-h-[56px]">
+        <div className="max-w-[1900px] mx-auto w-full px-3 sm:px-10 py-2 sm:py-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6">
+            <div className="flex items-center justify-between sm:justify-start gap-4 overflow-hidden w-full sm:w-auto">
               <div className="flex items-center gap-2 shrink-0"><div className="w-6 h-6 sm:w-7 sm:h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-md"><Activity className="w-3.5 h-3.5 sm:w-4 h-4 text-white" /></div><h1 className="text-[12px] sm:text-[14px] font-black tracking-tighter uppercase leading-tight whitespace-nowrap">{t.title}</h1></div>
               <div className="hidden md:flex items-center gap-4 overflow-hidden border-l border-slate-100 pl-6 h-6"><div className="flex items-center gap-6 overflow-x-auto no-scrollbar scroll-smooth">{Object.entries(marketData.rates || {}).map(([cur, rate]) => { const baseRate = marketData.rates?.[displayCurrency] || 1; const relativeRate = (rate as number) / baseRate; return (<div key={cur} className="flex items-center gap-1.5 whitespace-nowrap bg-slate-50 px-2 py-0.5 rounded-md"><span className="text-[10px] font-black text-slate-500">{cur}</span><span className="text-[11px] font-black text-emerald-600">{relativeRate.toFixed(3)}</span></div>); })}</div></div>
             </div>
-            <div className="flex items-center justify-between md:justify-end gap-2 sm:gap-4">
+            <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 w-full sm:w-auto border-t sm:border-t-0 border-slate-50 pt-2 sm:pt-0">
               <div className="flex items-center gap-2 shrink-0">
                 <Button 
                   variant="ghost" 
@@ -898,7 +898,7 @@ export default function AssetInsightsPage() {
           </div>
         </div>
       </header>
-      <main className="max-w-[1900px] mx-auto px-4 sm:px-10 pt-[110px] md:pt-24 pb-20">
+      <main className="max-w-[1900px] mx-auto px-3 sm:px-10 pt-[115px] sm:pt-24 pb-20">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <SortableContext items={sections} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-8 items-start">
