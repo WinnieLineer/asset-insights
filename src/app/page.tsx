@@ -430,50 +430,94 @@ export default function AssetInsightsPage() {
       return { ...asset, isClosed, valueInDisplay, priceInDisplay: unitPriceInDisplay, changePercent, valueInTWD };
     });
 
-    if (sortedTimeline.length > 0) {
-      const firstTs = sortedTimeline[0].timestamp;
-      const lastTs = Math.floor(Date.now() / 1000);
+    // 第二部分：歷史走勢計算 (Chart Data)
+    // 確保即使沒有 symbol (只有現金) 也能產生走勢圖
+    let timelineToUse = [...sortedTimeline];
+    if (timelineToUse.length === 0 && assets.length > 0) {
+      // 如果沒有 symbol 數據，產生至少兩個點（起始日期或 30 天前，以及今天）
+      const p1 = Math.floor(Date.now() / 1000) - (30 * 24 * 60 * 60);
+      const p2 = Math.floor(Date.now() / 1000);
+      timelineToUse = [{ timestamp: p1, assets: {} }, { timestamp: p2, assets: {} }];
+    } else if (timelineToUse.length > 0) {
+      // 確保最後一個點是「今天」，以符合目前的總體資產顯示
+      const lastPoint = timelineToUse[timelineToUse.length - 1];
+      const todayUnix = Math.floor(Date.now() / 1000);
+      const lastPointDate = new Date(lastPoint.timestamp * 1000).toISOString().split('T')[0];
+      const todayStrLocal = new Date().toISOString().split('T')[0];
+      
+      if (lastPointDate !== todayStrLocal) {
+        timelineToUse.push({
+          timestamp: todayUnix,
+          assets: Object.fromEntries(
+            assets
+              .filter(a => a.symbol && marketData.assetMarketPrices?.[a.id])
+              .map(a => [a.id, marketData.assetMarketPrices?.[a.id]?.price])
+          )
+        });
+      }
+    }
+
+    if (timelineToUse.length > 0) {
       const apiByDay: Record<string, any[]> = {};
-      sortedTimeline.forEach(p => {
+      timelineToUse.forEach(p => {
         const d = new Date(p.timestamp * 1000).toISOString().split('T')[0];
         if (!apiByDay[d]) apiByDay[d] = [];
         apiByDay[d].push(p);
       });
-      let currentD = new Date(firstTs * 1000);
-      const endD = new Date(lastTs * 1000);
+
+      const allDays = Object.keys(apiByDay).sort();
+      const firstDay = allDays[0];
+      const lastDay = allDays[allDays.length - 1];
+      
+      let currentD = new Date(firstDay);
+      const endD = new Date(lastDay);
+      
       while (currentD <= endD) {
         const dateKey = currentD.toISOString().split('T')[0];
+        const currentUnix = Math.floor(currentD.getTime() / 1000);
+        
+        // 更新當前已知的價格 (Carrying forward)
         if (apiByDay[dateKey]) {
           const lastPointOfDay = apiByDay[dateKey][apiByDay[dateKey].length - 1];
           Object.entries(lastPointOfDay.assets || {}).forEach(([id, price]) => {
             lastKnownPrices[id] = price as number;
           });
         }
+
         let pointTotalTWD = 0;
         const categories: Record<string, number> = {};
+        
         processedAssets.forEach(asset => {
           const acqTime = new Date(asset.acquisitionDate).getTime();
           const endTimeStr = asset.endDate || '9999-12-31';
           const currentT = currentD.getTime();
+          
+          // 邏輯與總資產一致：今天 > 結束日期 則不計入
           if (currentT < acqTime || dateKey > endTimeStr) return; 
-          let priceAtT = lastKnownPrices[asset.id];
-          if (priceAtT === undefined) {
-            if (!asset.symbol || asset.symbol.trim() === '') priceAtT = 1;
-            else return; 
+          
+          let valInTWD = 0;
+          if (asset.symbol && asset.symbol.trim() !== '') {
+            let priceAtT = lastKnownPrices[asset.id];
+            if (priceAtT !== undefined) {
+              const apiCurrency = marketData.assetMarketPrices?.[asset.id]?.currency || asset.currency || 'TWD';
+              const apiCurrencyRate = marketData.rates?.[apiCurrency as Currency] || 1;
+              valInTWD = (asset.amount || 0) * priceAtT * (rateTWD / apiCurrencyRate);
+            }
+          } else {
+            // 現金資產
+            const assetCurrencyRate = marketData.rates?.[asset.currency] || 1;
+            valInTWD = (asset.amount || 0) * (rateTWD / assetCurrencyRate);
           }
-          const apiCurrency = marketData.assetMarketPrices?.[asset.id]?.currency || asset.currency || 'TWD';
-          const apiCurrencyRate = marketData.rates?.[apiCurrency as Currency] || 1;
-          const priceInTWDAtT = priceAtT * (rateTWD / apiCurrencyRate);
-          let valInTWD = (asset.amount || 0) * priceInTWDAtT;
-          if (!asset.symbol || asset.symbol.trim() === '') {
-            valInTWD = (asset.amount || 0) * (rateTWD / (marketData.rates?.[asset.currency] || 1));
+          
+          if (valInTWD > 0) {
+            pointTotalTWD += valInTWD;
+            categories[asset.category] = (categories[asset.category] || 0) + valInTWD;
           }
-          pointTotalTWD += valInTWD;
-          categories[asset.category] = (categories[asset.category] || 0) + valInTWD;
         });
+
         if (pointTotalTWD > 0) {
           dayAggregator[dateKey] = { 
-            timestamp: currentD.getTime() / 1000, 
+            timestamp: currentUnix, 
             displayDate: currentD.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }),
             shortDate: currentD.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
             totalValue: pointTotalTWD * (displayRate / rateTWD),
@@ -483,8 +527,17 @@ export default function AssetInsightsPage() {
         currentD.setDate(currentD.getDate() + 1);
       }
     }
+
     const historyData = Object.keys(dayAggregator).sort().map(key => dayAggregator[key]);
-    return { processedAssets, activeAssets: processedAssets.filter(a => !a.isClosed), closedAssets: processedAssets.filter(a => a.isClosed), totalTWD, totalDisplay: totalTWD * (displayRate / rateTWD), allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ name, value: value * (displayRate / rateTWD) })), chartData: historyData };
+    return { 
+      processedAssets, 
+      activeAssets: processedAssets.filter(a => !a.isClosed), 
+      closedAssets: processedAssets.filter(a => a.isClosed), 
+      totalTWD, 
+      totalDisplay: totalTWD * (displayRate / rateTWD), 
+      allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ name, value: value * (displayRate / rateTWD) })), 
+      chartData: historyData 
+    };
   }, [assets, marketData, displayCurrency, marketTimeline]);
 
   const getSortedItems = useCallback((items: any[], config: SortConfig) => {
