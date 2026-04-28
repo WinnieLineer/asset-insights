@@ -281,7 +281,6 @@ export default function AssetInsightsPage() {
     ai: { width: 12, height: 650 }
   });
 
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [marketData, setMarketData] = useState<MarketData>({
@@ -545,41 +544,6 @@ export default function AssetInsightsPage() {
     });
   };
 
-  const handleMouseDown = (e: React.MouseEvent | React.TouchEvent) => {
-    const selection = window.getSelection();
-    if (selection && selection.toString().length > 0) return;
-    const target = e.target as HTMLElement;
-    if (target.closest('button, input, select, [role="combobox"], textarea, th, td, a, label, h1, h2, h3, h4, p, span')) return;
-    const startX = 'clientX' in e ? e.clientX : e.touches[0].clientX;
-    const startY = 'clientY' in e ? e.clientY : e.touches[0].clientY;
-    const onMove = (me: MouseEvent | TouchEvent) => {
-      const curX = 'clientX' in me ? me.clientX : (me as TouchEvent).touches[0].clientX;
-      const curY = 'clientY' in me ? me.clientY : (me as TouchEvent).touches[0].clientY;
-      if (Math.abs(curX - startX) > 8 || Math.abs(curY - startY) > 8) cleanup();
-    };
-    const cleanup = () => {
-      if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
-      window.removeEventListener('mouseup', cleanup);
-      window.removeEventListener('touchend', cleanup);
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('touchmove', onMove);
-    };
-    window.addEventListener('mouseup', cleanup);
-    window.addEventListener('touchend', cleanup);
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('touchmove', onMove);
-    longPressTimer.current = setTimeout(() => { 
-      const finalSelection = window.getSelection();
-      if (finalSelection && finalSelection.toString().length > 0) { cleanup(); return; }
-      // Only trigger if not already reordering
-      if (!isReordering) {
-        setIsReordering(true); 
-        toast({ title: t.reorderHint });
-      }
-      cleanup(); 
-    }, 800);
-  };
-
   const handleExport = () => {
     const dataStr = JSON.stringify({ assets, sections, layoutConfigs }, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
@@ -812,7 +776,6 @@ export default function AssetInsightsPage() {
         style={wrapperStyle} 
         className={cn(commonClass, id === 'summary' && "xl:col-span-12")}
         {...(isReordering ? { ...attributes, ...listeners } : {})}
-        onPointerDown={!isReordering ? handleMouseDown : undefined}
       >
         {isDragging && <div className="absolute inset-0 bg-slate-100/30 rounded-2xl border-2 border-dashed border-slate-300 z-0" />}
         <div className={cn("h-full w-full transition-all duration-300", isReordering && "pointer-events-none", isDragging && "scale-[1.05] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] z-[1000] rotate-[1deg]")}>
