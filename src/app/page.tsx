@@ -159,7 +159,7 @@ const translations = {
     priceChange: 'CHG',
     currency: 'CURRENCY',
     shares: 'Shares',
-    categoryNames: { Stock: 'Equity', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Future: 'Future', Forex: 'Forex' }
+    categoryNames: { Stock: 'Stock', Crypto: 'Crypto', Bank: 'Other', Savings: 'Deposit', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Future: 'Future', Forex: 'Forex' }
   },
   zh: {
     title: 'ASSET INSIGHTS',

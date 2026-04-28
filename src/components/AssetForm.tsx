@@ -40,7 +40,7 @@ const t = {
     date: 'Starting Holding Date',
     endDate: 'Closed Date',
     submit: 'Add Position',
-    categories: { Stock: 'Equity', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Future: 'Future', Forex: 'Forex', Custom: 'Custom...' },
+    categories: { Stock: 'Stock', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Future: 'Future', Forex: 'Forex', Custom: 'Custom...' },
     errors: { 
       nameTooShort: 'Min 2 characters', 
       invalidAmount: 'Invalid amount', 
@@ -132,39 +132,41 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   const symbolValue = form.watch('symbol');
   const showCurrencyField = !symbolValue || symbolValue.trim() === '';
   
-  useEffect(() => {
-    if (!isManualTyping.current || !symbolValue || symbolValue.length < 1) {
-      if (!symbolValue) {
-        setSuggestions([]);
-        setTickerFound(null);
-      }
+  const performSearch = async (val: string) => {
+    if (!val || val.length < 1) {
+      setSuggestions([]);
+      setTickerFound(null);
       return;
     }
 
-    const timer = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const response = await fetch(`${AUTOCOMPLETE_API}${encodeURIComponent(symbolValue)}`);
-        if (response.ok) {
-          const data = await response.json();
-          const results = data.ResultSet?.Result || [];
-          setSuggestions(results.map((r: any) => ({
-            symbol: r.symbol,
-            name: r.name,
-            exchDisp: r.exchDisp,
-            typeDisp: r.typeDisp
-          })));
-          setTickerFound(results.length > 0);
-          setShowSuggestions(true);
-        }
-      } catch (error) {
-        setTickerFound(false);
-      } finally {
-        setIsSearching(false);
+    setIsSearching(true);
+    try {
+      const response = await fetch(`${AUTOCOMPLETE_API}${encodeURIComponent(val)}`);
+      if (response.ok) {
+        const data = await response.json();
+        const results = data.ResultSet?.Result || [];
+        setSuggestions(results.map((r: any) => ({
+          symbol: r.symbol,
+          name: r.name,
+          exchDisp: r.exchDisp,
+          typeDisp: r.typeDisp
+        })));
+        setTickerFound(results.length > 0);
+        setShowSuggestions(true);
       }
-    }, 400);
+    } catch (error) {
+      setTickerFound(false);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
-    return () => clearTimeout(timer);
+  useEffect(() => {
+    if (!symbolValue) {
+      setSuggestions([]);
+      setTickerFound(null);
+      setShowSuggestions(false);
+    }
   }, [symbolValue]);
 
   const selectSuggestion = (s: Suggestion) => {
@@ -198,7 +200,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   };
 
   const onSubmit = (v: z.infer<typeof formSchema>) => {
-    const finalAmount = (v.category === 'Stock' || v.category === 'ETF') && amountUnit === 'lot' ? v.amount * 1000 : v.amount;
+    const finalAmount = amountUnit === 'lot' ? v.amount * 1000 : v.amount;
     onAdd({ ...v, amount: finalAmount } as Omit<Asset, 'id'>);
     form.reset({
       ...v,
@@ -278,6 +280,12 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                   autoComplete="off"
                   onChange={(e) => { isManualTyping.current = true; field.onChange(e); }}
                   onFocus={(e) => { const target = e.currentTarget; setTimeout(() => target.select(), 50); }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      performSearch(field.value);
+                    }
+                  }}
                   className={cn("bg-slate-50 border-slate-200 h-9 text-[13px] font-bold uppercase focus:border-black rounded-lg pl-9", tickerFound === false && !isCustomCategory && "border-rose-300")} 
                 />
               </FormControl>
@@ -347,17 +355,15 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                     className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" 
                   />
                 </FormControl>
-                {(form.watch('category') === 'Stock' || form.watch('category') === 'ETF') && (
-                  <Select value={amountUnit} onValueChange={(val: any) => setAmountUnit(val)}>
-                    <SelectTrigger className="w-20 h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg shrink-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="share">{language === 'zh' ? '股' : 'Shares'}</SelectItem>
-                      <SelectItem value="lot">{language === 'zh' ? '張' : 'Lots'}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
+                <Select value={amountUnit} onValueChange={(val: any) => setAmountUnit(val)}>
+                  <SelectTrigger className="w-20 h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg shrink-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="share">{language === 'zh' ? '股/單位' : 'Shares/Units'}</SelectItem>
+                    <SelectItem value="lot">{language === 'zh' ? '張' : 'Lots'}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <FormMessage />
             </FormItem>
