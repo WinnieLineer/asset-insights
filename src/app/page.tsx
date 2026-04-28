@@ -859,7 +859,7 @@ export default function AssetInsightsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/30 text-black pb-32 overflow-x-hidden" onMouseDown={handleMouseDown} onTouchStart={handleMouseDown}>
+    <div className="min-h-screen bg-slate-50/30 text-black pb-32 overflow-x-hidden">
       <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl shadow-sm h-auto flex flex-col justify-center">
         <div className="max-w-[1900px] mx-auto w-full px-4 sm:px-10 py-2 sm:py-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-6">
