@@ -461,6 +461,10 @@ export default function AssetInsightsPage() {
       }
     }
 
+    const displayScale = displayRate / rateTWD;
+    const dateFormatter = new Intl.DateTimeFormat(language === 'zh' ? 'zh-TW' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const shortDateFormatter = new Intl.DateTimeFormat(language === 'zh' ? 'zh-TW' : 'en-US', { month: 'short', day: 'numeric' });
+
     if (timelineToUse.length > 0) {
       const apiByDay: Record<string, any[]> = {};
       timelineToUse.forEach(p => {
@@ -480,7 +484,6 @@ export default function AssetInsightsPage() {
         const dateKey = currentD.toISOString().split('T')[0];
         const currentUnix = Math.floor(currentD.getTime() / 1000);
         
-        // 更新當前已知的價格 (Carrying forward)
         if (apiByDay[dateKey]) {
           const lastPointOfDay = apiByDay[dateKey][apiByDay[dateKey].length - 1];
           Object.entries(lastPointOfDay.assets || {}).forEach(([id, price]) => {
@@ -489,15 +492,12 @@ export default function AssetInsightsPage() {
         }
 
         let pointTotalTWD = 0;
-        const categories: Record<string, number> = {};
+        const categoriesTWD: Record<string, number> = {};
         
-        processedAssets.forEach(asset => {
+        const currentT = currentD.getTime();
+        for (const asset of processedAssets) {
           const acqTime = new Date(asset.acquisitionDate).getTime();
-          const endTimeStr = asset.endDate || '9999-12-31';
-          const currentT = currentD.getTime();
-          
-          // 邏輯與總資產一致：今天 > 結束日期 則不計入
-          if (currentT < acqTime || dateKey > endTimeStr) return; 
+          if (currentT < acqTime || (asset.endDate && dateKey > asset.endDate)) continue;
           
           let valInTWD = 0;
           if (asset.symbol && asset.symbol.trim() !== '') {
@@ -508,24 +508,28 @@ export default function AssetInsightsPage() {
               valInTWD = (asset.amount || 0) * priceAtT * (rateTWD / apiCurrencyRate);
             }
           } else {
-            // 現金資產
             const assetCurrencyRate = marketData.rates?.[asset.currency] || 1;
             valInTWD = (asset.amount || 0) * (rateTWD / assetCurrencyRate);
           }
           
           if (valInTWD > 0) {
             pointTotalTWD += valInTWD;
-            categories[asset.category] = (categories[asset.category] || 0) + valInTWD;
+            categoriesTWD[asset.category] = (categoriesTWD[asset.category] || 0) + valInTWD;
           }
-        });
+        }
 
         if (pointTotalTWD > 0) {
+          const categoryEntries = {};
+          for (const [c, v] of Object.entries(categoriesTWD)) {
+            (categoryEntries as any)[c] = v * displayScale;
+          }
+
           dayAggregator[dateKey] = { 
             timestamp: currentUnix, 
-            displayDate: currentD.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }),
-            shortDate: currentD.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
-            totalValue: pointTotalTWD * (displayRate / rateTWD),
-            ...Object.fromEntries(Object.entries(categories).map(([c, v]) => [c, v * (displayRate / rateTWD)]))
+            displayDate: dateFormatter.format(currentD),
+            shortDate: shortDateFormatter.format(currentD),
+            totalValue: pointTotalTWD * displayScale,
+            ...categoryEntries
           };
         }
         currentD.setDate(currentD.getDate() + 1);
@@ -538,8 +542,8 @@ export default function AssetInsightsPage() {
       activeAssets: processedAssets.filter(a => !a.isClosed), 
       closedAssets: processedAssets.filter(a => a.isClosed), 
       totalTWD, 
-      totalDisplay: totalTWD * (displayRate / rateTWD), 
-      allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ name, value: value * (displayRate / rateTWD) })), 
+      totalDisplay: totalTWD * displayScale, 
+      allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ name, value: value * displayScale })), 
       chartData: historyData 
     };
   }, [assets, marketData, displayCurrency, marketTimeline]);
