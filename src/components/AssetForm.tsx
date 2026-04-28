@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Asset } from '@/app/lib/types';
@@ -129,7 +129,8 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     },
   });
 
-  const symbolValue = form.watch('symbol');
+  const symbolValue = useWatch({ control: form.control, name: 'symbol' }) || '';
+  const categoryValue = useWatch({ control: form.control, name: 'category' }) || 'Stock';
   const showCurrencyField = !symbolValue || symbolValue.trim() === '';
   
   const performSearch = async (val: string) => {
@@ -275,7 +276,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
           </FormItem>
         )} />
 
-        {!(['Savings', 'Bank', 'Custom'].includes(form.watch('category')) || isCustomCategory) && (
+        {!(['Savings', 'Bank', 'Custom'].includes(categoryValue) || isCustomCategory) && (
           <FormField control={form.control} name="symbol" render={({ field }) => (
             <FormItem className="relative">
               <FormLabel className="pro-label text-[10px] opacity-60">{lang.symbol}</FormLabel>
