@@ -275,46 +275,48 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
           </FormItem>
         )} />
 
-        <FormField control={form.control} name="symbol" render={({ field }) => (
-          <FormItem className="relative">
-            <FormLabel className="pro-label text-[10px] opacity-60">{lang.symbol}</FormLabel>
-            <div className="relative">
-              <div className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
-                {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" /> : <Search className="w-3.5 h-3.5 text-slate-400" />}
-              </div>
-              <FormControl>
-                <Input 
-                  placeholder={lang.symbolPlaceholder} 
-                  {...field} 
-                  autoComplete="off"
-                  onChange={(e) => { isManualTyping.current = true; field.onChange(e); }}
-                  onFocus={(e) => { const target = e.currentTarget; setTimeout(() => target.select(), 50); }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      performSearch(field.value);
-                    }
-                  }}
-                  className={cn("bg-slate-50 border-slate-200 h-9 text-[13px] font-bold uppercase focus:border-black rounded-lg pl-9", tickerFound === false && !isCustomCategory && "border-rose-300")} 
-                />
-              </FormControl>
-              {showSuggestions && suggestions.length > 0 && (
-                <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border border-slate-200 rounded-lg shadow-xl max-h-[200px] overflow-auto no-scrollbar">
-                  {suggestions.map((s, idx) => (
-                    <div key={idx} onClick={() => selectSuggestion(s)} className="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0">
-                      <div className="font-black text-xs text-slate-900 leading-tight">{s.name}</div>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-[11px] font-black text-blue-600 uppercase">{s.symbol}</span>
-                        <span className="text-[10px] font-bold text-slate-400">{s.typeDisp}</span>
-                      </div>
-                    </div>
-                  ))}
+        {!(['Savings', 'Bank', 'Custom'].includes(form.watch('category')) || isCustomCategory) && (
+          <FormField control={form.control} name="symbol" render={({ field }) => (
+            <FormItem className="relative">
+              <FormLabel className="pro-label text-[10px] opacity-60">{lang.symbol}</FormLabel>
+              <div className="relative">
+                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+                  {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" /> : <Search className="w-3.5 h-3.5 text-slate-400" />}
                 </div>
-              )}
-            </div>
-            <FormMessage className="text-[10px] font-bold text-rose-500" />
-          </FormItem>
-        )} />
+                <FormControl>
+                  <Input 
+                    placeholder={lang.symbolPlaceholder} 
+                    {...field} 
+                    autoComplete="off"
+                    onChange={(e) => { isManualTyping.current = true; field.onChange(e); }}
+                    onFocus={(e) => { const target = e.currentTarget; setTimeout(() => target.select(), 50); }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        performSearch(field.value);
+                      }
+                    }}
+                    className={cn("bg-slate-50 border-slate-200 h-9 text-[13px] font-bold uppercase focus:border-black rounded-lg pl-9", tickerFound === false && !isCustomCategory && "border-rose-300")} 
+                  />
+                </FormControl>
+                {showSuggestions && suggestions.length > 0 && (
+                  <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border border-slate-200 rounded-lg shadow-xl max-h-[200px] overflow-auto no-scrollbar">
+                    {suggestions.map((s, idx) => (
+                      <div key={idx} onClick={() => selectSuggestion(s)} className="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0">
+                        <div className="font-black text-xs text-slate-900 leading-tight">{s.name}</div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-[11px] font-black text-blue-600 uppercase">{s.symbol}</span>
+                          <span className="text-[10px] font-bold text-slate-400">{s.typeDisp}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <FormMessage className="text-[10px] font-bold text-rose-500" />
+            </FormItem>
+          )} />
+        )}
 
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem>
