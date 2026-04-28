@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Asset, MarketData, AssetCategory, Currency } from './lib/types';
+
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 import { fetchMarketData } from '@/app/lib/market-api';
 import { AssetForm } from '@/components/AssetForm';
 import { HistoricalTrendChart, AllocationPieChart } from '@/components/PortfolioCharts';
@@ -845,7 +847,7 @@ export default function AssetInsightsPage() {
     return (
       <div className="min-h-screen bg-black text-white relative overflow-hidden flex flex-col items-center justify-center p-6">
         <div className="absolute inset-0 z-0">
-          <img src={`/bg.png?v=${APP_VERSION}`} className="w-full h-full object-cover opacity-40" alt="background" />
+          <img src={`${basePath}/bg.png?v=${APP_VERSION}`} className="w-full h-full object-cover opacity-40" alt="background" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
         </div>
         

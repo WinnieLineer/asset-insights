@@ -2,15 +2,17 @@ import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import {Toaster} from '@/components/ui/toaster';
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 export const metadata: Metadata = {
   title: 'Asset Insights',
   description: '全方位的個人資產管理與 AI 智慧財務決策系統。',
   icons: {
     icon: [
-      { url: '/app-icon.png?v=1.0.5' },
-      { url: '/favicon.ico?v=1.0.5', sizes: 'any' },
+      { url: `${basePath}/app-icon.png?v=1.0.5` },
+      { url: `${basePath}/favicon.ico?v=1.0.5`, sizes: 'any' },
     ],
-    apple: '/app-icon.png?v=1.0.5',
+    apple: `${basePath}/app-icon.png?v=1.0.5`,
   },
 };
 
