@@ -643,6 +643,7 @@ export default function AssetInsightsPage() {
   };
 
   const SortableSection = ({ id }: { id: string }) => {
+    if (id === 'closedList' && assetCalculations.closedAssets.length === 0) return null;
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: !isReordering });
     
     const config = layoutConfigs[id] || { width: 12, height: 400 };
