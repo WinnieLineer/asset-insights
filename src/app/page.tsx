@@ -681,50 +681,55 @@ export default function AssetInsightsPage() {
 
   if (showIntro) {
     return (
-      <div className="min-h-screen bg-black text-white relative overflow-hidden flex flex-col items-center justify-center p-6">
-        <div className="absolute inset-0 z-0">
-          <img src={`${basePath}/bg.png?v=${APP_VERSION}`} className="w-full h-full object-cover opacity-40" alt="background" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
-        </div>
-        
-        <div className="absolute top-8 right-8 z-20 flex bg-white/5 backdrop-blur-xl p-1 rounded-lg border border-white/10 opacity-60 hover:opacity-100 transition-opacity">
-          <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-7 px-3 font-black text-[11px]">繁</Button>
-          <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-7 px-3 font-black text-[11px]">EN</Button>
-        </div>
-
-        <div className="relative z-10 max-w-5xl w-full text-center space-y-12 animate-fade-in">
-          <div className="space-y-4">
-            <h1 className="text-6xl sm:text-8xl font-black tracking-tighter uppercase leading-none italic">{t.title}</h1>
-            <p className="text-lg sm:text-2xl font-medium text-slate-400 max-w-2xl mx-auto leading-relaxed">{t.introDesc}</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-            {[
-              { icon: <RefreshCw />, t: t.f1Title, d: t.f1Desc },
-              { icon: <GripHorizontal />, t: t.f2Title, d: t.f2Desc },
-              { icon: <Brain />, t: t.f3Title, d: t.f3Desc },
-              { icon: <BarChart3 />, t: t.f4Title, d: t.f4Desc },
-              { icon: <CheckCircle2 />, t: t.f5Title, d: t.f5Desc },
-              { icon: <Globe />, t: t.f6Title, d: t.f6Desc }
-            ].map((f, i) => (
-              <div key={i} className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-all group">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center mb-4 text-white group-hover:scale-110 transition-transform">{React.cloneElement(f.icon as any, { className: "w-5 h-5" })}</div>
-                <h3 className="font-black text-sm uppercase tracking-widest mb-2">{f.t}</h3>
-                <p className="text-xs text-slate-500 font-bold leading-relaxed">{f.d}</p>
+      <div className="fixed inset-0 z-[5000] bg-white overflow-y-auto no-scrollbar">
+        <div className="min-h-full w-full bg-slate-50 flex flex-col items-center justify-start sm:justify-center p-4 sm:p-10 relative overflow-hidden font-['Zen_Maru_Gothic']">
+          <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none" />
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-slate-200/30 rounded-full blur-3xl" />
+          
+          <div className="relative z-10 w-full max-w-4xl space-y-12 sm:space-y-20 py-10 sm:py-0">
+            <div className="text-center space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-1000 px-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-slate-100 mb-4">
+                <Sparkles className="w-4 h-4 text-blue-600" />
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-slate-500">Asset Insights v{APP_VERSION}</span>
               </div>
-            ))}
-          </div>
+              <h1 className="text-5xl sm:text-8xl font-black text-slate-900 tracking-tighter leading-[0.95] drop-shadow-sm">
+                NEXT GEN<br/>PORTFOLIO.
+              </h1>
+              <p className="text-sm sm:text-xl font-bold text-slate-500 max-w-2xl mx-auto leading-relaxed">
+                {language === 'zh' ? '全方位的個人資產管理與 AI 智慧財務決策系統。' : 'Next-generation personal asset management and AI-powered financial decision system.'}
+              </p>
+            </div>
 
-          <div className="pt-8">
-            <Button 
-              onClick={() => {
-                localStorage.setItem('has_seen_intro', 'true');
-                setShowIntro(false);
-              }} 
-              className="bg-white text-black hover:bg-slate-200 h-16 px-12 rounded-full font-black text-xl uppercase tracking-widest shadow-[0_20px_60px_rgba(255,255,255,0.2)] active:scale-95 transition-all"
-            >
-              {t.startNow} <ArrowRightLeft className="w-6 h-6 ml-3 rotate-90" />
-            </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 px-2 sm:px-0">
+              {[
+                { icon: <Activity className="w-6 h-6 text-white" />, title: language === 'zh' ? '即時市場數據' : 'Real-time Data', desc: language === 'zh' ? '整合全球市場 API，提供毫秒級價格更新與匯率換算。' : 'Global market API integration with millisecond updates.' },
+                { icon: <Globe className="w-6 h-6 text-white" />, title: language === 'zh' ? '多幣別全球化' : 'Global Support', desc: language === 'zh' ? '支援台幣、美金、人民幣與新幣，掌握全球資產動態。' : 'Support for TWD, USD, CNY, and SGD assets.' },
+                { icon: <Brain className="w-6 h-6 text-white" />, title: language === 'zh' ? 'AI 策略審計' : 'AI Auditing', desc: language === 'zh' ? 'Gemini 2.5 驅動，為您的投資部位提供專業級優化建議。' : 'Professional optimization powered by Gemini 2.5.' }
+              ].map((item, i) => (
+                <div key={i} className="bg-white/80 backdrop-blur-xl p-8 rounded-[32px] border border-white shadow-xl shadow-slate-200/50 space-y-4 hover:-translate-y-2 transition-all duration-500 group animate-in fade-in slide-in-from-bottom-10" style={{ animationDelay: `${i * 200 + 400}ms` }}>
+                  <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">{item.icon}</div>
+                  <h3 className="text-lg font-black text-slate-900">{item.title}</h3>
+                  <p className="text-xs font-bold text-slate-400 leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-center pt-8 sm:pt-10">
+              <Button 
+                onClick={() => { setShowIntro(false); localStorage.setItem('has_seen_intro', 'true'); }}
+                className="group relative h-20 sm:h-24 px-12 sm:px-20 bg-slate-900 hover:bg-black text-white rounded-full transition-all duration-500 hover:scale-105 active:scale-95 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-10"
+                style={{ animationDelay: '1000ms' }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex items-center gap-6">
+                  <span className="text-xl sm:text-2xl font-black tracking-[0.2em] uppercase">
+                    {language === 'zh' ? '即刻開啟 ASSET INSIGHTS' : 'LAUNCH EXPERIENCE'}
+                  </span>
+                  <ArrowRightLeft className="w-6 h-6 sm:w-8 sm:h-8 group-hover:translate-x-2 transition-transform" />
+                </div>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -733,40 +738,55 @@ export default function AssetInsightsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/30 text-black pb-32 overflow-x-hidden">
-      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[2000] bg-white/95 backdrop-blur-3xl shadow-sm h-auto flex flex-col justify-center min-h-[56px]">
-        <div className="max-w-[1900px] mx-auto w-full px-3 sm:px-10 py-2 sm:py-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6">
-            <div className="flex items-center justify-between sm:justify-start gap-4 overflow-hidden w-full sm:w-auto">
-              <div className="flex items-center gap-2 shrink-0"><div className="w-6 h-6 sm:w-7 sm:h-7 bg-black rounded-lg flex items-center justify-center shrink-0 shadow-md"><Activity className="w-3.5 h-3.5 sm:w-4 h-4 text-white" /></div><h1 className="text-[12px] sm:text-[14px] font-black tracking-tighter uppercase leading-tight whitespace-nowrap">{t.title}</h1></div>
-              <div className="hidden md:flex items-center gap-4 overflow-hidden border-l border-slate-100 pl-6 h-6"><div className="flex items-center gap-6 overflow-x-auto no-scrollbar scroll-smooth">{Object.entries(marketData.rates || {}).map(([cur, rate]) => { const baseRate = marketData.rates?.[displayCurrency] || 1; const relativeRate = (rate as number) / baseRate; return (<div key={cur} className="flex items-center gap-1.5 whitespace-nowrap bg-slate-50 px-2 py-0.5 rounded-md"><span className="text-[10px] font-black text-slate-500">{cur}</span><span className="text-[11px] font-black text-emerald-600">{relativeRate.toFixed(3)}</span></div>); })}</div></div>
+      <header className="fixed top-0 left-0 right-0 z-[2000] bg-white/80 backdrop-blur-xl border-b border-slate-100 h-16 sm:h-20 flex items-center transition-all duration-300 shadow-sm">
+        <div className="max-w-[1900px] w-full mx-auto px-4 sm:px-10">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 sm:p-2 bg-black rounded-lg sm:rounded-xl shadow-lg rotate-[-5deg] hover:rotate-0 transition-transform shrink-0">
+                <Activity className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-black text-sm sm:text-xl tracking-tighter leading-none">ASSET INSIGHTS</span>
+                <span className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-0.5 hidden xs:block">Portfolio Engine</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 w-full sm:w-auto border-t sm:border-t-0 border-slate-50 pt-2 sm:pt-0">
-              <div className="flex items-center gap-2 shrink-0">
+
+            <div className="flex items-center gap-1.5 sm:gap-3">
+              <div className="flex items-center gap-1.5 sm:gap-3">
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  onClick={() => setShowIntro(true)}
-                  className="h-6 sm:h-7 w-6 sm:w-7 rounded-md hover:bg-slate-100 text-slate-400 hover:text-black transition-colors"
+                  onClick={() => { localStorage.removeItem('has_seen_intro'); setShowIntro(true); }}
+                  className="h-7 w-7 sm:h-8 sm:w-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-black transition-colors hidden xs:flex"
                 >
-                  <Info className="w-3.5 h-3.5" />
+                  <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </Button>
                 <Button 
                   variant={isReordering ? "default" : "outline"} 
                   size="sm" 
                   onClick={() => setIsReordering(!isReordering)}
-                  className={cn("h-6 sm:h-7 px-2 sm:px-3 font-black text-[10px] sm:text-[11px] uppercase gap-1.5 transition-all", isReordering && "bg-black text-white ring-4 ring-black/10")}
+                  className={cn(
+                    "h-8 sm:h-10 px-3 sm:px-5 font-black text-[10px] sm:text-[12px] uppercase gap-2 transition-all rounded-full", 
+                    isReordering ? "bg-black text-white ring-4 ring-black/10 shadow-lg" : "hover:border-black"
+                  )}
                 >
-                  <GripHorizontal className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{isReordering ? 'EXIT LAYOUT' : 'LAYOUT'}</span>
+                  <GripHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden md:inline">{isReordering ? 'EXIT LAYOUT' : 'LAYOUT'}</span>
                 </Button>
-                <div className="flex bg-slate-100 p-0.5 rounded-md">
-                  <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[11px]">繁</Button>
-                  <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[11px]">EN</Button>
+
+                <div className="flex bg-slate-100 p-1 rounded-full items-center">
+                  <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-6 sm:h-8 px-2.5 sm:px-4 font-black text-[10px] sm:text-[11px] rounded-full transition-all">繁</Button>
+                  <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-6 sm:h-8 px-2.5 sm:px-4 font-black text-[10px] sm:text-[11px] rounded-full transition-all">EN</Button>
                 </div>
+
                 <Select value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
-                  <SelectTrigger className="h-6 sm:h-7 w-16 sm:w-20 bg-slate-100 border-none font-black text-[10px] sm:text-[11px] rounded-full hover:bg-slate-200 transition-colors focus:ring-0"><SelectValue /></SelectTrigger>
-                  <SelectContent align="end" className="min-w-[80px] font-black text-[11px] rounded-xl border-slate-100 shadow-2xl">
-                    {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<SelectItem key={cur} value={cur} className="rounded-md focus:bg-slate-100 cursor-pointer">{cur}</SelectItem>))}
+                  <SelectTrigger className="h-8 sm:h-10 w-16 sm:w-24 bg-slate-100 border-none font-black text-[11px] sm:text-[13px] rounded-full hover:bg-slate-200 transition-colors focus:ring-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent align="end" className="min-w-[100px] font-black text-[12px] rounded-2xl border-slate-100 shadow-2xl p-1">
+                    {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (
+                      <SelectItem key={cur} value={cur} className="rounded-xl focus:bg-slate-100 cursor-pointer py-2 px-3">{cur}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
