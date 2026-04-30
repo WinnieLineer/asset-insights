@@ -307,6 +307,9 @@ export default function AssetInsightsPage() {
 
   useEffect(() => {
     setMounted(true);
+    if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
     const handleResize = () => setIsDesktop(window.innerWidth >= 1280);
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -914,13 +917,13 @@ export default function AssetInsightsPage() {
           >
             <div className="flex items-center gap-1 border-b border-white/10 pb-1 mb-1">
               <span className="text-[9px] font-black text-white/40 w-3 text-center">W</span>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'dec')}><Minimize2 className="w-3 h-3" /></Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'x', 'inc')}><Maximize2 className="w-3 h-3" /></Button>
+              <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'x', 'dec'); }}><Minimize2 className="w-3 h-3" /></button>
+              <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'x', 'inc'); }}><Maximize2 className="w-3 h-3" /></button>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-[9px] font-black text-white/40 w-3 text-center">H</span>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'dec')}><ChevronUp className="w-3 h-3" /></Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => resizeSection(id, 'y', 'inc')}><ChevronDown className="w-3.5 h-3.5" /></Button>
+              <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'y', 'dec'); }}><Minimize2 className="w-3 h-3" /></button>
+              <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'y', 'inc'); }}><Maximize2 className="w-3 h-3" /></button>
             </div>
           </div>
         )}
@@ -984,7 +987,7 @@ export default function AssetInsightsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/30 text-black pb-32 overflow-x-hidden">
-      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[120] bg-white/95 backdrop-blur-3xl shadow-sm h-auto flex flex-col justify-center min-h-[56px]">
+      <header className="fixed top-0 left-0 right-0 border-b border-slate-100 z-[2000] bg-white/95 backdrop-blur-3xl shadow-sm h-auto flex flex-col justify-center min-h-[56px]">
         <div className="max-w-[1900px] mx-auto w-full px-3 sm:px-10 py-2 sm:py-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6">
             <div className="flex items-center justify-between sm:justify-start gap-4 overflow-hidden w-full sm:w-auto">
