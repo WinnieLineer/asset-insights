@@ -239,6 +239,11 @@ const formatNumber = (num: any) => {
   return parseFloat(val.toFixed(5)).toString();
 };
 
+const SortIcon = ({ config, columnKey }: { config: SortConfig, columnKey: string }) => {
+  if (config.key !== columnKey || !config.direction) return <ArrowUpDown className="w-3 h-3 ml-2 opacity-20" />;
+  return config.direction === 'asc' ? <ArrowUp className="w-3 h-3 ml-2 text-black" /> : <ArrowDown className="w-3 h-3 ml-2 text-black" />;
+};
+
 export default function AssetInsightsPage() {
   const { toast } = useToast();
   const [mounted, setMounted] = useState(false);
@@ -610,11 +615,6 @@ export default function AssetInsightsPage() {
     setter({ key, direction });
   };
 
-  const SortIcon = ({ config, columnKey }: { config: SortConfig, columnKey: string }) => {
-    if (config.key !== columnKey || !config.direction) return <ArrowUpDown className="w-3 h-3 ml-2 opacity-20" />;
-    return config.direction === 'asc' ? <ArrowUp className="w-3 h-3 ml-2 text-black" /> : <ArrowDown className="w-3 h-3 ml-2 text-black" />;
-  };
-
   const resizeSection = (id: string, axis: 'x' | 'y', direction: 'inc' | 'dec') => {
     setLayoutConfigs(prev => {
       const existing = prev[id] || { width: 12, height: 400 };
@@ -675,260 +675,6 @@ export default function AssetInsightsPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
-  };
-
-  const SortableSection = ({ id }: { id: string }) => {
-    if (id === 'closedList' && assetCalculations.closedAssets.length === 0) return null;
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: !isReordering });
-    
-    const config = layoutConfigs[id] || { width: 12, height: 400 };
-    
-    let currentHeight: any = 'auto';
-    const hasActive = assetCalculations.activeAssets.length > 0;
-    const hasClosed = assetCalculations.closedAssets.length > 0;
-    const hasChartData = assetCalculations.chartData.length > 0;
-    const hasAllocationData = assetCalculations.allocationData.length > 0;
-
-    // Content-driven sections always use auto height
-    if (id === 'list' || id === 'closedList' || id === 'ai' || id === 'addAsset' || id === 'summary' || id === 'controls') {
-      currentHeight = 'auto';
-    }
-    // Chart sections need explicit heights for rendering
-    else if (id === 'historicalTrend') {
-      currentHeight = (!hasChartData) ? 180 : config.height;
-    }
-    else if (id === 'allocation') {
-      currentHeight = (!hasAllocationData) ? 180 : config.height;
-    }
-    else {
-      currentHeight = config.height;
-    }
-
-
-    const commonClass = cn(
-      "relative transition-all duration-500 ease-in-out",
-      isReordering && "z-[900]",
-      config.width === 4 && "xl:col-span-4",
-      config.width === 5 && "xl:col-span-5",
-      config.width === 6 && "xl:col-span-6",
-      config.width === 7 && "xl:col-span-7",
-      config.width === 8 && "xl:col-span-8",
-      config.width === 10 && "xl:col-span-10",
-      config.width === 12 && "xl:col-span-12"
-    );
-    const wrapperStyle = { 
-      minHeight: currentHeight === 'auto' ? 'auto' : `${currentHeight}px`, 
-      height: currentHeight === 'auto' ? 'auto' : undefined,
-      transform: CSS.Translate.toString(transform),
-      transition: isDragging ? 'none' : transition,
-      zIndex: isDragging ? 9999 : (isReordering ? 900 : 1),
-      opacity: isDragging ? 0.4 : 1,
-    };
-
-    let content = null;
-    switch (id) {
-      case 'summary':
-        content = (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full items-stretch">
-            <Card className="md:col-span-8 lg:col-span-9 modern-card p-4 sm:p-6 relative overflow-hidden bg-white flex flex-col justify-center min-h-[140px]">
-              <div className="space-y-2 z-20 relative text-left">
-                <div className="pro-label text-xs sm:text-sm"><Globe className="w-3.5 h-3.5" /> {t.totalValue}</div>
-                <div className="pro-title flex items-center text-2xl sm:text-4xl">
-                  <span className="text-slate-200 font-medium text-[0.6em] mr-2">{CURRENCY_SYMBOLS[displayCurrency]}</span>
-                  <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                  {loading && <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-slate-200 ml-3" />}
-                </div>
-              </div>
-              <div className="absolute bottom-4 right-4 opacity-5 pointer-events-none"><Wallet className="w-12 h-12 sm:w-20 sm:h-20 text-black" /></div>
-            </Card>
-            <div className="md:col-span-4 lg:col-span-3 flex items-stretch">
-              <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full bg-slate-900 text-white hover:bg-black font-black flex flex-col items-center justify-center gap-1 rounded-2xl shadow-lg transition-all active:scale-95 py-4 px-6">
-                <div className="flex items-center gap-3"><RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} /><span className="text-[13px] tracking-[0.2em] uppercase font-black">{loading ? t.fetching : t.syncMarket}</span></div>
-                {lastUpdated && !loading && (<span className="text-[10px] opacity-60 font-bold uppercase tracking-widest mt-1">{lastUpdated}</span>)}
-              </Button>
-            </div>
-          </div>
-        ); break;
-      case 'controls':
-        content = (
-          <section className="bg-slate-50/80 backdrop-blur-md p-4 border border-slate-100 rounded-2xl flex flex-col xl:flex-row items-center gap-4 shadow-sm h-full overflow-hidden">
-            <div className="w-full xl:w-auto grid grid-cols-2 sm:flex items-center gap-3">
-              <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
-                <Label className="pro-label text-[10px] whitespace-nowrap opacity-60 flex items-center gap-1 shrink-0">{t.baseRange}</Label>
-                <Select value={trackingDays} onValueChange={setTrackingDays}>
-                  <SelectTrigger className="w-full sm:w-28 h-8 bg-white font-black text-[11px] rounded-lg border-slate-200"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="30">{t.days30}</SelectItem>
-                    <SelectItem value="90">{t.days90}</SelectItem>
-                    <SelectItem value="180">{t.days180}</SelectItem>
-                    <SelectItem value="365">{t.days365}</SelectItem>
-                    <SelectItem value="max">{t.maxRange}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
-                <Label className="pro-label text-[10px] whitespace-nowrap opacity-60 flex items-center gap-1 shrink-0">{t.interval}</Label>
-                <Select value={interval} onValueChange={setInterval}>
-                  <SelectTrigger className="w-full sm:w-24 h-8 bg-white font-black text-[11px] rounded-lg border-slate-200"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1d">{t.int1d}</SelectItem>
-                    <SelectItem value="1wk">{t.int1wk}</SelectItem>
-                    <SelectItem value="1mo">{t.int1mo}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex-1 flex items-center gap-2 w-full">
-              <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg"><Download className="w-3 h-3" /> {t.exportData}</Button>
-              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg"><Upload className="w-3 h-3" /> {t.importData}</Button>
-              <input type="file" ref={fileInputRef} onChange={(e) => {
-                 const file = e.target.files?.[0]; if (!file) return;
-                 const reader = new FileReader(); reader.onload = (event) => {
-                   try { const data = JSON.parse(event.target?.result as string); if (data.assets) setAssets(data.assets); toast({ title: t.importSuccess }); } catch (err) { toast({ variant: 'destructive', title: '匯入失敗' }); }
-                 }; reader.readAsText(file);
-              }} accept=".json" className="hidden" />
-            </div>
-          </section>
-        ); break;
-      case 'addAsset':
-        content = (
-          <Card className="modern-card bg-white h-full flex flex-col overflow-hidden">
-            <CardHeader className="px-5 py-3 border-b border-slate-50 shrink-0 flex flex-row items-center justify-between">
-              <h3 className="pro-label text-sm"><Plus className="w-4 h-4" /> {t.addAsset}</h3>
-              <Button form="add-asset-form" type="submit" size="sm" className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[13px] uppercase tracking-widest h-8 px-3">{t.saveChanges}</Button>
-            </CardHeader>
-            <CardContent className="p-5 flex-1 overflow-auto no-scrollbar">
-              <AssetForm language={language} hideSubmit onAdd={(a) => { const newAsset = { ...a, id: crypto.randomUUID() }; setAssets(prev => [...prev, newAsset]); updateAllData([...assets, newAsset]); }} />
-            </CardContent>
-          </Card>
-        ); break;
-      case 'historicalTrend':
-        content = <HistoricalTrendChart language={language} historicalData={assetCalculations.chartData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? currentHeight : 280} activeAssets={assetCalculations.activeAssets} />;
-        break;
-      case 'allocation':
-        content = <AllocationPieChart language={language} allocationData={assetCalculations.allocationData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? currentHeight : 280} />;
-        break;
-      case 'list':
-        content = (
-          <Card className="modern-card bg-white h-full flex flex-col overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-50 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <h3 className="pro-label text-sm"><BarChart3 className="w-5 h-5" /> {t.dashboard}</h3>
-              <div className="flex items-center gap-2"><Filter className="w-3.5 h-3.5 text-slate-400" /><Select value={categoryFilter} onValueChange={setCategoryFilter}><SelectTrigger className="w-[120px] h-8 bg-slate-50 border-slate-200 text-[11px] font-black uppercase rounded-lg"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t.allCategories}</SelectItem>{allCategories.map(cat => (<SelectItem key={cat} value={cat}>{t.categoryNames[cat as keyof typeof t.categoryNames] || cat}</SelectItem>))}</SelectContent></Select></div>
-            </div>
-            <CardContent className="p-0 flex-1 overflow-hidden relative">
-              <Table className="min-w-[1200px] border-separate border-spacing-0" wrapperClassName="h-full overflow-auto no-scrollbar">
-                <TableHeader className="relative z-30">
-                  <TableRow className="hover:bg-transparent border-none">
-                    <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md px-6 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'name')}><div className="flex items-center text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.assetName} <SortIcon config={activeSort} columnKey="name" /></div></TableHead>
-                    <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'category')}><div className="flex items-center text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.category} <SortIcon config={activeSort} columnKey="category" /></div></TableHead>
-                    <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'acquisitionDate')}><div className="flex items-center text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.acqDate} <SortIcon config={activeSort} columnKey="acquisitionDate" /></div></TableHead>
-                    <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'amount')}><div className="flex items-center text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.holdings} <SortIcon config={activeSort} columnKey="amount" /></div></TableHead>
-                    <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30 text-right" onClick={() => requestSort('active', 'priceInDisplay')}><div className="flex items-center justify-end text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.unitPrice} <SortIcon config={activeSort} columnKey="priceInDisplay" /></div></TableHead>
-                    <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30 text-right" onClick={() => requestSort('active', 'valueInDisplay')}><div className="flex items-center justify-end text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.valuation} <SortIcon config={activeSort} columnKey="valueInDisplay" /></div></TableHead>
-                    <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30 text-right" onClick={() => requestSort('active', 'changePercent')}><div className="flex items-center justify-end text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.priceChange} <SortIcon config={activeSort} columnKey="changePercent" /></div></TableHead>
-                    <TableHead className="sticky top-0 bg-white/95 w-[60px] border-b border-slate-100 z-30"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedActiveAssets.map((asset: any) => (
-                    <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50">
-                      <TableCell className="px-6 py-4">
-                        <div className="font-black text-[14px] text-slate-900">{asset.name}</div>
-                        <div className="text-[12px] font-black text-slate-400 uppercase tracking-[0.1em] mt-0.5">{asset.symbol || asset.category}</div>
-                      </TableCell>
-                      <TableCell><Badge variant="outline" className="text-[10px] font-black uppercase px-2 py-0.5">{t.categoryNames[asset.category as keyof typeof t.categoryNames] || asset.category}</Badge></TableCell>
-                      <TableCell><span className="text-[13px] font-black text-slate-500">{asset.acquisitionDate}</span></TableCell>
-                      <TableCell><span className="text-[14px] font-black text-slate-700">{formatNumber(asset.amount)}<span className="text-[10px] text-slate-400 ml-1 font-bold">{(['Stock', 'ETF'].includes(asset.category)) ? t.shares : ''}</span></span></TableCell>
-                      <TableCell className="text-right"><div className="font-black text-[13px] text-slate-700"><span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.priceInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 4 }) || '0'}</div></TableCell>
-                      <TableCell className="text-right"><div className="font-black text-base text-slate-900"><span className="text-slate-200 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.valueInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0'}</div></TableCell>
-                      <TableCell className="text-right"><div className={cn("inline-flex items-center gap-1 font-black text-[13px]", (asset.changePercent || 0) > 0 ? "text-emerald-500" : (asset.changePercent || 0) < 0 ? "text-rose-500" : "text-slate-400")}>{(asset.changePercent || 0) > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : (asset.changePercent || 0) < 0 ? <TrendingDown className="w-3.5 h-3.5" /> : null}{(asset.changePercent || 0).toFixed(2)}%</div></TableCell>
-                      <TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
-                        scrollPosRef.current = window.scrollY;
-                        setEditingAsset(asset); 
-                        setEditName(asset.name); 
-                        if (asset.amountUnit) {
-                          setEditAmount(asset.amountUnit === 'lot' ? asset.amount / 1000 : asset.amount);
-                          setEditAmountUnit(asset.amountUnit);
-                        } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) { 
-                          setEditAmount(asset.amount / 1000); 
-                          setEditAmountUnit('lot'); 
-                        } else { 
-                          setEditAmount(asset.amount); 
-                          setEditAmountUnit('share'); 
-                        } 
-                        setEditDate(asset.acquisitionDate); 
-                        setEditEndDate(asset.endDate || ''); 
-                        setEditCurrency(asset.currency); 
-                      }}><Edit2 className="w-3.5 h-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button></div></TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        ); break;
-      case 'closedList':
-        content = (
-          <Card className="modern-card bg-white h-full flex flex-col overflow-hidden opacity-80">
-            <div className="px-6 py-4 border-b border-slate-50 shrink-0"><h3 className="pro-label text-sm"><History className="w-5 h-5" /> {t.closedPositions}</h3></div>
-            <CardContent className="p-0 flex-1 overflow-auto no-scrollbar relative"><Table className="min-w-[800px] border-separate border-spacing-0"><TableBody>{sortedClosedAssets.map((asset: any) => (<TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50"><TableCell className="px-6 py-4"><div className="font-black text-[13px] text-slate-700 line-through">{asset.name}</div><div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.1em] mt-0.5">{asset.symbol || asset.category}</div></TableCell><TableCell><span className="text-[13px] font-black text-slate-700">{formatNumber(asset.amount)}<span className="text-[10px] text-slate-500 ml-1 font-bold">{(['Stock', 'ETF'].includes(asset.category)) ? t.shares : ''}</span></span></TableCell><TableCell><span className="text-[12px] font-black text-slate-700">{asset.acquisitionDate}</span></TableCell><TableCell className="text-right"><div className="font-black text-[12px] text-slate-700">{asset.endDate}</div></TableCell><TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
-                        scrollPosRef.current = window.scrollY;
-                        setEditingAsset(asset); 
-                        setEditName(asset.name); 
-                        if (asset.amountUnit) {
-                          setEditAmount(asset.amountUnit === 'lot' ? asset.amount / 1000 : asset.amount);
-                          setEditAmountUnit(asset.amountUnit);
-                        } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) { 
-                          setEditAmount(asset.amount / 1000); 
-                          setEditAmountUnit('lot'); 
-                        } else { 
-                          setEditAmount(asset.amount); 
-                          setEditAmountUnit('share'); 
-                        } 
-                        setEditDate(asset.acquisitionDate); 
-                        setEditEndDate(asset.endDate || ''); 
-                        setEditCurrency(asset.currency); 
-                      }}><Edit2 className="w-3.5 h-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button></div></TableCell></TableRow>))}</TableBody></Table></CardContent>
-          </Card>
-        ); break;
-      case 'ai':
-        content = <AITipCard language={language} assets={assetCalculations.activeAssets} totalTWD={assetCalculations.totalTWD} />;
-        break;
-      default: return null;
-    }
-
-    return (
-      <div 
-        ref={setNodeRef} 
-        style={wrapperStyle} 
-        className={cn(commonClass, id === 'summary' && "xl:col-span-12")}
-        {...(isReordering ? { ...attributes, ...listeners } : {})}
-      >
-        {isDragging && <div className="absolute inset-0 bg-slate-100/30 rounded-2xl border-2 border-dashed border-slate-300 z-0" />}
-        <div className={cn("h-full w-full transition-all duration-300", isReordering && "pointer-events-none", isDragging && "scale-[1.05] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] z-[1000] rotate-[1deg]")}>
-          <div className={cn("h-full w-full rounded-2xl overflow-hidden", isReordering && !isDragging && "ring-2 ring-slate-200 shadow-sm")}>
-            {content}
-          </div>
-        </div>
-        {isReordering && (
-          <div 
-            className="absolute bottom-2 right-2 z-[2100] flex flex-col gap-1 bg-black/90 backdrop-blur-xl p-1.5 rounded-xl border border-white/20 shadow-2xl scale-90 sm:scale-100" 
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-1 border-b border-white/10 pb-1 mb-1">
-              <span className="text-[9px] font-black text-white/40 w-3 text-center">W</span>
-              <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'x', 'dec'); }}><Minimize2 className="w-3 h-3" /></button>
-              <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'x', 'inc'); }}><Maximize2 className="w-3 h-3" /></button>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-[9px] font-black text-white/40 w-3 text-center">H</span>
-              <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'y', 'dec'); }}><Minimize2 className="w-3 h-3" /></button>
-              <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'y', 'inc'); }}><Maximize2 className="w-3 h-3" /></button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
   };
 
   if (!mounted) return null;
@@ -1018,8 +764,10 @@ export default function AssetInsightsPage() {
                   <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-5 sm:h-6 px-1.5 sm:px-2 font-black text-[10px] sm:text-[11px]">EN</Button>
                 </div>
                 <Select value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
-                  <SelectTrigger className="h-6 sm:h-7 w-16 sm:w-20 bg-slate-100 border-none font-black text-[10px] sm:text-[11px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>{(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<SelectItem key={cur} value={cur}>{cur}</SelectItem>))}</SelectContent>
+                  <SelectTrigger className="h-6 sm:h-7 w-16 sm:w-20 bg-slate-100 border-none font-black text-[10px] sm:text-[11px] rounded-full hover:bg-slate-200 transition-colors focus:ring-0"><SelectValue /></SelectTrigger>
+                  <SelectContent align="end" className="min-w-[80px] font-black text-[11px] rounded-xl border-slate-100 shadow-2xl">
+                    {(['TWD', 'USD', 'CNY', 'SGD'] as Currency[]).map(cur => (<SelectItem key={cur} value={cur} className="rounded-md focus:bg-slate-100 cursor-pointer">{cur}</SelectItem>))}
+                  </SelectContent>
                 </Select>
               </div>
             </div>
@@ -1030,7 +778,48 @@ export default function AssetInsightsPage() {
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <SortableContext items={sections} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-8 items-start">
-              {sections.map((id) => <SortableSection key={id} id={id} />)}
+              {sections.map((id) => (
+                <SortableSection 
+                  key={id} 
+                  id={id} 
+                  isReordering={isReordering}
+                  layoutConfigs={layoutConfigs}
+                  assetCalculations={assetCalculations}
+                  loading={loading}
+                  displayCurrency={displayCurrency}
+                  t={t}
+                  language={language}
+                  isDesktop={isDesktop}
+                  assets={assets}
+                  setAssets={setAssets}
+                  updateAllData={updateAllData}
+                  setEditingAsset={setEditingAsset}
+                  setEditName={setEditName}
+                  setEditAmount={setEditAmount}
+                  setEditAmountUnit={setEditAmountUnit}
+                  setEditDate={setEditDate}
+                  setEditEndDate={setEditEndDate}
+                  setEditCurrency={setEditCurrency}
+                  scrollPosRef={scrollPosRef}
+                  categoryFilter={categoryFilter}
+                  setCategoryFilter={setCategoryFilter}
+                  allCategories={allCategories}
+                  activeSort={activeSort}
+                  closedSort={closedSort}
+                  requestSort={requestSort}
+                  sortedActiveAssets={sortedActiveAssets}
+                  sortedClosedAssets={sortedClosedAssets}
+                  trackingDays={trackingDays}
+                  setTrackingDays={setTrackingDays}
+                  interval={interval}
+                  setInterval={setInterval}
+                  handleExport={handleExport}
+                  fileInputRef={fileInputRef}
+                  lastUpdated={lastUpdated}
+                  resizeSection={resizeSection}
+                  toast={toast}
+                />
+              ))}
             </div>
           </SortableContext>
         </DndContext>
@@ -1067,3 +856,301 @@ export default function AssetInsightsPage() {
     </div>
   );
 }
+
+interface SortableSectionProps {
+  id: string;
+  isReordering: boolean;
+  layoutConfigs: Record<string, LayoutConfig>;
+  assetCalculations: any;
+  loading: boolean;
+  displayCurrency: Currency;
+  t: any;
+  language: 'zh' | 'en';
+  isDesktop: boolean;
+  assets: Asset[];
+  setAssets: React.Dispatch<React.SetStateAction<Asset[]>>;
+  updateAllData: (assets: Asset[]) => void;
+  setEditingAsset: (asset: Asset | null) => void;
+  setEditName: (val: string) => void;
+  setEditAmount: (val: number) => void;
+  setEditAmountUnit: (val: string) => void;
+  setEditDate: (val: string) => void;
+  setEditEndDate: (val: string) => void;
+  setEditCurrency: (val: Currency) => void;
+  scrollPosRef: React.MutableRefObject<number>;
+  categoryFilter: string;
+  setCategoryFilter: (val: string) => void;
+  allCategories: string[];
+  activeSort: SortConfig;
+  closedSort: SortConfig;
+  requestSort: (list: 'active' | 'closed', key: string) => void;
+  sortedActiveAssets: any[];
+  sortedClosedAssets: any[];
+  trackingDays: string;
+  setTrackingDays: (val: string) => void;
+  interval: string;
+  setInterval: (val: string) => void;
+  handleExport: () => void;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  lastUpdated: string | null;
+  resizeSection: (id: string, axis: 'x' | 'y', direction: 'inc' | 'dec') => void;
+  toast: any;
+}
+
+const SortableSection = ({ 
+  id, isReordering, layoutConfigs, assetCalculations, loading, displayCurrency, t, language, isDesktop,
+  assets, setAssets, updateAllData, setEditingAsset, setEditName, setEditAmount, setEditAmountUnit,
+  setEditDate, setEditEndDate, setEditCurrency, scrollPosRef, categoryFilter, setCategoryFilter,
+  allCategories, activeSort, closedSort, requestSort, sortedActiveAssets, sortedClosedAssets,
+  trackingDays, setTrackingDays, interval, setInterval, handleExport, fileInputRef, lastUpdated, resizeSection, toast
+}: SortableSectionProps) => {
+  if (id === 'closedList' && assetCalculations.closedAssets.length === 0) return null;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: !isReordering });
+  
+  const config = layoutConfigs[id] || { width: 12, height: 400 };
+  
+  let currentHeight: any = 'auto';
+  const hasActive = assetCalculations.activeAssets.length > 0;
+  const hasClosed = assetCalculations.closedAssets.length > 0;
+  const hasChartData = assetCalculations.chartData.length > 0;
+  const hasAllocationData = assetCalculations.allocationData.length > 0;
+
+  if (id === 'list' || id === 'closedList' || id === 'ai' || id === 'addAsset' || id === 'summary' || id === 'controls') {
+    currentHeight = 'auto';
+  }
+  else if (id === 'historicalTrend') {
+    currentHeight = (!hasChartData) ? 180 : config.height;
+  }
+  else if (id === 'allocation') {
+    currentHeight = (!hasAllocationData) ? 180 : config.height;
+  }
+  else {
+    currentHeight = config.height;
+  }
+
+  const commonClass = cn(
+    "relative transition-all duration-500 ease-in-out",
+    isReordering && "z-[900]",
+    config.width === 4 && "xl:col-span-4",
+    config.width === 5 && "xl:col-span-5",
+    config.width === 6 && "xl:col-span-6",
+    config.width === 7 && "xl:col-span-7",
+    config.width === 8 && "xl:col-span-8",
+    config.width === 10 && "xl:col-span-10",
+    config.width === 12 && "xl:col-span-12"
+  );
+  
+  const wrapperStyle = { 
+    minHeight: currentHeight === 'auto' ? 'auto' : `${currentHeight}px`, 
+    height: currentHeight === 'auto' ? 'auto' : undefined,
+    transform: CSS.Translate.toString(transform),
+    transition: isDragging ? 'none' : transition,
+    zIndex: isDragging ? 9999 : (isReordering ? 900 : 1),
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  let content = null;
+  switch (id) {
+    case 'summary':
+      content = (
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full items-stretch">
+          <Card className="md:col-span-8 lg:col-span-9 modern-card p-4 sm:p-6 relative overflow-hidden bg-white flex flex-col justify-center min-h-[140px]">
+            <div className="space-y-2 z-20 relative text-left">
+              <div className="pro-label text-xs sm:text-sm"><Globe className="w-3.5 h-3.5" /> {t.totalValue}</div>
+              <div className="pro-title flex items-center text-2xl sm:text-4xl">
+                <span className="text-slate-200 font-medium text-[0.6em] mr-2">{CURRENCY_SYMBOLS[displayCurrency]}</span>
+                <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                {loading && <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-slate-200 ml-3" />}
+              </div>
+            </div>
+            <div className="absolute bottom-4 right-4 opacity-5 pointer-events-none"><Wallet className="w-12 h-12 sm:w-20 sm:h-20 text-black" /></div>
+          </Card>
+          <div className="md:col-span-4 lg:col-span-3 flex items-stretch">
+            <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full bg-slate-900 text-white hover:bg-black font-black flex flex-col items-center justify-center gap-1 rounded-2xl shadow-lg transition-all active:scale-95 py-4 px-6">
+              <div className="flex items-center gap-3"><RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} /><span className="text-[13px] tracking-[0.2em] uppercase font-black">{loading ? t.fetching : t.syncMarket}</span></div>
+              {lastUpdated && !loading && (<span className="text-[10px] opacity-60 font-bold uppercase tracking-widest mt-1">{lastUpdated}</span>)}
+            </Button>
+          </div>
+        </div>
+      ); break;
+    case 'controls':
+      content = (
+        <section className="bg-slate-50/80 backdrop-blur-md p-4 border border-slate-100 rounded-2xl flex flex-col xl:flex-row items-center gap-4 shadow-sm h-full overflow-hidden">
+          <div className="w-full xl:w-auto grid grid-cols-2 sm:flex items-center gap-3">
+            <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+              <Label className="pro-label text-[10px] whitespace-nowrap opacity-60 flex items-center gap-1 shrink-0">{t.baseRange}</Label>
+              <Select value={trackingDays} onValueChange={setTrackingDays}>
+                <SelectTrigger className="w-full sm:w-28 h-8 bg-white font-black text-[11px] rounded-lg border-slate-200"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">{t.days30}</SelectItem>
+                  <SelectItem value="90">{t.days90}</SelectItem>
+                  <SelectItem value="180">{t.days180}</SelectItem>
+                  <SelectItem value="365">{t.days365}</SelectItem>
+                  <SelectItem value="max">{t.maxRange}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-1.5 flex-1 sm:flex-none">
+              <Label className="pro-label text-[10px] whitespace-nowrap opacity-60 flex items-center gap-1 shrink-0">{t.interval}</Label>
+              <Select value={interval} onValueChange={setInterval}>
+                <SelectTrigger className="w-full sm:w-24 h-8 bg-white font-black text-[11px] rounded-lg border-slate-200"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1d">{t.int1d}</SelectItem>
+                  <SelectItem value="1wk">{t.int1wk}</SelectItem>
+                  <SelectItem value="1mo">{t.int1mo}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex-1 flex items-center gap-2 w-full">
+            <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg"><Download className="w-3 h-3" /> {t.exportData}</Button>
+            <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg"><Upload className="w-3 h-3" /> {t.importData}</Button>
+            <input type="file" ref={fileInputRef} onChange={(e) => {
+               const file = e.target.files?.[0]; if (!file) return;
+               const reader = new FileReader(); reader.onload = (event) => {
+                 try { const data = JSON.parse(event.target?.result as string); if (data.assets) setAssets(data.assets); toast({ title: t.importSuccess }); } catch (err) { toast({ variant: 'destructive', title: '匯入失敗' }); }
+               }; reader.readAsText(file);
+            }} accept=".json" className="hidden" />
+          </div>
+        </section>
+      ); break;
+    case 'addAsset':
+      content = (
+        <Card className="modern-card bg-white h-full flex flex-col overflow-hidden">
+          <CardHeader className="px-5 py-3 border-b border-slate-50 shrink-0 flex flex-row items-center justify-between">
+            <h3 className="pro-label text-sm"><Plus className="w-4 h-4" /> {t.addAsset}</h3>
+            <Button form="add-asset-form" type="submit" size="sm" className="bg-slate-900 hover:bg-black text-white font-black rounded-lg text-[13px] uppercase tracking-widest h-8 px-3">{t.saveChanges}</Button>
+          </CardHeader>
+          <CardContent className="p-5 flex-1 overflow-auto no-scrollbar">
+            <AssetForm language={language} hideSubmit onAdd={(a) => { const newAsset = { ...a, id: crypto.randomUUID() }; setAssets(prev => [...prev, newAsset]); updateAllData([...assets, newAsset]); }} />
+          </CardContent>
+        </Card>
+      ); break;
+    case 'historicalTrend':
+      content = <HistoricalTrendChart language={language} historicalData={assetCalculations.chartData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? currentHeight : 280} activeAssets={assetCalculations.activeAssets} />;
+      break;
+    case 'allocation':
+      content = <AllocationPieChart language={language} allocationData={assetCalculations.allocationData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? currentHeight : 280} />;
+      break;
+    case 'list':
+      content = (
+        <Card className="modern-card bg-white h-full flex flex-col overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-50 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <h3 className="pro-label text-sm"><BarChart3 className="w-5 h-5" /> {t.dashboard}</h3>
+            <div className="flex items-center gap-2"><Filter className="w-3.5 h-3.5 text-slate-400" /><Select value={categoryFilter} onValueChange={setCategoryFilter}><SelectTrigger className="w-[120px] h-8 bg-slate-50 border-slate-200 text-[11px] font-black uppercase rounded-lg"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t.allCategories}</SelectItem>{allCategories.map(cat => (<SelectItem key={cat} value={cat}>{t.categoryNames[cat as keyof typeof t.categoryNames] || cat}</SelectItem>))}</SelectContent></Select></div>
+          </div>
+          <CardContent className="p-0 flex-1 overflow-hidden relative">
+            <Table className="min-w-[1200px] border-separate border-spacing-0" wrapperClassName="h-full overflow-auto no-scrollbar">
+              <TableHeader className="relative z-30">
+                <TableRow className="hover:bg-transparent border-none">
+                  <TableHead className="sticky top-0 bg-white/95 backdrop-blur-md px-6 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'name')}><div className="flex items-center text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.assetName} <SortIcon config={activeSort} columnKey="name" /></div></TableHead>
+                  <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'category')}><div className="flex items-center text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.category} <SortIcon config={activeSort} columnKey="category" /></div></TableHead>
+                  <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'acquisitionDate')}><div className="flex items-center text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.acqDate} <SortIcon config={activeSort} columnKey="acquisitionDate" /></div></TableHead>
+                  <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'amount')}><div className="flex items-center text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.holdings} <SortIcon config={activeSort} columnKey="amount" /></div></TableHead>
+                  <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30 text-right" onClick={() => requestSort('active', 'priceInDisplay')}><div className="flex items-center justify-end text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.unitPrice} <SortIcon config={activeSort} columnKey="priceInDisplay" /></div></TableHead>
+                  <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30 text-right" onClick={() => requestSort('active', 'valueInDisplay')}><div className="flex items-center justify-end text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.valuation} <SortIcon config={activeSort} columnKey="valueInDisplay" /></div></TableHead>
+                  <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30 text-right" onClick={() => requestSort('active', 'changePercent')}><div className="flex items-center justify-end text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.priceChange} <SortIcon config={activeSort} columnKey="changePercent" /></div></TableHead>
+                  <TableHead className="sticky top-0 bg-white/95 w-[60px] border-b border-slate-100 z-30"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedActiveAssets.map((asset: any) => (
+                  <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50">
+                    <TableCell className="px-6 py-4">
+                      <div className="font-black text-[14px] text-slate-900">{asset.name}</div>
+                      <div className="text-[12px] font-black text-slate-400 uppercase tracking-[0.1em] mt-0.5">{asset.symbol || asset.category}</div>
+                    </TableCell>
+                    <TableCell><Badge variant="outline" className="text-[10px] font-black uppercase px-2 py-0.5">{t.categoryNames[asset.category as keyof typeof t.categoryNames] || asset.category}</Badge></TableCell>
+                    <TableCell><span className="text-[13px] font-black text-slate-500">{asset.acquisitionDate}</span></TableCell>
+                    <TableCell><span className="text-[14px] font-black text-slate-700">{formatNumber(asset.amount)}<span className="text-[10px] text-slate-400 ml-1 font-bold">{(['Stock', 'ETF'].includes(asset.category)) ? t.shares : ''}</span></span></TableCell>
+                    <TableCell className="text-right"><div className="font-black text-[13px] text-slate-700"><span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.priceInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 4 }) || '0'}</div></TableCell>
+                    <TableCell className="text-right"><div className="font-black text-base text-slate-900"><span className="text-slate-200 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.valueInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0'}</div></TableCell>
+                    <TableCell className="text-right"><div className={cn("inline-flex items-center gap-1 font-black text-[13px]", (asset.changePercent || 0) > 0 ? "text-emerald-500" : (asset.changePercent || 0) < 0 ? "text-rose-500" : "text-slate-400")}>{(asset.changePercent || 0) > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : (asset.changePercent || 0) < 0 ? <TrendingDown className="w-3.5 h-3.5" /> : null}{(asset.changePercent || 0).toFixed(2)}%</div></TableCell>
+                    <TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
+                      scrollPosRef.current = window.scrollY;
+                      setEditingAsset(asset); 
+                      setEditName(asset.name); 
+                      if (asset.amountUnit) {
+                        setEditAmount(asset.amountUnit === 'lot' ? asset.amount / 1000 : asset.amount);
+                        setEditAmountUnit(asset.amountUnit);
+                      } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) { 
+                        setEditAmount(asset.amount / 1000); 
+                        setEditAmountUnit('lot'); 
+                      } else { 
+                        setEditAmount(asset.amount); 
+                        setEditAmountUnit('share'); 
+                      } 
+                      setEditDate(asset.acquisitionDate); 
+                      setEditEndDate(asset.endDate || ''); 
+                      setEditCurrency(asset.currency); 
+                    }}><Edit2 className="w-3.5 h-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button></div></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      ); break;
+    case 'closedList':
+      content = (
+        <Card className="modern-card bg-white h-full flex flex-col overflow-hidden opacity-80">
+          <div className="px-6 py-4 border-b border-slate-50 shrink-0"><h3 className="pro-label text-sm"><History className="w-5 h-5" /> {t.closedPositions}</h3></div>
+          <CardContent className="p-0 flex-1 overflow-auto no-scrollbar relative"><Table className="min-w-[800px] border-separate border-spacing-0"><TableBody>{sortedClosedAssets.map((asset: any) => (<TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50"><TableCell className="px-6 py-4"><div className="font-black text-[13px] text-slate-700 line-through">{asset.name}</div><div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.1em] mt-0.5">{asset.symbol || asset.category}</div></TableCell><TableCell><span className="text-[13px] font-black text-slate-700">{formatNumber(asset.amount)}<span className="text-[10px] text-slate-500 ml-1 font-bold">{(['Stock', 'ETF'].includes(asset.category)) ? t.shares : ''}</span></span></TableCell><TableCell><span className="text-[12px] font-black text-slate-700">{asset.acquisitionDate}</span></TableCell><TableCell className="text-right"><div className="font-black text-[12px] text-slate-700">{asset.endDate}</div></TableCell><TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
+                      scrollPosRef.current = window.scrollY;
+                      setEditingAsset(asset); 
+                      setEditName(asset.name); 
+                      if (asset.amountUnit) {
+                        setEditAmount(asset.amountUnit === 'lot' ? asset.amount / 1000 : asset.amount);
+                        setEditAmountUnit(asset.amountUnit);
+                      } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) { 
+                        setEditAmount(asset.amount / 1000); 
+                        setEditAmountUnit('lot'); 
+                      } else { 
+                        setEditAmount(asset.amount); 
+                        setEditAmountUnit('share'); 
+                      } 
+                      setEditDate(asset.acquisitionDate); 
+                      setEditEndDate(asset.endDate || ''); 
+                      setEditCurrency(asset.currency); 
+                    }}><Edit2 className="w-3.5 h-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button></div></TableCell></TableRow>))}</TableBody></Table></CardContent>
+        </Card>
+      ); break;
+    case 'ai':
+      content = <AITipCard language={language} assets={assetCalculations.activeAssets} totalTWD={assetCalculations.totalTWD} />;
+      break;
+    default: return null;
+  }
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={wrapperStyle} 
+      className={cn(commonClass, id === 'summary' && "xl:col-span-12")}
+      {...(isReordering ? { ...attributes, ...listeners } : {})}
+    >
+      {isDragging && <div className="absolute inset-0 bg-slate-100/30 rounded-2xl border-2 border-dashed border-slate-300 z-0" />}
+      <div className={cn("h-full w-full transition-all duration-300", isReordering && "pointer-events-none", isDragging && "scale-[1.05] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] z-[1000] rotate-[1deg]")}>
+        <div className={cn("h-full w-full rounded-2xl overflow-hidden", isReordering && !isDragging && "ring-2 ring-slate-200 shadow-sm")}>
+          {content}
+        </div>
+      </div>
+      {isReordering && (
+        <div 
+          className="absolute bottom-2 right-2 z-[2100] flex flex-col gap-1 bg-black/90 backdrop-blur-xl p-1.5 rounded-xl border border-white/20 shadow-2xl scale-90 sm:scale-100" 
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-1 border-b border-white/10 pb-1 mb-1">
+            <span className="text-[9px] font-black text-white/40 w-3 text-center">W</span>
+            <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'x', 'dec'); }}><Minimize2 className="w-3 h-3" /></button>
+            <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'x', 'inc'); }}><Maximize2 className="w-3 h-3" /></button>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[9px] font-black text-white/40 w-3 text-center">H</span>
+            <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'y', 'dec'); }}><Minimize2 className="w-3 h-3" /></button>
+            <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'y', 'inc'); }}><Maximize2 className="w-3 h-3" /></button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
