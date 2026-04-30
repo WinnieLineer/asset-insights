@@ -282,6 +282,20 @@ export default function AssetInsightsPage() {
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollPosRef = useRef<number>(0);
+
+  // Restore scroll position after Radix Dialog's body scroll lock kicks in
+  useEffect(() => {
+    if (editingAsset) {
+      const savedPos = scrollPosRef.current;
+      // Use multiple rAF to ensure we restore after Radix's scroll lock
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.scrollTo(0, savedPos);
+        });
+      });
+    }
+  }, [editingAsset]);
 
   const [marketData, setMarketData] = useState<MarketData>({
     exchangeRate: 32.5,
@@ -395,10 +409,9 @@ export default function AssetInsightsPage() {
     const displayRate = marketData.rates?.[displayCurrency] || 1;
     const todayStr = new Date().toISOString().split('T')[0];
     const lastKnownPrices: Record<string, number> = {};
-    // 預先填入目前的市場價格，確保走勢圖至少能從目前價格開始計算
-    Object.entries(marketData.assetMarketPrices || {}).forEach(([id, info]) => {
-      lastKnownPrices[id] = info.price;
-    });
+    // DO NOT pre-seed with current prices — let timeline data fill in historical prices
+    // as we walk through each day. This ensures historical chart values reflect actual
+    // prices at each point in time, not today's price.
     const dayAggregator: Record<string, any> = {};
     const sortedTimeline = [...marketTimeline].sort((a, b) => a.timestamp - b.timestamp);
 
@@ -485,14 +498,18 @@ export default function AssetInsightsPage() {
         const currentUnix = Math.floor(currentD.getTime() / 1000);
         
         if (apiByDay[dateKey]) {
-          const lastPointOfDay = apiByDay[dateKey][apiByDay[dateKey].length - 1];
-          Object.entries(lastPointOfDay.assets || {}).forEach(([id, price]) => {
-            lastKnownPrices[id] = price as number;
+          // Merge ALL data points for this day — different assets may have
+          // different close timestamps (e.g. 0050.TW vs VTI on different exchanges)
+          apiByDay[dateKey].forEach((point: any) => {
+            Object.entries(point.assets || {}).forEach(([id, price]) => {
+              lastKnownPrices[id] = price as number;
+            });
           });
         }
 
         let pointTotalTWD = 0;
         const categoriesTWD: Record<string, number> = {};
+        const assetDetails: Record<string, { name: string; category: string; symbol: string; value: number }> = {};
         
         const currentT = currentD.getTime();
         for (const asset of processedAssets) {
@@ -515,6 +532,12 @@ export default function AssetInsightsPage() {
           if (valInTWD > 0) {
             pointTotalTWD += valInTWD;
             categoriesTWD[asset.category] = (categoriesTWD[asset.category] || 0) + valInTWD;
+            assetDetails[asset.id] = {
+              name: asset.name,
+              category: asset.category,
+              symbol: asset.symbol || '',
+              value: valInTWD * displayScale
+            };
           }
         }
 
@@ -529,6 +552,7 @@ export default function AssetInsightsPage() {
             displayDate: dateFormatter.format(currentD),
             shortDate: shortDateFormatter.format(currentD),
             totalValue: pointTotalTWD * displayScale,
+            _assetDetails: assetDetails,
             ...categoryEntries
           };
         }
@@ -656,21 +680,26 @@ export default function AssetInsightsPage() {
     
     const config = layoutConfigs[id] || { width: 12, height: 400 };
     
-    let currentHeight: any = config.height;
+    let currentHeight: any = 'auto';
     const hasActive = assetCalculations.activeAssets.length > 0;
     const hasClosed = assetCalculations.closedAssets.length > 0;
     const hasChartData = assetCalculations.chartData.length > 0;
     const hasAllocationData = assetCalculations.allocationData.length > 0;
 
-    if (!hasActive && (id === 'list' || id === 'ai')) currentHeight = 200;
-    else if (id === 'list') currentHeight = Math.max(300, Math.min(config.height, 150 + assetCalculations.activeAssets.length * 60));
-    else if (id === 'ai') currentHeight = 'auto';
-    
-    if (!hasClosed && id === 'closedList') currentHeight = 200;
-    else if (id === 'closedList') currentHeight = Math.max(250, Math.min(config.height, 150 + assetCalculations.closedAssets.length * 60));
-    
-    if (!hasChartData && id === 'historicalTrend') currentHeight = 180;
-    if (!hasAllocationData && id === 'allocation') currentHeight = 180;
+    // Content-driven sections always use auto height
+    if (id === 'list' || id === 'closedList' || id === 'ai' || id === 'addAsset' || id === 'summary' || id === 'controls') {
+      currentHeight = 'auto';
+    }
+    // Chart sections need explicit heights for rendering
+    else if (id === 'historicalTrend') {
+      currentHeight = (!hasChartData) ? 180 : config.height;
+    }
+    else if (id === 'allocation') {
+      currentHeight = (!hasAllocationData) ? 180 : config.height;
+    }
+    else {
+      currentHeight = config.height;
+    }
 
 
     const commonClass = cn(
@@ -686,7 +715,7 @@ export default function AssetInsightsPage() {
     );
     const wrapperStyle = { 
       minHeight: currentHeight === 'auto' ? 'auto' : `${currentHeight}px`, 
-      height: currentHeight === 'auto' ? 'auto' : `${currentHeight}px`,
+      height: currentHeight === 'auto' ? 'auto' : undefined,
       transform: CSS.Translate.toString(transform),
       transition: isDragging ? 'none' : transition,
       zIndex: isDragging ? 9999 : (isReordering ? 900 : 1),
@@ -771,7 +800,7 @@ export default function AssetInsightsPage() {
           </Card>
         ); break;
       case 'historicalTrend':
-        content = <HistoricalTrendChart language={language} historicalData={assetCalculations.chartData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? currentHeight : 280} />;
+        content = <HistoricalTrendChart language={language} historicalData={assetCalculations.chartData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? currentHeight : 280} activeAssets={assetCalculations.activeAssets} />;
         break;
       case 'allocation':
         content = <AllocationPieChart language={language} allocationData={assetCalculations.allocationData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? currentHeight : 280} />;
@@ -811,6 +840,7 @@ export default function AssetInsightsPage() {
                       <TableCell className="text-right"><div className="font-black text-base text-slate-900"><span className="text-slate-200 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.valueInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0'}</div></TableCell>
                       <TableCell className="text-right"><div className={cn("inline-flex items-center gap-1 font-black text-[13px]", (asset.changePercent || 0) > 0 ? "text-emerald-500" : (asset.changePercent || 0) < 0 ? "text-rose-500" : "text-slate-400")}>{(asset.changePercent || 0) > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : (asset.changePercent || 0) < 0 ? <TrendingDown className="w-3.5 h-3.5" /> : null}{(asset.changePercent || 0).toFixed(2)}%</div></TableCell>
                       <TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
+                        scrollPosRef.current = window.scrollY;
                         setEditingAsset(asset); 
                         setEditName(asset.name); 
                         if (asset.amountUnit) {
@@ -838,7 +868,24 @@ export default function AssetInsightsPage() {
         content = (
           <Card className="modern-card bg-white h-full flex flex-col overflow-hidden opacity-80">
             <div className="px-6 py-4 border-b border-slate-50 shrink-0"><h3 className="pro-label text-sm"><History className="w-5 h-5" /> {t.closedPositions}</h3></div>
-            <CardContent className="p-0 flex-1 overflow-auto no-scrollbar relative"><Table className="min-w-[800px] border-separate border-spacing-0"><TableBody>{sortedClosedAssets.map((asset: any) => (<TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50"><TableCell className="px-6 py-4"><div className="font-black text-[13px] text-slate-400 line-through">{asset.name}</div><div className="text-[11px] font-black text-slate-300 uppercase tracking-[0.1em] mt-0.5">{asset.symbol || asset.category}</div></TableCell><TableCell><span className="text-[13px] font-black text-slate-400">{formatNumber(asset.amount)}<span className="text-[10px] text-slate-300 ml-1 font-bold">{(['Stock', 'ETF'].includes(asset.category)) ? t.shares : ''}</span></span></TableCell><TableCell className="text-right pr-6"><div className="font-black text-[12px] text-slate-500">{asset.endDate}</div></TableCell></TableRow>))}</TableBody></Table></CardContent>
+            <CardContent className="p-0 flex-1 overflow-auto no-scrollbar relative"><Table className="min-w-[800px] border-separate border-spacing-0"><TableBody>{sortedClosedAssets.map((asset: any) => (<TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50"><TableCell className="px-6 py-4"><div className="font-black text-[13px] text-slate-700 line-through">{asset.name}</div><div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.1em] mt-0.5">{asset.symbol || asset.category}</div></TableCell><TableCell><span className="text-[13px] font-black text-slate-700">{formatNumber(asset.amount)}<span className="text-[10px] text-slate-500 ml-1 font-bold">{(['Stock', 'ETF'].includes(asset.category)) ? t.shares : ''}</span></span></TableCell><TableCell><span className="text-[12px] font-black text-slate-700">{asset.acquisitionDate}</span></TableCell><TableCell className="text-right"><div className="font-black text-[12px] text-slate-700">{asset.endDate}</div></TableCell><TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
+                        scrollPosRef.current = window.scrollY;
+                        setEditingAsset(asset); 
+                        setEditName(asset.name); 
+                        if (asset.amountUnit) {
+                          setEditAmount(asset.amountUnit === 'lot' ? asset.amount / 1000 : asset.amount);
+                          setEditAmountUnit(asset.amountUnit);
+                        } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) { 
+                          setEditAmount(asset.amount / 1000); 
+                          setEditAmountUnit('lot'); 
+                        } else { 
+                          setEditAmount(asset.amount); 
+                          setEditAmountUnit('share'); 
+                        } 
+                        setEditDate(asset.acquisitionDate); 
+                        setEditEndDate(asset.endDate || ''); 
+                        setEditCurrency(asset.currency); 
+                      }}><Edit2 className="w-3.5 h-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button></div></TableCell></TableRow>))}</TableBody></Table></CardContent>
           </Card>
         ); break;
       case 'ai':
@@ -987,7 +1034,7 @@ export default function AssetInsightsPage() {
       </main>
 
       <Dialog open={!!editingAsset} onOpenChange={(open) => !open && setEditingAsset(null)}>
-        <DialogContent className="max-w-[95vw] sm:max-w-[480px] bg-white rounded-3xl p-6">
+        <DialogContent className="max-w-[95vw] sm:max-w-[480px] bg-white rounded-3xl p-6" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader><DialogTitle className="text-xl font-black uppercase flex items-center gap-3"><Edit2 className="w-5 h-5 text-primary" /> {t.editAsset}</DialogTitle></DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-1"><Label htmlFor="edit-name" className="pro-label text-[10px]">{t.assetName}</Label><Input id="edit-name" value={editName} onFocus={(e) => { const target = e.currentTarget; setTimeout(() => target.select(), 50); }} onChange={(e) => setEditName(e.target.value)} className="h-9 font-black text-sm rounded-lg" /></div>

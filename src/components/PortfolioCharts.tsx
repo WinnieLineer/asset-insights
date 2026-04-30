@@ -9,6 +9,7 @@ import {
 import { AssetCategory, Currency } from '@/app/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { ChevronRight, X } from 'lucide-react';
 
 const getCategoryColor = (cat: string) => {
   const COLORS: Record<string, string> = {
@@ -39,33 +40,41 @@ const t = {
     allocation: 'CURRENT ALLOCATION', 
     trend: 'ASSET EVOLUTION', 
     total: 'TOTAL', 
+    categoryDetail: 'Category Breakdown',
+    noAssets: 'No assets in this category',
+    tapHint: 'Hover chart for historical breakdown',
     categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF', 'Option': 'Option', 'Fund': 'Fund', 'Index': 'Index', 'Future': 'Future', 'Forex': 'Forex' }
   },
   zh: { 
     allocation: '當前資產配置比例', 
     trend: '歷史資產演變走勢', 
     total: '投資組合總計', 
+    categoryDetail: '類別細項明細',
+    noAssets: '此類別無資產',
+    tapHint: '滑動圖表查看歷史細項',
     categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款', 'ETF': 'ETF', 'Option': '選擇權', 'Fund': '基金', 'Index': '指數', 'Future': '期貨', 'Forex': '外匯' }
   }
 };
 
-const CustomTooltip = ({ active, payload, label, symbol, langCategories }: any) => {
+const CustomTooltip = ({ active, payload, label, symbol, langCategories, selectedCategory }: any) => {
   if (active && payload && payload.length) {
     const categories = payload.filter((p: any) => p.dataKey !== 'totalValue' && p.value > 0);
     const totalEntry = payload.find((p: any) => p.dataKey === 'totalValue');
     const pointData = payload[0].payload;
-    // 懸浮卡片日期顯示年份
     const fullDate = pointData.displayDate || label;
 
     return (
       <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-4 shadow-2xl rounded-xl z-[1000] min-w-[200px]">
-        <p className="text-[11px] font-black text-slate-800 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">{fullDate}</p>
+        <p className="text-[11px] font-black text-slate-900 uppercase tracking-widest mb-3 border-b border-slate-100 pb-2">{fullDate}</p>
         <div className="space-y-2">
           {categories.map((entry: any, index: number) => (
-            <div key={index} className="flex items-center justify-between gap-8">
+            <div key={index} className={cn(
+              "flex items-center justify-between gap-8",
+              selectedCategory && selectedCategory !== entry.name && "opacity-30"
+            )}>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.color || entry.fill }} />
-                <span className="text-[11px] font-black text-slate-600 uppercase tracking-tight">
+                <span className="text-[11px] font-black text-slate-700 uppercase tracking-tight">
                   {langCategories[entry.name] || entry.name}
                 </span>
               </div>
@@ -109,25 +118,27 @@ const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, p
   return (
     <g>
       <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#cbd5e1" strokeWidth={1} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 3} y={ey} dy={-2} textAnchor={textAnchor} fill="#64748b" fontSize={isMobile ? 8 : 10} fontWeight={900} className="uppercase tracking-widest">
+      <text x={ex + (cos >= 0 ? 1 : -1) * 3} y={ey} dy={-2} textAnchor={textAnchor} fill="#334155" fontSize={isMobile ? 8 : 10} fontWeight={900} className="uppercase tracking-widest">
         {langCategories[name] || name}
       </text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 3} y={ey} dy={8} textAnchor={textAnchor} fill="#94a3b8" fontSize={isMobile ? 8 : 9} fontWeight={700}>
+      <text x={ex + (cos >= 0 ? 1 : -1) * 3} y={ey} dy={8} textAnchor={textAnchor} fill="#64748b" fontSize={isMobile ? 8 : 9} fontWeight={700}>
         {`${(percent * 100).toFixed(1)}%`}
       </text>
     </g>
   );
 };
 
-export function HistoricalTrendChart({ historicalData, displayCurrency, language, loading, height }: any) {
+export function HistoricalTrendChart({ historicalData, displayCurrency, language, loading, height, activeAssets }: any) {
   const lang = t[language as keyof typeof t] || t.zh;
   const symbol = SYMBOLS[displayCurrency as Currency] || '$';
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [hoveredPointData, setHoveredPointData] = useState<any>(null);
   
   if (loading && historicalData.length === 0) return <Skeleton className="w-full rounded-2xl" style={{ height: height || 250 }} />;
 
   const activeCategoriesInHistory = Array.from(new Set(
-    historicalData.flatMap((d: any) => Object.keys(d).filter(k => !['timestamp', 'displayDate', 'shortDate', 'totalValue'].includes(k) && d[k] > 0))
+    historicalData.flatMap((d: any) => Object.keys(d).filter(k => !['timestamp', 'displayDate', 'shortDate', 'totalValue', '_assetDetails'].includes(k) && d[k] > 0))
   )) as AssetCategory[];
 
   const formatYAxis = (v: number) => {
@@ -136,49 +147,120 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
     return `${symbol}${v}`;
   };
 
+  // Get per-asset breakdown for the selected category at the hovered time point
+  const getDetailAssets = () => {
+    if (!selectedCategory) return [];
+    
+    const pointData = hoveredPointData;
+    if (!pointData || !pointData._assetDetails) {
+      // Fall back to the latest data point
+      const lastPoint = historicalData.length > 0 ? historicalData[historicalData.length - 1] : null;
+      if (!lastPoint || !lastPoint._assetDetails) return [];
+      const details = lastPoint._assetDetails;
+      return Object.entries(details)
+        .filter(([_, d]: any) => d.category === selectedCategory)
+        .map(([id, d]: any) => ({ id, ...d }))
+        .sort((a: any, b: any) => b.value - a.value);
+    }
+    
+    const details = pointData._assetDetails;
+    return Object.entries(details)
+      .filter(([_, d]: any) => d.category === selectedCategory)
+      .map(([id, d]: any) => ({ id, ...d }))
+      .sort((a: any, b: any) => b.value - a.value);
+  };
+
+  const detailAssets = getDetailAssets();
+  const detailTotal = detailAssets.reduce((sum: number, a: any) => sum + (a.value || 0), 0);
+  const detailDate = hoveredPointData?.displayDate || (historicalData.length > 0 ? historicalData[historicalData.length - 1]?.displayDate : '');
+
+  const effectiveHover = selectedCategory || hoveredCategory;
+
   return (
-    <div className="modern-card p-5 sm:p-6 border-slate-100 bg-white relative shadow-sm rounded-2xl h-full flex flex-col overflow-hidden" style={{ minHeight: '250px', height: height || 250 }}>
+    <div className="modern-card p-5 sm:p-6 border-slate-100 bg-white relative shadow-sm rounded-2xl h-full flex flex-col overflow-hidden" style={{ minHeight: '250px' }}>
       <div className="w-full mb-4 flex items-center justify-between shrink-0">
         <h3 className="pro-label text-xs sm:text-sm">{lang.trend}</h3>
+        {selectedCategory && (
+          <button 
+            onClick={() => { setSelectedCategory(null); setHoveredPointData(null); }}
+            className="flex items-center gap-1 text-[10px] font-black text-slate-500 hover:text-black uppercase tracking-widest transition-colors"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        )}
       </div>
-      <div className="w-full flex-1 min-h-[120px] relative">
+      <div className="w-full min-h-[120px] relative" style={{ height: height ? (height - 80) : 170 }}>
         {historicalData.length === 0 ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-[12px] font-black uppercase tracking-widest opacity-40">No Data</div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={historicalData} margin={{ top: 10, right: 10, bottom: 10, left: 20 }}>
+            <ComposedChart 
+              data={historicalData} 
+              margin={{ top: 10, right: 10, bottom: 10, left: 20 }}
+              onMouseMove={(state: any) => {
+                if (state && state.activePayload && state.activePayload.length > 0) {
+                  setHoveredPointData(state.activePayload[0].payload);
+                }
+              }}
+              onMouseLeave={() => {
+                if (!selectedCategory) {
+                  setHoveredPointData(null);
+                }
+              }}
+            >
             <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="shortDate" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 800 }} dy={5} />
+            <XAxis dataKey="shortDate" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 800 }} dy={5} />
             <YAxis 
               axisLine={false} 
               tickLine={false} 
               width={60}
-              tick={{ fontSize: 11, fill: '#cbd5e1', fontWeight: 700 }} 
+              tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 700 }} 
               tickFormatter={formatYAxis} 
             />
-            <Tooltip content={(props) => <CustomTooltip {...props} symbol={symbol} langCategories={lang.categories} />} />
+            <Tooltip 
+              content={(props) => (
+                <CustomTooltip 
+                  {...props} 
+                  symbol={symbol} 
+                  langCategories={lang.categories} 
+                  selectedCategory={selectedCategory}
+                />
+              )} 
+            />
             <Legend 
               verticalAlign="top" 
               align="right" 
               iconType="circle"
               content={({ payload }) => (
-                <div className="flex justify-end gap-3 mb-4">
+                <div className="flex flex-wrap justify-end gap-3 mb-4">
                   {payload?.map((entry: any, index: number) => {
                     if (entry.value === 'totalValue') return null;
+                    const isSelected = selectedCategory === entry.value;
                     return (
                       <div 
                         key={index} 
                         className={cn(
-                          "flex items-center gap-1.5 cursor-pointer transition-opacity",
-                          hoveredCategory && hoveredCategory !== entry.value ? "opacity-30" : "opacity-100"
+                          "flex items-center gap-1.5 cursor-pointer transition-all select-none",
+                          isSelected ? "opacity-100 scale-105" : (effectiveHover && effectiveHover !== entry.value ? "opacity-30" : "opacity-100"),
+                          isSelected && "bg-slate-100 px-2 py-0.5 rounded-md"
                         )}
-                        onMouseEnter={() => setHoveredCategory(entry.value)}
-                        onMouseLeave={() => setHoveredCategory(null)}
+                        onMouseEnter={() => !selectedCategory && setHoveredCategory(entry.value)}
+                        onMouseLeave={() => !selectedCategory && setHoveredCategory(null)}
+                        onClick={() => {
+                          if (selectedCategory === entry.value) {
+                            setSelectedCategory(null);
+                            setHoveredPointData(null);
+                          } else {
+                            setSelectedCategory(entry.value);
+                            setHoveredCategory(null);
+                          }
+                        }}
                       >
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                        <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">
                           {lang.categories[entry.value as keyof typeof lang.categories] || entry.value}
                         </span>
+                        {isSelected && <ChevronRight className="w-3 h-3 text-slate-900" />}
                       </div>
                     );
                   })}
@@ -194,7 +276,17 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                 fill={getCategoryColor(cat)} 
                 barSize={12} 
                 isAnimationActive={false}
-                opacity={hoveredCategory && hoveredCategory !== cat ? 0.3 : 1}
+                opacity={effectiveHover && effectiveHover !== cat ? 0.15 : 1}
+                cursor="pointer"
+                onClick={() => {
+                  if (selectedCategory === cat) {
+                    setSelectedCategory(null);
+                    setHoveredPointData(null);
+                  } else {
+                    setSelectedCategory(cat);
+                    setHoveredCategory(null);
+                  }
+                }}
               />
             ))}
             <Line 
@@ -205,12 +297,55 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
               strokeWidth={2} 
               dot={false} 
               isAnimationActive={false}
-              opacity={hoveredCategory ? 0.1 : 1}
+              opacity={effectiveHover ? 0.1 : 1}
             />
           </ComposedChart>
         </ResponsiveContainer>
         )}
       </div>
+
+      {/* Category detail panel — shows per-asset historical values */}
+      {selectedCategory && detailAssets.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-slate-100 shrink-0 animate-in slide-in-from-bottom-2 duration-200">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getCategoryColor(selectedCategory) }} />
+              <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest">
+                {lang.categories[selectedCategory as keyof typeof lang.categories] || selectedCategory}
+              </span>
+              <span className="text-[11px] font-black text-slate-900 ml-1">
+                {symbol}{detailTotal.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </span>
+            </div>
+            <span className="text-[10px] font-bold text-slate-500">{detailDate}</span>
+          </div>
+          <div className="space-y-1 max-h-[180px] overflow-auto no-scrollbar">
+            {detailAssets.map((asset: any) => {
+              const pct = detailTotal > 0 ? (asset.value / detailTotal * 100) : 0;
+              return (
+                <div key={asset.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="w-1 h-6 rounded-full shrink-0" style={{ backgroundColor: getCategoryColor(selectedCategory), opacity: 0.4 }} />
+                    <div className="min-w-0">
+                      <div className="text-[12px] font-black text-slate-900 truncate">{asset.name}</div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{asset.symbol || '—'}</div>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0 ml-3">
+                    <div className="text-[12px] font-black text-slate-900 tabular-nums">
+                      {symbol}{(asset.value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </div>
+                    <div className="text-[10px] font-bold text-slate-500 tabular-nums">{pct.toFixed(1)}%</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {!hoveredPointData && (
+            <div className="text-center mt-2 text-[10px] font-bold text-slate-400 italic">{lang.tapHint}</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -271,12 +406,12 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
         </div>
         
         <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center max-w-[65%] z-0">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 line-clamp-1">
+          <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-0.5 line-clamp-1">
             {displayLabel}
           </p>
           <div className="flex items-baseline gap-0.5">
              <span className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tighter leading-none">{displayPercent}</span>
-             <span className="text-[12px] font-black text-slate-400">%</span>
+             <span className="text-[12px] font-black text-slate-500">%</span>
           </div>
           <div className="mt-2 text-[10px] font-black text-white bg-slate-900 px-3 py-1 rounded-full shadow-lg border border-white/10 whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
             {symbol}{displayValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
