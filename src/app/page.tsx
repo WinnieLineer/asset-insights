@@ -802,7 +802,7 @@ export default function AssetInsightsPage() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative flex items-center gap-3 sm:gap-6">
-                  <span className="text-sm sm:text-2xl font-black tracking-[0.05em] sm:tracking-[0.2em] uppercase font-['Noto_Sans_TC']">
+                  <span className="text-sm sm:text-2xl font-black tracking-[0.05em] sm:tracking-[0.2em] uppercase font-['Zen_Maru_Gothic','Noto_Sans_TC']">
                     {language === 'zh' ? '即刻開啟 ASSET INSIGHTS' : 'LAUNCH EXPERIENCE'}
                   </span>
                   <ArrowRightLeft className="w-5 h-5 sm:w-8 sm:h-8 group-hover:translate-x-2 transition-transform" />
@@ -1172,10 +1172,10 @@ const SortableSection = ({
         </Card>
       ); break;
     case 'historicalTrend':
-      content = <HistoricalTrendChart language={language} historicalData={assetCalculations.chartData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? currentHeight : 280} activeAssets={assetCalculations.activeAssets} />;
+      content = <HistoricalTrendChart language={language} historicalData={assetCalculations.chartData} displayCurrency={displayCurrency} loading={loading} height={currentHeight === 'auto' ? 280 : currentHeight} activeAssets={assetCalculations.activeAssets} />;
       break;
     case 'allocation':
-      content = <AllocationPieChart language={language} allocationData={assetCalculations.allocationData} displayCurrency={displayCurrency} loading={loading} height={isDesktop ? currentHeight : 280} />;
+      content = <AllocationPieChart language={language} allocationData={assetCalculations.allocationData} displayCurrency={displayCurrency} loading={loading} height={currentHeight === 'auto' ? 280 : currentHeight} />;
       break;
     case 'list':
       content = (
