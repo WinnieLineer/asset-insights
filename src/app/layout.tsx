@@ -35,7 +35,7 @@ export default function RootLayout({
         <meta httpEquiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.googleapis.com https://*.er-api.com https://*.clarity.ms; img-src 'self' data: https:; object-src 'none'; connect-src 'self' https://*.clarity.ms https://*.bing.com https://*.er-api.com https://*.googleapis.com https://api.github.com https://script.google.com https://script.googleusercontent.com;" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=Zen+Maru+Gothic:wght@400;500;700;900&family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&family=Zen+Maru+Gothic:wght@400;500;700;900&family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
         <script
           type="text/javascript"
           dangerouslySetInnerHTML={{

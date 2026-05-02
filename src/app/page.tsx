@@ -797,15 +797,15 @@ export default function AssetInsightsPage() {
             <div className="flex justify-center pt-8 sm:pt-10">
               <Button
                 onClick={() => { setShowIntro(false); localStorage.setItem('has_seen_intro', 'true'); }}
-                className="group relative h-20 sm:h-24 px-12 sm:px-20 bg-slate-900 hover:bg-black text-white rounded-full transition-all duration-500 hover:scale-105 active:scale-95 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-10"
+                className="group relative h-16 sm:h-24 px-8 sm:px-20 bg-slate-900 hover:bg-black text-white rounded-full transition-all duration-500 hover:scale-105 active:scale-95 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-10"
                 style={{ animationDelay: '1000ms' }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative flex items-center gap-6">
-                  <span className="text-xl sm:text-2xl font-black tracking-[0.2em] uppercase">
+                <div className="relative flex items-center gap-3 sm:gap-6">
+                  <span className="text-sm sm:text-2xl font-black tracking-[0.05em] sm:tracking-[0.2em] uppercase font-['Noto_Sans_TC']">
                     {language === 'zh' ? '即刻開啟 ASSET INSIGHTS' : 'LAUNCH EXPERIENCE'}
                   </span>
-                  <ArrowRightLeft className="w-6 h-6 sm:w-8 sm:h-8 group-hover:translate-x-2 transition-transform" />
+                  <ArrowRightLeft className="w-5 h-5 sm:w-8 sm:h-8 group-hover:translate-x-2 transition-transform" />
                 </div>
               </Button>
             </div>
@@ -870,17 +870,17 @@ export default function AssetInsightsPage() {
                 </Select>
 
                 {ghConfig.user ? (
-                  <div className="flex items-center gap-2 pl-2 border-l border-slate-100 ml-1">
-                    <div className="flex flex-col items-end hidden sm:flex">
-                      <span className="text-[10px] font-black leading-none">{ghConfig.user.name || ghConfig.user.login}</span>
-                      <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-tighter">Synced</span>
+                  <div className="flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-2 border-l border-slate-100 ml-0.5 sm:ml-1 shrink-0">
+                    <div className="flex flex-col items-end">
+                      <span className="text-[8px] sm:text-[10px] font-black leading-none truncate max-w-[60px] sm:max-w-none">{ghConfig.user.name || ghConfig.user.login}</span>
+                      <span className="text-[7px] sm:text-[8px] font-bold text-emerald-500 uppercase tracking-tighter">Synced</span>
                     </div>
-                    <img src={ghConfig.user.avatar_url} alt="GitHub" className="w-8 h-8 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform cursor-pointer" title="GitHub Connected" />
+                    <img src={ghConfig.user.avatar_url} alt="GitHub" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform cursor-pointer object-cover shrink-0" title="GitHub Connected" />
                   </div>
                 ) : (
-                  <Button
-                    variant="ghost"
-                    size="icon"
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
                     onClick={handleGitHubConnect}
                     className="h-8 w-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-black transition-colors"
                   >
