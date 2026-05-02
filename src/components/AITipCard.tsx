@@ -72,33 +72,28 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
   const [insight, setInsight] = useState<FinancialTipOutput | null>(null);
   const [loading, setLoading] = useState(false);
   const [userQuestion, setUserQuestion] = useState('');
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const lang = t[language];
 
   const callGeminiAPI = async () => {
-    // 僅分析 activeAssets (由 props 傳入時已過濾)
+    // ... (same as before)
     if (assets.length === 0) return;
-    
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
       toast({ variant: 'destructive', title: 'Configuration Error', description: lang.noApiKey });
       return;
     }
-
     setLoading(true);
-    
     const portfolioSummary = assets.map(a => 
       `${a.name} (${a.symbol || a.category}): ${(a.amount ?? 0).toFixed(5)} units, Unit Price: ${(a.priceInDisplay ?? 0).toFixed(4)}, Total Value: ${(a.valueInDisplay ?? 0).toFixed(0)}`
     ).join('\n');
-
     const promptText = `
       You are a high-end institutional financial analyst. Provide a professional portfolio audit.
-      
       PORTFOLIO DATA:
       ${portfolioSummary}
       Total Portfolio Value (TWD): ${(totalTWD ?? 0).toFixed(0)}
       Current Context: ${marketConditions}
       User Custom Inquiry: "${userQuestion || 'Full portfolio analysis'}"
-      
       OUTPUT FORMAT (JSON ONLY):
       {
         "answer": "Concise executive answer to the inquiry",
@@ -107,20 +102,16 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
         "diversificationScore": 0-100,
         "recommendations": ["Step 1", "Step 2", "Step 3"]
       }
-      
       Language: ${language === 'zh' ? 'Traditional Chinese' : 'English'}.
       IMPORTANT: Return ONLY raw JSON. No markdown code blocks.
     `;
-
     try {
       const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent", {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
       });
-
       if (!response.ok) throw new Error(`API returned ${response.status}`);
-
       const data = await response.json();
       const rawText = data.candidates[0].content.parts[0].text;
       const cleanJson = rawText.replace(/```json|```/gi, '').trim();
@@ -142,42 +133,61 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
 
   return (
     <Card className="modern-card border-slate-200 bg-white overflow-hidden animate-fade-in h-full flex flex-col">
-      <CardHeader className="px-6 sm:px-10 py-6 sm:py-8 border-b border-slate-100 bg-zinc-50/50 shrink-0">
+      <CardHeader 
+        className={cn(
+          "px-6 sm:px-10 py-6 border-b border-slate-100 bg-zinc-50/50 shrink-0 cursor-pointer hover:bg-zinc-50 transition-colors",
+          !isCollapsed && "sm:py-8"
+        )}
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 sm:gap-10">
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-black rounded-lg shrink-0 shadow-lg"><Brain className="w-6 h-6 text-white" /></div>
-              <h3 className="pro-label">{lang.title}</h3>
+              <div className="p-2.5 bg-black rounded-lg shrink-0 shadow-lg"><Brain className="w-5 h-5 text-white" /></div>
+              <div className="flex flex-col">
+                <h3 className="pro-label text-sm sm:text-base">{lang.title}</h3>
+                {isCollapsed && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Click to expand for AI insights</span>}
+              </div>
             </div>
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.desc}</div>
+            {!isCollapsed && <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{lang.desc}</div>}
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 flex-1 max-w-xl w-full">
-            <div className="w-full space-y-2">
-              <label className="pro-label tracking-[0.2em] flex items-center gap-3 ml-1 mb-2 text-slate-500">
-                <MessageSquare className="w-4 h-4" /> {lang.instructionLabel}
-              </label>
-              <Textarea 
-                placeholder={lang.instructionPlaceholder}
-                className="text-sm min-h-[80px] bg-white text-black border border-slate-200 focus:ring-2 focus:ring-black focus:border-black rounded-xl p-4 font-bold placeholder:text-slate-300 transition-all shadow-sm"
-                value={userQuestion}
-                onChange={(e) => setUserQuestion(e.target.value)}
-              />
+          {!isCollapsed && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4 flex-1 max-w-xl w-full" onClick={(e) => e.stopPropagation()}>
+              <div className="w-full space-y-2">
+                <label className="pro-label tracking-[0.2em] flex items-center gap-3 ml-1 mb-2 text-slate-500">
+                  <MessageSquare className="w-4 h-4" /> {lang.instructionLabel}
+                </label>
+                <Textarea 
+                  placeholder={lang.instructionPlaceholder}
+                  className="text-sm min-h-[80px] bg-white text-black border border-slate-200 focus:ring-2 focus:ring-black focus:border-black rounded-xl p-4 font-bold placeholder:text-slate-300 transition-all shadow-sm"
+                  value={userQuestion}
+                  onChange={(e) => setUserQuestion(e.target.value)}
+                />
+              </div>
+              <Button 
+                className="bg-black hover:bg-zinc-800 text-white font-black h-[60px] px-8 rounded-xl shrink-0 w-full sm:w-auto transition-all active:scale-95 shadow-xl border border-zinc-700/50"
+                onClick={callGeminiAPI}
+                disabled={loading || assets.length === 0}
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin mr-3" /> : <Sparkles className="w-5 h-5 mr-3" />}
+                <span className="text-[14px] tracking-[0.3em] uppercase">{loading ? lang.loading : lang.ctaButton}</span>
+              </Button>
             </div>
-            <Button 
-              className="bg-black hover:bg-zinc-800 text-white font-black h-[60px] px-8 rounded-xl shrink-0 w-full sm:w-auto transition-all active:scale-95 shadow-xl border border-zinc-700/50"
-              onClick={callGeminiAPI}
-              disabled={loading || assets.length === 0}
-            >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin mr-3" /> : <Sparkles className="w-5 h-5 mr-3" />}
-              <span className="text-[14px] tracking-[0.3em] uppercase">{loading ? lang.loading : lang.ctaButton}</span>
+          )}
+          
+          <div className="hidden lg:block">
+            <Button variant="ghost" size="icon" className="rounded-full">
+              {isCollapsed ? <Cpu className="w-5 h-5 text-slate-300" /> : <Target className="w-5 h-5 text-black" />}
             </Button>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent className="p-6 sm:p-10 flex-1 overflow-auto no-scrollbar">
-        {insight ? (
+      {!isCollapsed && (
+        <CardContent className="p-6 sm:p-10 flex-1 overflow-auto no-scrollbar">
+          {insight ? (
+            // ... (rest of the content remains the same)
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 animate-fade-in">
             <div className="xl:col-span-5 space-y-10">
               <div className="space-y-5">
@@ -229,6 +239,7 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
           </div>
         )}
       </CardContent>
+    )}
     </Card>
   );
 }
