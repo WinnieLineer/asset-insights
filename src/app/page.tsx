@@ -1083,21 +1083,21 @@ const SortableSection = ({
     case 'summary':
       content = (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full items-stretch">
-          <Card className="md:col-span-8 lg:col-span-9 modern-card p-4 sm:p-6 relative overflow-hidden bg-white flex flex-col justify-center min-h-[140px]">
-            <div className="space-y-2 z-20 relative text-left">
-              <div className="pro-label text-xs sm:text-sm"><Globe className="w-3.5 h-3.5" /> {t.totalValue}</div>
-              <div className="pro-title flex items-center text-2xl sm:text-4xl">
+          <Card className="md:col-span-8 lg:col-span-9 modern-card p-3 sm:p-6 relative overflow-hidden bg-white flex flex-col justify-center min-h-[90px] sm:min-h-[140px]">
+            <div className="space-y-1 sm:space-y-2 z-20 relative text-left">
+              <div className="pro-label text-[10px] sm:text-sm"><Globe className="w-3 sm:w-3.5 h-3 sm:h-3.5" /> {t.totalValue}</div>
+              <div className="pro-title flex items-center text-xl sm:text-4xl">
                 <span className="text-slate-200 font-medium text-[0.6em] mr-2">{CURRENCY_SYMBOLS[displayCurrency]}</span>
                 <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                {loading && <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-slate-200 ml-3" />}
+                {loading && <Loader2 className="w-3 h-3 sm:w-5 sm:h-5 animate-spin text-slate-200 ml-2 sm:ml-3" />}
               </div>
             </div>
-            <div className="absolute bottom-4 right-4 opacity-5 pointer-events-none"><Wallet className="w-12 h-12 sm:w-20 sm:h-20 text-black" /></div>
+            <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 opacity-5 pointer-events-none"><Wallet className="w-10 h-10 sm:w-20 sm:h-20 text-black" /></div>
           </Card>
           <div className="md:col-span-4 lg:col-span-3 flex items-stretch">
-            <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-full bg-slate-900 text-white hover:bg-black font-black flex flex-col items-center justify-center gap-1 rounded-2xl shadow-lg transition-all active:scale-95 py-4 px-6">
-              <div className="flex items-center gap-3"><RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} /><span className="text-[13px] tracking-[0.2em] uppercase font-black">{loading ? t.fetching : t.syncMarket}</span></div>
-              {lastUpdated && !loading && (<span className="text-[10px] opacity-60 font-bold uppercase tracking-widest mt-1">{lastUpdated}</span>)}
+            <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-12 sm:h-full bg-slate-900 text-white hover:bg-black font-black flex flex-row sm:flex-col items-center justify-center gap-2 sm:gap-1 rounded-2xl shadow-lg transition-all active:scale-95 py-2 sm:py-4 px-6">
+              <div className="flex items-center gap-2 sm:gap-3"><RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} /><span className="text-[11px] sm:text-[13px] tracking-[0.1em] sm:tracking-[0.2em] uppercase font-black">{loading ? t.fetching : t.syncMarket}</span></div>
+              {lastUpdated && !loading && (<span className="text-[8px] sm:text-[10px] opacity-60 font-bold uppercase tracking-widest mt-0 sm:mt-1">{lastUpdated}</span>)}
             </Button>
           </div>
         </div>
