@@ -9,12 +9,14 @@ import { AssetForm } from '@/components/AssetForm';
 import { HistoricalTrendChart, AllocationPieChart } from '@/components/PortfolioCharts';
 import { AITipCard } from '@/components/AITipCard';
 import { Button } from '@/components/ui/button';
-import { 
-  Activity, 
-  RefreshCw, 
-  Trash2, 
-  Globe, 
-  Wallet, 
+import { fetchGitHubUser, ensureRepoExists, uploadToGitHub, downloadFromGitHub } from '@/app/lib/github-api';
+import { GitHubConfig, GitHubUser } from './lib/types';
+import {
+  Activity,
+  RefreshCw,
+  Trash2,
+  Globe,
+  Wallet,
   BarChart3,
   Edit2,
   Loader2,
@@ -59,21 +61,21 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
 } from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -93,6 +95,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 const APP_VERSION = '1.0.5';
+const GITHUB_CLIENT_ID = 'Ov23liaxNNxcPIxmCKlD';
+const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbzuRTBnr9hPl5bhuVtAEXqiptEELSMnKS4MC-Y7sKvnuDJAta4oeP1k_dTiyYbCAnsu/exec';
 
 const CURRENCY_SYMBOLS: Record<Currency, string> = {
   TWD: 'NT$',
@@ -252,7 +256,7 @@ export default function AssetInsightsPage() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [displayCurrency, setDisplayCurrency] = useState<Currency>('TWD');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  
+
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editName, setEditName] = useState<string>('');
   const [editAmount, setEditAmount] = useState<number>(0);
@@ -268,13 +272,22 @@ export default function AssetInsightsPage() {
   const [isReordering, setIsReordering] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [isDesktop, setIsDesktop] = useState(false);
-  
+
+  // GitHub Sync State
+  const [ghConfig, setGhConfig] = useState<GitHubConfig>({
+    token: null,
+    user: null,
+    repo: 'asset-insights-backup',
+    path: 'data/backup.json'
+  });
+  const [isSyncing, setIsSyncing] = useState(false);
+
   const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
-  
+
   // 初始佈局順序調整：對齊截圖
   const [sections, setSections] = useState<string[]>(['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'addAsset', 'closedList', 'ai']);
-  
+
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
     summary: { width: 12, height: 160 },
     controls: { width: 12, height: 80 },
@@ -334,10 +347,10 @@ export default function AssetInsightsPage() {
 
     const savedAssets = localStorage.getItem('assets');
     if (savedAssets) setAssets(JSON.parse(savedAssets));
-    
+
     const savedSections = localStorage.getItem('sections');
     if (savedSections) setSections(JSON.parse(savedSections));
-    
+
     const savedConfigs = localStorage.getItem('layoutConfigs');
     if (savedConfigs) setLayoutConfigs(JSON.parse(savedConfigs));
 
@@ -356,8 +369,74 @@ export default function AssetInsightsPage() {
     const savedUpdated = localStorage.getItem('pref_lastUpdated');
     if (savedUpdated) setLastUpdated(savedUpdated);
 
+    // Handle GitHub Auth Callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('gh_token');
+    if (token) {
+      // Clear token from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      handleGitHubLogin(token);
+    } else {
+      const savedToken = localStorage.getItem('gh_token');
+      if (savedToken) handleGitHubLogin(savedToken);
+    }
+
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  const handleGitHubLogin = async (token: string) => {
+    try {
+      const user = await fetchGitHubUser(token);
+      setGhConfig(prev => ({ ...prev, token, user }));
+      localStorage.setItem('gh_token', token);
+      toast({ title: language === 'zh' ? 'GitHub 已連結' : 'GitHub Connected', description: `Welcome, ${user.name || user.login}` });
+    } catch (err) {
+      console.error('GitHub login failed', err);
+      localStorage.removeItem('gh_token');
+    }
+  };
+
+  const syncToGitHub = async () => {
+    if (!ghConfig.token || !ghConfig.user) return;
+    setIsSyncing(true);
+    try {
+      await ensureRepoExists(ghConfig.token, ghConfig.user.login);
+      await uploadToGitHub(ghConfig.token, ghConfig.user.login, { assets, sections, layoutConfigs });
+      const now = new Date().toLocaleString();
+      setGhConfig(prev => ({ ...prev, lastSync: now }));
+      toast({ title: language === 'zh' ? '同步成功' : 'Sync Successful', description: language === 'zh' ? '資料已上傳至 GitHub' : 'Data uploaded to GitHub' });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Sync Failed', description: err.message });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const syncFromGitHub = async () => {
+    if (!ghConfig.token || !ghConfig.user) return;
+    setIsSyncing(true);
+    try {
+      const data = await downloadFromGitHub(ghConfig.token, ghConfig.user.login);
+      if (data) {
+        if (data.assets) setAssets(data.assets);
+        if (data.sections) setSections(data.sections);
+        if (data.layoutConfigs) setLayoutConfigs(data.layoutConfigs);
+        toast({ title: language === 'zh' ? '匯入成功' : 'Import Successful', description: language === 'zh' ? '已從 GitHub 抓取最新資料' : 'Latest data fetched from GitHub' });
+        if (data.assets) updateAllData(data.assets);
+      } else {
+        toast({ title: language === 'zh' ? '找不到備份' : 'No Backup Found' });
+      }
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Import Failed', description: err.message });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleGitHubConnect = () => {
+    const scope = 'repo';
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=${scope}&redirect_uri=${encodeURIComponent(GAS_PROXY_URL)}`;
+  };
 
   useEffect(() => {
     if (mounted) {
@@ -392,7 +471,7 @@ export default function AssetInsightsPage() {
       setMarketData(result.marketData);
       setMarketTimeline(result.historicalTimeline);
       const now = new Date();
-      const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+      const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
       setLastUpdated(timestamp);
       if (typeof window !== 'undefined' && window.innerWidth > 1024) {
         toast({ title: t.dataUpdated });
@@ -442,7 +521,7 @@ export default function AssetInsightsPage() {
         allocationMap[asset.category] = (allocationMap[asset.category] || 0) + valueInTWD;
       }
       const valueInDisplay = valueInTWD * (displayRate / rateTWD);
-      const unitPriceInDisplay = (asset.symbol && asset.symbol.trim() !== '') 
+      const unitPriceInDisplay = (asset.symbol && asset.symbol.trim() !== '')
         ? (nativePrice * (rateTWD / apiCurrencyRate)) * (displayRate / rateTWD)
         : (rateTWD / (marketData.rates?.[asset.currency] || 1)) * (displayRate / rateTWD);
       let changePercent = 0;
@@ -469,7 +548,7 @@ export default function AssetInsightsPage() {
       const todayUnix = Math.floor(Date.now() / 1000);
       const lastPointDate = new Date(lastPoint.timestamp * 1000).toISOString().split('T')[0];
       const todayStrLocal = new Date().toISOString().split('T')[0];
-      
+
       if (lastPointDate !== todayStrLocal) {
         timelineToUse.push({
           timestamp: todayUnix,
@@ -497,14 +576,14 @@ export default function AssetInsightsPage() {
       const allDays = Object.keys(apiByDay).sort();
       const firstDay = allDays[0];
       const lastDay = allDays[allDays.length - 1];
-      
+
       let currentD = new Date(firstDay);
       const endD = new Date(lastDay);
-      
+
       while (currentD <= endD) {
         const dateKey = currentD.toISOString().split('T')[0];
         const currentUnix = Math.floor(currentD.getTime() / 1000);
-        
+
         if (apiByDay[dateKey]) {
           // Merge ALL data points for this day — different assets may have
           // different close timestamps (e.g. 0050.TW vs VTI on different exchanges)
@@ -518,12 +597,12 @@ export default function AssetInsightsPage() {
         let pointTotalTWD = 0;
         const categoriesTWD: Record<string, number> = {};
         const assetDetails: Record<string, { name: string; category: string; symbol: string; value: number }> = {};
-        
+
         const currentT = currentD.getTime();
         for (const asset of processedAssets) {
           const acqTime = new Date(asset.acquisitionDate).getTime();
           if (currentT < acqTime || (asset.endDate && dateKey > asset.endDate)) continue;
-          
+
           let valInTWD = 0;
           if (asset.symbol && asset.symbol.trim() !== '') {
             let priceAtT = lastKnownPrices[asset.id];
@@ -536,7 +615,7 @@ export default function AssetInsightsPage() {
             const assetCurrencyRate = marketData.rates?.[asset.currency] || 1;
             valInTWD = (asset.amount || 0) * (rateTWD / assetCurrencyRate);
           }
-          
+
           if (valInTWD > 0) {
             pointTotalTWD += valInTWD;
             categoriesTWD[asset.category] = (categoriesTWD[asset.category] || 0) + valInTWD;
@@ -555,8 +634,8 @@ export default function AssetInsightsPage() {
             (categoryEntries as any)[c] = v * displayScale;
           }
 
-          dayAggregator[dateKey] = { 
-            timestamp: currentUnix, 
+          dayAggregator[dateKey] = {
+            timestamp: currentUnix,
             displayDate: dateFormatter.format(currentD),
             shortDate: shortDateFormatter.format(currentD),
             totalValue: pointTotalTWD * displayScale,
@@ -569,14 +648,14 @@ export default function AssetInsightsPage() {
     }
 
     const historyData = Object.keys(dayAggregator).sort().map(key => dayAggregator[key]);
-    return { 
-      processedAssets, 
-      activeAssets: processedAssets.filter(a => !a.isClosed), 
-      closedAssets: processedAssets.filter(a => a.isClosed), 
-      totalTWD, 
-      totalDisplay: totalTWD * displayScale, 
-      allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ name, value: value * displayScale })), 
-      chartData: historyData 
+    return {
+      processedAssets,
+      activeAssets: processedAssets.filter(a => !a.isClosed),
+      closedAssets: processedAssets.filter(a => a.isClosed),
+      totalTWD,
+      totalDisplay: totalTWD * displayScale,
+      allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ name, value: value * displayScale })),
+      chartData: historyData
     };
   }, [assets, marketData, displayCurrency, marketTimeline]);
 
@@ -686,7 +765,7 @@ export default function AssetInsightsPage() {
           <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none" />
           <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-100/30 rounded-full blur-3xl" />
           <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-slate-200/30 rounded-full blur-3xl" />
-          
+
           <div className="relative z-10 w-full max-w-4xl space-y-12 sm:space-y-20 py-10 sm:py-0">
             <div className="text-center space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-1000 px-4">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-slate-100 mb-4">
@@ -694,7 +773,7 @@ export default function AssetInsightsPage() {
                 <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-slate-500">Asset Insights v{APP_VERSION}</span>
               </div>
               <h1 className="text-5xl sm:text-8xl font-black text-slate-900 tracking-tighter leading-[0.95] drop-shadow-sm">
-                NEXT GEN<br/>PORTFOLIO.
+                NEXT GEN<br />PORTFOLIO.
               </h1>
               <p className="text-sm sm:text-xl font-bold text-slate-500 max-w-2xl mx-auto leading-relaxed">
                 {language === 'zh' ? '全方位的個人資產管理與 AI 智慧財務決策系統。' : 'Next-generation personal asset management and AI-powered financial decision system.'}
@@ -716,7 +795,7 @@ export default function AssetInsightsPage() {
             </div>
 
             <div className="flex justify-center pt-8 sm:pt-10">
-              <Button 
+              <Button
                 onClick={() => { setShowIntro(false); localStorage.setItem('has_seen_intro', 'true'); }}
                 className="group relative h-20 sm:h-24 px-12 sm:px-20 bg-slate-900 hover:bg-black text-white rounded-full transition-all duration-500 hover:scale-105 active:scale-95 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-10"
                 style={{ animationDelay: '1000ms' }}
@@ -753,20 +832,20 @@ export default function AssetInsightsPage() {
 
             <div className="flex items-center gap-1.5 sm:gap-3">
               <div className="flex items-center gap-1.5 sm:gap-3">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => { localStorage.removeItem('has_seen_intro'); setShowIntro(true); }}
                   className="h-7 w-7 sm:h-8 sm:w-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-black transition-colors hidden xs:flex"
                 >
                   <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </Button>
-                <Button 
-                  variant={isReordering ? "default" : "outline"} 
-                  size="sm" 
+                <Button
+                  variant={isReordering ? "default" : "outline"}
+                  size="sm"
                   onClick={() => setIsReordering(!isReordering)}
                   className={cn(
-                    "h-8 sm:h-10 px-3 sm:px-5 font-black text-[10px] sm:text-[12px] uppercase gap-2 transition-all rounded-full", 
+                    "h-8 sm:h-10 px-3 sm:px-5 font-black text-[10px] sm:text-[12px] uppercase gap-2 transition-all rounded-full",
                     isReordering ? "bg-black text-white ring-4 ring-black/10 shadow-lg" : "hover:border-black"
                   )}
                 >
@@ -789,6 +868,25 @@ export default function AssetInsightsPage() {
                     ))}
                   </SelectContent>
                 </Select>
+
+                {ghConfig.user ? (
+                  <div className="flex items-center gap-2 pl-2 border-l border-slate-100 ml-1">
+                    <div className="flex flex-col items-end hidden sm:flex">
+                      <span className="text-[10px] font-black leading-none">{ghConfig.user.name || ghConfig.user.login}</span>
+                      <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-tighter">Synced</span>
+                    </div>
+                    <img src={ghConfig.user.avatar_url} alt="GitHub" className="w-8 h-8 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform cursor-pointer" title="GitHub Connected" />
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleGitHubConnect}
+                    className="h-8 w-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-black transition-colors"
+                  >
+                    <Globe className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -799,9 +897,9 @@ export default function AssetInsightsPage() {
           <SortableContext items={sections} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-8 items-start">
               {sections.map((id) => (
-                <SortableSection 
-                  key={id} 
-                  id={id} 
+                <SortableSection
+                  key={id}
+                  id={id}
                   isReordering={isReordering}
                   layoutConfigs={layoutConfigs}
                   assetCalculations={assetCalculations}
@@ -838,6 +936,11 @@ export default function AssetInsightsPage() {
                   lastUpdated={lastUpdated}
                   resizeSection={resizeSection}
                   toast={toast}
+                  ghConfig={ghConfig}
+                  isSyncing={isSyncing}
+                  syncToGitHub={syncToGitHub}
+                  syncFromGitHub={syncFromGitHub}
+                  handleGitHubConnect={handleGitHubConnect}
                 />
               ))}
             </div>
@@ -915,20 +1018,26 @@ interface SortableSectionProps {
   lastUpdated: string | null;
   resizeSection: (id: string, axis: 'x' | 'y', direction: 'inc' | 'dec') => void;
   toast: any;
+  ghConfig: GitHubConfig;
+  isSyncing: boolean;
+  syncToGitHub: () => void;
+  syncFromGitHub: () => void;
+  handleGitHubConnect: () => void;
 }
 
-const SortableSection = ({ 
+const SortableSection = ({
   id, isReordering, layoutConfigs, assetCalculations, loading, displayCurrency, t, language, isDesktop,
   assets, setAssets, updateAllData, setEditingAsset, setEditName, setEditAmount, setEditAmountUnit,
   setEditDate, setEditEndDate, setEditCurrency, scrollPosRef, categoryFilter, setCategoryFilter,
   allCategories, activeSort, closedSort, requestSort, sortedActiveAssets, sortedClosedAssets,
-  trackingDays, setTrackingDays, interval, setInterval, handleExport, fileInputRef, lastUpdated, resizeSection, toast
+  trackingDays, setTrackingDays, interval, setInterval, handleExport, fileInputRef, lastUpdated, resizeSection, toast,
+  ghConfig, isSyncing, syncToGitHub, syncFromGitHub, handleGitHubConnect
 }: SortableSectionProps) => {
   if (id === 'closedList' && assetCalculations.closedAssets.length === 0) return null;
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled: !isReordering });
-  
+
   const config = layoutConfigs[id] || { width: 12, height: 400 };
-  
+
   let currentHeight: any = 'auto';
   const hasActive = assetCalculations.activeAssets.length > 0;
   const hasClosed = assetCalculations.closedAssets.length > 0;
@@ -959,9 +1068,9 @@ const SortableSection = ({
     config.width === 10 && "xl:col-span-10",
     config.width === 12 && "xl:col-span-12"
   );
-  
-  const wrapperStyle = { 
-    minHeight: currentHeight === 'auto' ? 'auto' : `${currentHeight}px`, 
+
+  const wrapperStyle = {
+    minHeight: currentHeight === 'auto' ? 'auto' : `${currentHeight}px`,
     height: currentHeight === 'auto' ? 'auto' : undefined,
     transform: CSS.Translate.toString(transform),
     transition: isDragging ? 'none' : transition,
@@ -1026,12 +1135,28 @@ const SortableSection = ({
             <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg"><Download className="w-3 h-3" /> {t.exportData}</Button>
             <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg"><Upload className="w-3 h-3" /> {t.importData}</Button>
             <input type="file" ref={fileInputRef} onChange={(e) => {
-               const file = e.target.files?.[0]; if (!file) return;
-               const reader = new FileReader(); reader.onload = (event) => {
-                 try { const data = JSON.parse(event.target?.result as string); if (data.assets) setAssets(data.assets); toast({ title: t.importSuccess }); } catch (err) { toast({ variant: 'destructive', title: '匯入失敗' }); }
-               }; reader.readAsText(file);
+              const file = e.target.files?.[0]; if (!file) return;
+              const reader = new FileReader(); reader.onload = (event) => {
+                try { const data = JSON.parse(event.target?.result as string); if (data.assets) setAssets(data.assets); toast({ title: t.importSuccess }); } catch (err) { toast({ variant: 'destructive', title: '匯入失敗' }); }
+              }; reader.readAsText(file);
             }} accept=".json" className="hidden" />
           </div>
+          {ghConfig.token ? (
+            <div className="w-full flex items-center gap-2 border-t border-slate-100 pt-3 xl:border-t-0 xl:pt-0 xl:w-auto">
+              <Button variant="default" size="sm" disabled={isSyncing} onClick={syncToGitHub} className="flex-1 xl:flex-none h-8 font-black text-[10px] uppercase gap-1 bg-slate-900 text-white rounded-lg">
+                {isSyncing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />} Sync Cloud
+              </Button>
+              <Button variant="outline" size="sm" disabled={isSyncing} onClick={syncFromGitHub} className="flex-1 xl:flex-none h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg">
+                Pull Cloud
+              </Button>
+            </div>
+          ) : (
+            <div className="w-full xl:w-auto border-t border-slate-100 pt-3 xl:border-t-0 xl:pt-0">
+              <Button variant="outline" size="sm" onClick={handleGitHubConnect} className="w-full h-8 font-black text-[10px] uppercase gap-2 bg-white border-slate-200 rounded-lg">
+                <Globe className="w-3 h-3" /> Connect GitHub
+              </Button>
+            </div>
+          )}
         </section>
       ); break;
     case 'addAsset':
@@ -1086,23 +1211,23 @@ const SortableSection = ({
                     <TableCell className="text-right"><div className="font-black text-[13px] text-slate-700"><span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.priceInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 4 }) || '0'}</div></TableCell>
                     <TableCell className="text-right"><div className="font-black text-base text-slate-900"><span className="text-slate-200 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.valueInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0'}</div></TableCell>
                     <TableCell className="text-right"><div className={cn("inline-flex items-center gap-1 font-black text-[13px]", (asset.changePercent || 0) > 0 ? "text-emerald-500" : (asset.changePercent || 0) < 0 ? "text-rose-500" : "text-slate-400")}>{(asset.changePercent || 0) > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : (asset.changePercent || 0) < 0 ? <TrendingDown className="w-3.5 h-3.5" /> : null}{(asset.changePercent || 0).toFixed(2)}%</div></TableCell>
-                    <TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
+                    <TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                       scrollPosRef.current = window.scrollY;
-                      setEditingAsset(asset); 
-                      setEditName(asset.name); 
+                      setEditingAsset(asset);
+                      setEditName(asset.name);
                       if (asset.amountUnit) {
                         setEditAmount(asset.amountUnit === 'lot' ? asset.amount / 1000 : asset.amount);
                         setEditAmountUnit(asset.amountUnit);
-                      } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) { 
-                        setEditAmount(asset.amount / 1000); 
-                        setEditAmountUnit('lot'); 
-                      } else { 
-                        setEditAmount(asset.amount); 
-                        setEditAmountUnit('share'); 
-                      } 
-                      setEditDate(asset.acquisitionDate); 
-                      setEditEndDate(asset.endDate || ''); 
-                      setEditCurrency(asset.currency); 
+                      } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) {
+                        setEditAmount(asset.amount / 1000);
+                        setEditAmountUnit('lot');
+                      } else {
+                        setEditAmount(asset.amount);
+                        setEditAmountUnit('share');
+                      }
+                      setEditDate(asset.acquisitionDate);
+                      setEditEndDate(asset.endDate || '');
+                      setEditCurrency(asset.currency);
                     }}><Edit2 className="w-3.5 h-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button></div></TableCell>
                   </TableRow>
                 ))}
@@ -1115,24 +1240,24 @@ const SortableSection = ({
       content = (
         <Card className="modern-card bg-white h-full flex flex-col overflow-hidden opacity-80">
           <div className="px-6 py-4 border-b border-slate-50 shrink-0"><h3 className="pro-label text-sm"><History className="w-5 h-5" /> {t.closedPositions}</h3></div>
-          <CardContent className="p-0 flex-1 overflow-auto no-scrollbar relative"><Table className="min-w-[800px] border-separate border-spacing-0"><TableBody>{sortedClosedAssets.map((asset: any) => (<TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50"><TableCell className="px-6 py-4"><div className="font-black text-[13px] text-slate-700 line-through">{asset.name}</div><div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.1em] mt-0.5">{asset.symbol || asset.category}</div></TableCell><TableCell><span className="text-[13px] font-black text-slate-700">{formatNumber(asset.amount)}<span className="text-[10px] text-slate-500 ml-1 font-bold">{(['Stock', 'ETF'].includes(asset.category)) ? t.shares : ''}</span></span></TableCell><TableCell><span className="text-[12px] font-black text-slate-700">{asset.acquisitionDate}</span></TableCell><TableCell className="text-right"><div className="font-black text-[12px] text-slate-700">{asset.endDate}</div></TableCell><TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { 
-                      scrollPosRef.current = window.scrollY;
-                      setEditingAsset(asset); 
-                      setEditName(asset.name); 
-                      if (asset.amountUnit) {
-                        setEditAmount(asset.amountUnit === 'lot' ? asset.amount / 1000 : asset.amount);
-                        setEditAmountUnit(asset.amountUnit);
-                      } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) { 
-                        setEditAmount(asset.amount / 1000); 
-                        setEditAmountUnit('lot'); 
-                      } else { 
-                        setEditAmount(asset.amount); 
-                        setEditAmountUnit('share'); 
-                      } 
-                      setEditDate(asset.acquisitionDate); 
-                      setEditEndDate(asset.endDate || ''); 
-                      setEditCurrency(asset.currency); 
-                    }}><Edit2 className="w-3.5 h-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button></div></TableCell></TableRow>))}</TableBody></Table></CardContent>
+          <CardContent className="p-0 flex-1 overflow-auto no-scrollbar relative"><Table className="min-w-[800px] border-separate border-spacing-0"><TableBody>{sortedClosedAssets.map((asset: any) => (<TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50"><TableCell className="px-6 py-4"><div className="font-black text-[13px] text-slate-700 line-through">{asset.name}</div><div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.1em] mt-0.5">{asset.symbol || asset.category}</div></TableCell><TableCell><span className="text-[13px] font-black text-slate-700">{formatNumber(asset.amount)}<span className="text-[10px] text-slate-500 ml-1 font-bold">{(['Stock', 'ETF'].includes(asset.category)) ? t.shares : ''}</span></span></TableCell><TableCell><span className="text-[12px] font-black text-slate-700">{asset.acquisitionDate}</span></TableCell><TableCell className="text-right"><div className="font-black text-[12px] text-slate-700">{asset.endDate}</div></TableCell><TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+            scrollPosRef.current = window.scrollY;
+            setEditingAsset(asset);
+            setEditName(asset.name);
+            if (asset.amountUnit) {
+              setEditAmount(asset.amountUnit === 'lot' ? asset.amount / 1000 : asset.amount);
+              setEditAmountUnit(asset.amountUnit);
+            } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) {
+              setEditAmount(asset.amount / 1000);
+              setEditAmountUnit('lot');
+            } else {
+              setEditAmount(asset.amount);
+              setEditAmountUnit('share');
+            }
+            setEditDate(asset.acquisitionDate);
+            setEditEndDate(asset.endDate || '');
+            setEditCurrency(asset.currency);
+          }}><Edit2 className="w-3.5 h-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button></div></TableCell></TableRow>))}</TableBody></Table></CardContent>
         </Card>
       ); break;
     case 'ai':
@@ -1142,9 +1267,9 @@ const SortableSection = ({
   }
 
   return (
-    <div 
-      ref={setNodeRef} 
-      style={wrapperStyle} 
+    <div
+      ref={setNodeRef}
+      style={wrapperStyle}
       className={cn(commonClass, id === 'summary' && "xl:col-span-12")}
       {...(isReordering ? { ...attributes, ...listeners } : {})}
     >
@@ -1155,8 +1280,8 @@ const SortableSection = ({
         </div>
       </div>
       {isReordering && (
-        <div 
-          className="absolute bottom-2 right-2 z-[2100] flex flex-col gap-1 bg-black/90 backdrop-blur-xl p-1.5 rounded-xl border border-white/20 shadow-2xl scale-90 sm:scale-100" 
+        <div
+          className="absolute bottom-2 right-2 z-[2100] flex flex-col gap-1 bg-black/90 backdrop-blur-xl p-1.5 rounded-xl border border-white/20 shadow-2xl scale-90 sm:scale-100"
           onPointerDown={(e) => e.stopPropagation()}
         >
           <div className="flex items-center gap-1 border-b border-white/10 pb-1 mb-1">

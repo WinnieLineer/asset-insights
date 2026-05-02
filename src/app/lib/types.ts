@@ -33,3 +33,16 @@ export interface HistoricalPoint {
   totalValue: number;
   [key: string]: any; 
 }
+export interface GitHubUser {
+  login: string;
+  avatar_url: string;
+  name: string;
+}
+
+export interface GitHubConfig {
+  token: string | null;
+  user: GitHubUser | null;
+  repo: string;
+  path: string;
+  lastSync?: string;
+}
