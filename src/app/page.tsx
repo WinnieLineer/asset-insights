@@ -96,7 +96,7 @@ import { Badge } from '@/components/ui/badge';
 
 const APP_VERSION = '1.0.5';
 const GITHUB_CLIENT_ID = 'Ov23liaxNNxcPIxmCKlD';
-const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbzuRTBnr9hPl5bhuVtAEXqiptEELSMnKS4MC-Y7sKvnuDJAta4oeP1k_dTiyYbCAnsu/exec';
+const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbzlJZLp5_hA5eiUDZ2oSj8eWf094drGlHXmE4uYapt1oz3aTScbJm6W-AoJb6hdYhZ5UQ/exec';
 
 const CURRENCY_SYMBOLS: Record<Currency, string> = {
   TWD: 'NT$',
@@ -435,7 +435,8 @@ export default function AssetInsightsPage() {
 
   const handleGitHubConnect = () => {
     const scope = 'repo';
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=${scope}&redirect_uri=${encodeURIComponent(GAS_PROXY_URL)}`;
+    const returnUrl = typeof window !== 'undefined' ? (window.location.origin + window.location.pathname) : '';
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=${scope}&redirect_uri=${encodeURIComponent(GAS_PROXY_URL)}&state=${encodeURIComponent(returnUrl)}`;
   };
 
   useEffect(() => {

@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-TW" className="light scroll-smooth">
+    <html lang="zh-TW" className="light scroll-smooth" suppressHydrationWarning>
       <head>
         <meta httpEquiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' 'unsafe-inline' https://*.googleapis.com https://*.er-api.com https://*.clarity.ms; img-src 'self' data: https:; object-src 'none'; connect-src 'self' https://*.clarity.ms https://*.bing.com https://*.er-api.com https://*.googleapis.com https://api.github.com https://script.google.com https://script.googleusercontent.com;" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -49,7 +49,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="font-sans selection:bg-primary/10">
+      <body className="font-sans selection:bg-primary/10" suppressHydrationWarning>
         {children}
         <Toaster />
       </body>

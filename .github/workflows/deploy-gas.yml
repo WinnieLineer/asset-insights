@@ -1,0 +1,58 @@
+name: Deploy to Google Apps Script
+
+on:
+  push:
+    paths:
+      - 'gas/**'
+      - 'scripts/deploy-gas.cjs'
+      - '.github/workflows/deploy-gas.yml'
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install @google/clasp
+        run: npm install -g @google/clasp
+
+      - name: Configure and Deploy to Google Apps Script
+        continue-on-error: true
+        id: clasp_deploy
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          GAS_SCRIPT_ID: ${{ secrets.GAS_SCRIPT_ID }}
+          GAS_DEPLOYMENT_ID: ${{ secrets.GAS_DEPLOYMENT_ID }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo "ℹ️ CLASPRC_JSON secret is not set in GitHub Secrets. Skipping CI GAS deploy."
+            echo "💡 You can still deploy directly from local machine using: npm run gas:deploy"
+            exit 0
+          fi
+
+          # Decode and save clasprc.json
+          echo "$CLASPRC_JSON" > ~/.clasprc.json
+
+          if [ -n "$GAS_SCRIPT_ID" ]; then
+            if [ -f .clasp.json ]; then
+              node -e '
+                const fs = require("fs");
+                const cfg = JSON.parse(fs.readFileSync(".clasp.json", "utf8"));
+                cfg.scriptId = process.env.GAS_SCRIPT_ID;
+                if (process.env.GAS_DEPLOYMENT_ID) cfg.deploymentId = process.env.GAS_DEPLOYMENT_ID;
+                fs.writeFileSync(".clasp.json", JSON.stringify(cfg, null, 2));
+              '
+            else
+              echo "{\"scriptId\":\"$GAS_SCRIPT_ID\",\"rootDir\":\"./gas\"}" > .clasp.json
+            fi
+          fi
+
+          node scripts/deploy-gas.cjs
