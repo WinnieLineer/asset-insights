@@ -418,15 +418,19 @@ export default function AssetInsightsPage() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleGitHubLogin = async (token: string) => {
+  const handleGitHubLogin = async (rawToken: string) => {
+    const token = rawToken.replace(/^Bearer\s+/i, '').replace(/^token\s+/i, '').trim();
     try {
       const user = await fetchGitHubUser(token);
+      // 驗證是否具備私有 repository 存取/建立權限
+      await ensureRepoExists(token, user.login);
       setGhConfig(prev => ({ ...prev, token, user }));
       localStorage.setItem('gh_token', token);
       toast({ title: language === 'zh' ? 'GitHub 已連結' : 'GitHub Connected', description: `Welcome, ${user.name || user.login}` });
     } catch (err: any) {
       console.error('GitHub login failed', err);
       localStorage.removeItem('gh_token');
+      setGhConfig(prev => ({ ...prev, token: null, user: null }));
       toast({ 
         variant: 'destructive', 
         title: language === 'zh' ? 'GitHub 驗證失敗' : 'GitHub Auth Failed', 
@@ -470,7 +474,16 @@ export default function AssetInsightsPage() {
       setGhConfig(prev => ({ ...prev, lastSync: now }));
       toast({ title: language === 'zh' ? '同步成功' : 'Sync Successful', description: language === 'zh' ? '資料已上傳至 GitHub' : 'Data uploaded to GitHub' });
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Sync Failed', description: err.message });
+      if (err.message && (err.message.includes('401') || err.message.includes('Bad credentials') || err.message.includes('失效') || err.message.includes('Unauthorized'))) {
+        handleGitHubDisconnect();
+        toast({ 
+          variant: 'destructive', 
+          title: language === 'zh' ? 'GitHub 憑證失效' : 'GitHub Token Expired', 
+          description: language === 'zh' ? '您的登入授權已失效，已為您清除舊紀錄。請重新點選登入。' : 'Token expired, please reconnect' 
+        });
+      } else {
+        toast({ variant: 'destructive', title: 'Sync Failed', description: err.message });
+      }
     } finally {
       setIsSyncing(false);
     }
@@ -491,7 +504,16 @@ export default function AssetInsightsPage() {
         toast({ title: language === 'zh' ? '找不到備份' : 'No Backup Found' });
       }
     } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Import Failed', description: err.message });
+      if (err.message && (err.message.includes('401') || err.message.includes('Bad credentials') || err.message.includes('失效') || err.message.includes('Unauthorized'))) {
+        handleGitHubDisconnect();
+        toast({ 
+          variant: 'destructive', 
+          title: language === 'zh' ? 'GitHub 憑證失效' : 'GitHub Token Expired', 
+          description: language === 'zh' ? '您的登入授權已失效，已為您清除舊紀錄。請重新點選登入。' : 'Token expired, please reconnect' 
+        });
+      } else {
+        toast({ variant: 'destructive', title: 'Import Failed', description: err.message });
+      }
     } finally {
       setIsSyncing(false);
     }
