@@ -20,7 +20,37 @@ function getAuthHeaders(token: string, contentType = false): Record<string, stri
   return headers;
 }
 
-async function parseApiError(res: Response, defaultMsg: string): Promise<Error> {
+export class GitHubApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'GitHubApiError';
+    this.status = status;
+  }
+}
+
+function toBase64Utf8(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function fromBase64Utf8(b64: string): string {
+  // GitHub API may wrap base64 with newlines/whitespace
+  const cleanB64 = b64.replace(/\s+/g, '');
+  const binary = atob(cleanB64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+async function parseApiError(res: Response, defaultMsg: string): Promise<GitHubApiError> {
   let detail = '';
   try {
     const data = await res.json();
@@ -30,16 +60,17 @@ async function parseApiError(res: Response, defaultMsg: string): Promise<Error> 
   }
 
   if (res.status === 401) {
-    return new Error(
+    return new GitHubApiError(
       detail === 'Bad credentials'
         ? 'GitHub 授權無效或 Token 已過期 (Bad credentials)。請重新授權登入或貼上有效 Token。'
-        : `GitHub 身份驗證失敗 (401 Unauthorized)${detail ? `: ${detail}` : ''}`
+        : `GitHub 身份驗證失敗 (401 Unauthorized)${detail ? `: ${detail}` : ''}`,
+      401
     );
   }
   if (res.status === 403) {
-    return new Error(`GitHub 存取被拒 (403 Forbidden)${detail ? `: ${detail}` : ''}。請確認 Token 具備 repo 讀寫權限。`);
+    return new GitHubApiError(`GitHub 存取被拒 (403 Forbidden)${detail ? `: ${detail}` : ''}。請確認 Token 具備 repo 讀寫權限。`, 403);
   }
-  return new Error(`${defaultMsg} (${res.status}${detail ? `: ${detail}` : ''})`);
+  return new GitHubApiError(`${defaultMsg} (${res.status}${detail ? `: ${detail}` : ''})`, res.status);
 }
 
 export async function fetchGitHubUser(token: string): Promise<GitHubUser> {
@@ -98,7 +129,7 @@ export async function uploadToGitHub(token: string, owner: string, content: any)
   const sha = await getFileSha(token, owner);
   const body: any = {
     message: `Sync assets backup at ${new Date().toISOString()}`,
-    content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
+    content: toBase64Utf8(JSON.stringify(content, null, 2)),
   };
   if (sha) body.sha = sha;
 
@@ -124,6 +155,10 @@ export async function downloadFromGitHub(token: string, owner: string) {
   }
   const data = await res.json();
   if (!data || !data.content) return null;
-  const decoded = decodeURIComponent(escape(atob(data.content)));
-  return JSON.parse(decoded);
+  try {
+    const decoded = fromBase64Utf8(data.content);
+    return JSON.parse(decoded);
+  } catch (err: any) {
+    throw new Error(`備份檔案解析失敗: ${err.message || '內容非有效 JSON 格式'}`);
+  }
 }

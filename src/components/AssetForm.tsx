@@ -174,10 +174,21 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
 
     const timer = setTimeout(() => {
       performSearch(symbolValue);
-    }, 3000);
+    }, 400);
 
     return () => clearTimeout(timer);
   }, [symbolValue]);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const selectSuggestion = (s: Suggestion) => {
     isManualTyping.current = false;

@@ -30,29 +30,43 @@ function doGet(e) {
     return handleSearch(params.q);
   }
 
-  // 3. 通用 URL 轉發 (若有需要)
-  if (params.url) {
-    try {
-      const resp = UrlFetchApp.fetch(decodeURIComponent(params.url), {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-        muteHttpExceptions: true
-      });
-      return ContentService.createTextOutput(resp.getContentText())
-        .setMimeType(ContentService.MimeType.JSON);
-    } catch (err) {
-      return ContentService.createTextOutput(JSON.stringify({ error: err.toString() }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-  }
-
   return ContentService.createTextOutput(JSON.stringify({
     status: 'online',
     message: 'Asset Insights Unified Proxy is running!',
     endpoints: {
       stock: '?symbols=2330.TW,AAPL&period1=...&period2=...&interval=1d',
+      search: '?q=AAPL',
       oauth: '?code=...'
     }
   })).setMimeType(ContentService.MimeType.JSON);
+}
+
+// 驗證回跳網址白名單，防止 Open Redirect 釣魚攻擊
+function sanitizeRedirectUrl(url) {
+  if (!url) return DEFAULT_REDIRECT_URL;
+  try {
+    const raw = String(url).trim();
+    const allowedPrefixes = [
+      'https://winnielineer.github.io/',
+      'https://winnie-lin.space/',
+      'http://localhost:',
+      'http://127.0.0.1:'
+    ];
+    const isAllowed = allowedPrefixes.some(prefix => raw.startsWith(prefix));
+    return isAllowed ? raw : DEFAULT_REDIRECT_URL;
+  } catch (e) {
+    return DEFAULT_REDIRECT_URL;
+  }
+}
+
+// 簡單 HTML 字元跳脫，防範 XSS 注入
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // 處理 GitHub OAuth Token 交換
@@ -60,7 +74,7 @@ function handleGitHubOAuth(params) {
   const code = params.code;
   const state = params.state;
   const format = params.format;
-  const targetUrl = state ? decodeURIComponent(state) : DEFAULT_REDIRECT_URL;
+  const targetUrl = sanitizeRedirectUrl(state ? decodeURIComponent(state) : DEFAULT_REDIRECT_URL);
 
   try {
     const tokenResponse = UrlFetchApp.fetch('https://github.com/login/oauth/access_token', {
@@ -85,16 +99,19 @@ function handleGitHubOAuth(params) {
     }
 
     if (!accessToken) {
+      const escapedData = escapeHtml(JSON.stringify(tokenData, null, 2));
       return HtmlService.createHtmlOutput(`
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; text-align: center;">
           <h3 style="color: #dc2626;">❌ GitHub 授權交換失敗</h3>
-          <pre style="text-align: left; background: #f1f5f9; padding: 16px; border-radius: 8px; overflow: auto;">${JSON.stringify(tokenData, null, 2)}</pre>
+          <pre style="text-align: left; background: #f1f5f9; padding: 16px; border-radius: 8px; overflow: auto;">${escapedData}</pre>
         </div>
       `).setTitle('GitHub 授權失敗');
     }
 
     const separator = targetUrl.includes('?') ? '&' : '?';
     const finalRedirectUrl = `${targetUrl}${separator}gh_token=${encodeURIComponent(accessToken)}`;
+    const safeJsUrl = JSON.stringify(finalRedirectUrl);
+    const safeHtmlUrl = escapeHtml(finalRedirectUrl);
 
     return HtmlService.createHtmlOutput(`
       <!DOCTYPE html>
@@ -161,7 +178,7 @@ function handleGitHubOAuth(params) {
             // 嘗試跳出 Google Apps Script iframe 轉跳頂層視窗
             try {
               if (window.top && window.top !== window) {
-                window.top.location.href = "${finalRedirectUrl}";
+                window.top.location.href = ${safeJsUrl};
               }
             } catch (e) {
               console.log('Top navigation blocked by sandbox:', e);
@@ -173,7 +190,7 @@ function handleGitHubOAuth(params) {
             <div class="icon">✓</div>
             <h2>GitHub 授權成功</h2>
             <p>已成功取得授權金鑰！請點擊下方按鈕返回 Asset Insights 繼續使用：</p>
-            <a href="${finalRedirectUrl}" target="_top" class="btn">返回 ASSET INSIGHTS</a>
+            <a href="${safeHtmlUrl}" target="_top" class="btn">返回 ASSET INSIGHTS</a>
           </div>
         </body>
       </html>
@@ -183,7 +200,7 @@ function handleGitHubOAuth(params) {
       return ContentService.createTextOutput(JSON.stringify({ error: err.toString() }))
         .setMimeType(ContentService.MimeType.JSON);
     }
-    return HtmlService.createHtmlOutput(`<h3>OAuth 錯誤：</h3><p>${err.toString()}</p>`);
+    return HtmlService.createHtmlOutput(`<h3>OAuth 錯誤：</h3><p>${escapeHtml(err.toString())}</p>`);
   }
 }
 

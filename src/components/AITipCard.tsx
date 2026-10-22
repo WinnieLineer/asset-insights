@@ -1,12 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Brain, ShieldCheck, Target, Loader2, Cpu, MessageSquare, Sparkles } from 'lucide-react';
+import { Brain, ShieldCheck, Target, Loader2, Cpu, MessageSquare, Sparkles, Key, Eye, EyeOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -49,7 +59,17 @@ const t = {
     answer: 'EXECUTIVE SUMMARY',
     instructionLabel: 'CUSTOM ANALYSIS INSTRUCTION',
     instructionPlaceholder: 'ENTER COMMAND (e.g. Audit for volatility)...',
-    noApiKey: 'Gemini API Configuration missing.'
+    noApiKey: 'Gemini API Configuration missing. Please set your API key.',
+    apiKeySettings: 'Gemini API Key',
+    apiKeyModalTitle: 'Gemini API Key Settings',
+    apiKeyModalDesc: 'Configure your Google Gemini API key. Your key is stored securely in your browser localStorage only and is never uploaded to any third-party server.',
+    apiKeyPlaceholder: 'AIzaSy...',
+    saveKey: 'Save Key',
+    clearKey: 'Clear Key',
+    keySaved: 'API Key saved successfully',
+    keyCleared: 'API Key removed',
+    keyConfigured: 'AI Key Configured',
+    keyMissing: 'AI Key Missing'
   },
   zh: {
     title: 'GEMINI 資產部位分析',
@@ -63,7 +83,17 @@ const t = {
     answer: 'AI 專業執行總結',
     instructionLabel: '自定義分析指令',
     instructionPlaceholder: '例如：如果未來半年台幣持續升值，我的部位應如何調整？',
-    noApiKey: '請在環境設定中配置 Gemini API Key。'
+    noApiKey: '尚未設定 Gemini API Key，請點擊金鑰圖示進行設定。',
+    apiKeySettings: 'Gemini API 金鑰',
+    apiKeyModalTitle: 'Gemini API 金鑰設定',
+    apiKeyModalDesc: '請輸入您的 Google Gemini API Key。金鑰僅安全儲存於您本地瀏覽器 (localStorage)，絕不會上傳至第三方伺服器。',
+    apiKeyPlaceholder: '請輸入 AIzaSy... 開頭的 API Key',
+    saveKey: '儲存金鑰',
+    clearKey: '清除金鑰',
+    keySaved: 'API 金鑰已成功儲存',
+    keyCleared: '已清除 API 金鑰',
+    keyConfigured: 'AI 金鑰已設定',
+    keyMissing: '尚未設定金鑰'
   }
 };
 
@@ -73,14 +103,66 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
   const [loading, setLoading] = useState(false);
   const [userQuestion, setUserQuestion] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
+  const [customApiKey, setCustomApiKey] = useState('');
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [showKey, setShowKey] = useState(false);
   const lang = t[language];
 
+  // Load API key state on mount
+  useEffect(() => {
+    try {
+      const savedKey = localStorage.getItem('gemini_api_key');
+      const envKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      if (savedKey) {
+        setCustomApiKey(savedKey);
+        setHasApiKey(true);
+      } else if (envKey) {
+        setHasApiKey(true);
+      }
+    } catch (e) {}
+  }, []);
+
+  const getEffectiveApiKey = (): string => {
+    try {
+      const savedKey = localStorage.getItem('gemini_api_key');
+      if (savedKey && savedKey.trim()) return savedKey.trim();
+    } catch (e) {}
+    return process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+  };
+
+  const handleSaveApiKey = () => {
+    const trimmed = customApiKey.trim();
+    if (!trimmed) {
+      toast({ variant: 'destructive', title: language === 'zh' ? '請輸入金鑰' : 'Please enter an API Key' });
+      return;
+    }
+    try {
+      localStorage.setItem('gemini_api_key', trimmed);
+      setHasApiKey(true);
+      setIsKeyModalOpen(false);
+      toast({ title: lang.keySaved });
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Storage Error' });
+    }
+  };
+
+  const handleClearApiKey = () => {
+    try {
+      localStorage.removeItem('gemini_api_key');
+      setCustomApiKey('');
+      setHasApiKey(Boolean(process.env.NEXT_PUBLIC_GEMINI_API_KEY));
+      setIsKeyModalOpen(false);
+      toast({ title: lang.keyCleared });
+    } catch (e) {}
+  };
+
   const callGeminiAPI = async () => {
-    // ... (same as before)
     if (assets.length === 0) return;
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const apiKey = getEffectiveApiKey();
     if (!apiKey) {
-      toast({ variant: 'destructive', title: 'Configuration Error', description: lang.noApiKey });
+      setIsKeyModalOpen(true);
+      toast({ variant: 'destructive', title: 'Gemini API Key', description: lang.noApiKey });
       return;
     }
     setLoading(true);
@@ -111,14 +193,24 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
       });
-      if (!response.ok) throw new Error(`API returned ${response.status}`);
+      if (!response.ok) {
+        if (response.status === 400 || response.status === 403 || response.status === 401) {
+          throw new Error(language === 'zh' ? 'Gemini API 金鑰無效或權限不足 (400/403)' : 'Invalid or unauthorized Gemini API key');
+        }
+        throw new Error(`API returned ${response.status}`);
+      }
       const data = await response.json();
-      const rawText = data.candidates[0].content.parts[0].text;
-      const cleanJson = rawText.replace(/```json|```/gi, '').trim();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) throw new Error('Empty response from Gemini');
+      const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
       setInsight(JSON.parse(cleanJson));
-    } catch (error) {
+    } catch (error: any) {
       console.error('AI Error:', error);
-      toast({ variant: 'destructive', title: 'AI Audit Failed', description: 'Model synchronization error.' });
+      toast({ 
+        variant: 'destructive', 
+        title: language === 'zh' ? 'AI 分析失敗' : 'AI Audit Failed', 
+        description: error.message || (language === 'zh' ? '請檢查網路連線或 API 金鑰' : 'Model synchronization error')
+      });
     } finally {
       setLoading(false);
     }
@@ -176,10 +268,30 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
             </div>
           )}
           
-          <div className="hidden lg:block">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              {isCollapsed ? <Cpu className="w-5 h-5 text-slate-300" /> : <Target className="w-5 h-5 text-black" />}
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsKeyModalOpen(true);
+              }}
+              className={cn(
+                "h-8 px-2.5 rounded-lg border text-xs font-bold gap-1.5 transition-all shrink-0",
+                hasApiKey 
+                  ? "bg-emerald-50/80 text-emerald-700 border-emerald-200 hover:bg-emerald-100" 
+                  : "bg-amber-50/80 text-amber-700 border-amber-200 hover:bg-amber-100"
+              )}
+              title={hasApiKey ? lang.keyConfigured : lang.keyMissing}
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{hasApiKey ? lang.keyConfigured : lang.keyMissing}</span>
             </Button>
+            <div className="hidden lg:block">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                {isCollapsed ? <Cpu className="w-5 h-5 text-slate-300" /> : <Target className="w-5 h-5 text-black" />}
+              </Button>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -187,7 +299,6 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
       {!isCollapsed && (
         <CardContent className="p-6 sm:p-10 flex-1 overflow-auto no-scrollbar">
           {insight ? (
-            // ... (rest of the content remains the same)
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 animate-fade-in">
             <div className="xl:col-span-5 space-y-10">
               <div className="space-y-5">
@@ -240,6 +351,81 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
         )}
       </CardContent>
     )}
+
+      {/* Gemini API Key Configuration Dialog */}
+      <Dialog open={isKeyModalOpen} onOpenChange={setIsKeyModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white border border-slate-200 shadow-2xl rounded-2xl p-6">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold text-slate-900">
+              <Key className="w-5 h-5 text-indigo-600" />
+              {lang.apiKeyModalTitle}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 leading-relaxed pt-1">
+              {lang.apiKeyModalDesc}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-3">
+            <div className="space-y-2">
+              <Label className="text-xs font-bold text-slate-700">{lang.apiKeySettings}</Label>
+              <div className="relative">
+                <Input
+                  type={showKey ? "text" : "password"}
+                  placeholder={lang.apiKeyPlaceholder}
+                  value={customApiKey}
+                  onChange={(e) => setCustomApiKey(e.target.value)}
+                  className="pr-10 font-mono text-xs h-10 border-slate-200 focus:ring-2 focus:ring-black rounded-xl"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKey(!showKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                {language === 'zh' 
+                  ? '可至 Google AI Studio (aistudio.google.com) 免費申請 Gemini API Key。' 
+                  : 'Get a free key from Google AI Studio (aistudio.google.com).'}
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-row justify-between items-center sm:justify-between gap-2 pt-2">
+            {hasApiKey ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleClearApiKey}
+                className="text-rose-600 hover:bg-rose-50 border-rose-200 rounded-xl text-xs font-bold"
+              >
+                {lang.clearKey}
+              </Button>
+            ) : <div />}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsKeyModalOpen(false)}
+                className="rounded-xl text-xs"
+              >
+                {language === 'zh' ? '取消' : 'Cancel'}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSaveApiKey}
+                className="bg-black hover:bg-zinc-800 text-white rounded-xl text-xs font-bold px-4"
+              >
+                {lang.saveKey}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

@@ -348,14 +348,35 @@ export default function AssetInsightsPage() {
     const hasSeenIntro = localStorage.getItem('has_seen_intro');
     if (hasSeenIntro) setShowIntro(false);
 
-    const savedAssets = localStorage.getItem('assets');
-    if (savedAssets) setAssets(JSON.parse(savedAssets));
+    try {
+      const savedAssets = localStorage.getItem('assets');
+      if (savedAssets) {
+        const parsed = JSON.parse(savedAssets);
+        if (Array.isArray(parsed)) setAssets(parsed);
+      }
+    } catch (e) {
+      console.warn('Failed to parse saved assets:', e);
+    }
 
-    const savedSections = localStorage.getItem('sections');
-    if (savedSections) setSections(JSON.parse(savedSections));
+    try {
+      const savedSections = localStorage.getItem('sections');
+      if (savedSections) {
+        const parsed = JSON.parse(savedSections);
+        if (Array.isArray(parsed)) setSections(parsed);
+      }
+    } catch (e) {
+      console.warn('Failed to parse saved sections:', e);
+    }
 
-    const savedConfigs = localStorage.getItem('layoutConfigs');
-    if (savedConfigs) setLayoutConfigs(JSON.parse(savedConfigs));
+    try {
+      const savedConfigs = localStorage.getItem('layoutConfigs');
+      if (savedConfigs) {
+        const parsed = JSON.parse(savedConfigs);
+        if (typeof parsed === 'object' && parsed !== null) setLayoutConfigs(parsed);
+      }
+    } catch (e) {
+      console.warn('Failed to parse layoutConfigs:', e);
+    }
 
     const savedLang = localStorage.getItem('pref_language');
     if (savedLang) setLanguage(savedLang as 'en' | 'zh');
@@ -412,30 +433,55 @@ export default function AssetInsightsPage() {
       handleGitHubLogin(token);
     } else {
       const savedToken = localStorage.getItem('gh_token');
-      if (savedToken) handleGitHubLogin(savedToken);
+      if (savedToken) {
+        handleGitHubLogin(savedToken, true).catch(() => {
+          // Background verification error handled silently without wiping token on offline glitches
+        });
+      }
     }
 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleGitHubLogin = async (rawToken: string) => {
+  const handleGitHubLogin = async (rawToken: string, isSilent = false) => {
     const token = rawToken.replace(/^Bearer\s+/i, '').replace(/^token\s+/i, '').trim();
+    if (!token) return;
     try {
       const user = await fetchGitHubUser(token);
       // 驗證是否具備私有 repository 存取/建立權限
       await ensureRepoExists(token, user.login);
       setGhConfig(prev => ({ ...prev, token, user }));
-      localStorage.setItem('gh_token', token);
-      toast({ title: language === 'zh' ? 'GitHub 已連結' : 'GitHub Connected', description: `Welcome, ${user.name || user.login}` });
+      try {
+        localStorage.setItem('gh_token', token);
+      } catch (e) {}
+      if (!isSilent) {
+        toast({ title: language === 'zh' ? 'GitHub 已連結' : 'GitHub Connected', description: `Welcome, ${user.name || user.login}` });
+      }
     } catch (err: any) {
       console.error('GitHub login failed', err);
-      localStorage.removeItem('gh_token');
-      setGhConfig(prev => ({ ...prev, token: null, user: null }));
-      toast({ 
-        variant: 'destructive', 
-        title: language === 'zh' ? 'GitHub 驗證失敗' : 'GitHub Auth Failed', 
-        description: err.message || (language === 'zh' ? 'Token 無效或權限不足，請確認是否具備 repo 權限' : 'Invalid token or insufficient permissions') 
-      });
+      // 僅在明確身份驗證失效 (401) 時清除 Token，避免暫時性斷網抹除使用者憑證
+      const isAuthError = err.status === 401 || 
+        (err.message && (err.message.includes('401') || err.message.includes('Bad credentials') || err.message.includes('Unauthorized')));
+      
+      if (isAuthError) {
+        localStorage.removeItem('gh_token');
+        setGhConfig(prev => ({ ...prev, token: null, user: null }));
+        if (!isSilent) {
+          toast({ 
+            variant: 'destructive', 
+            title: language === 'zh' ? 'GitHub 驗證失敗' : 'GitHub Auth Failed', 
+            description: err.message || (language === 'zh' ? 'Token 無效或已過期，請重新登入' : 'Invalid token or expired') 
+          });
+        }
+      } else {
+        if (!isSilent) {
+          toast({ 
+            variant: 'destructive', 
+            title: language === 'zh' ? 'GitHub 連線異常' : 'GitHub Connection Error', 
+            description: err.message || (language === 'zh' ? '暫時無法連線至 GitHub，請稍後重試' : 'Temporary network issue') 
+          });
+        }
+      }
       throw err;
     }
   };
@@ -474,7 +520,9 @@ export default function AssetInsightsPage() {
       setGhConfig(prev => ({ ...prev, lastSync: now }));
       toast({ title: language === 'zh' ? '同步成功' : 'Sync Successful', description: language === 'zh' ? '資料已上傳至 GitHub' : 'Data uploaded to GitHub' });
     } catch (err: any) {
-      if (err.message && (err.message.includes('401') || err.message.includes('Bad credentials') || err.message.includes('失效') || err.message.includes('Unauthorized'))) {
+      const isAuthError = err.status === 401 || 
+        (err.message && (err.message.includes('401') || err.message.includes('Bad credentials') || err.message.includes('失效') || err.message.includes('Unauthorized')));
+      if (isAuthError) {
         handleGitHubDisconnect();
         toast({ 
           variant: 'destructive', 
@@ -482,7 +530,7 @@ export default function AssetInsightsPage() {
           description: language === 'zh' ? '您的登入授權已失效，已為您清除舊紀錄。請重新點選登入。' : 'Token expired, please reconnect' 
         });
       } else {
-        toast({ variant: 'destructive', title: 'Sync Failed', description: err.message });
+        toast({ variant: 'destructive', title: language === 'zh' ? '同步失敗' : 'Sync Failed', description: err.message });
       }
     } finally {
       setIsSyncing(false);
@@ -495,16 +543,18 @@ export default function AssetInsightsPage() {
     try {
       const data = await downloadFromGitHub(ghConfig.token, ghConfig.user.login);
       if (data) {
-        if (data.assets) setAssets(data.assets);
-        if (data.sections) setSections(data.sections);
-        if (data.layoutConfigs) setLayoutConfigs(data.layoutConfigs);
+        if (data.assets && Array.isArray(data.assets)) setAssets(data.assets);
+        if (data.sections && Array.isArray(data.sections)) setSections(data.sections);
+        if (data.layoutConfigs && typeof data.layoutConfigs === 'object') setLayoutConfigs(data.layoutConfigs);
         toast({ title: language === 'zh' ? '匯入成功' : 'Import Successful', description: language === 'zh' ? '已從 GitHub 抓取最新資料' : 'Latest data fetched from GitHub' });
-        if (data.assets) updateAllData(data.assets);
+        if (data.assets && Array.isArray(data.assets)) updateAllData(data.assets);
       } else {
         toast({ title: language === 'zh' ? '找不到備份' : 'No Backup Found' });
       }
     } catch (err: any) {
-      if (err.message && (err.message.includes('401') || err.message.includes('Bad credentials') || err.message.includes('失效') || err.message.includes('Unauthorized'))) {
+      const isAuthError = err.status === 401 || 
+        (err.message && (err.message.includes('401') || err.message.includes('Bad credentials') || err.message.includes('失效') || err.message.includes('Unauthorized')));
+      if (isAuthError) {
         handleGitHubDisconnect();
         toast({ 
           variant: 'destructive', 
@@ -512,7 +562,7 @@ export default function AssetInsightsPage() {
           description: language === 'zh' ? '您的登入授權已失效，已為您清除舊紀錄。請重新點選登入。' : 'Token expired, please reconnect' 
         });
       } else {
-        toast({ variant: 'destructive', title: 'Import Failed', description: err.message });
+        toast({ variant: 'destructive', title: language === 'zh' ? '匯入失敗' : 'Import Failed', description: err.message });
       }
     } finally {
       setIsSyncing(false);
@@ -527,14 +577,18 @@ export default function AssetInsightsPage() {
 
   useEffect(() => {
     if (mounted) {
-      localStorage.setItem('assets', JSON.stringify(assets));
-      localStorage.setItem('sections', JSON.stringify(sections));
-      localStorage.setItem('layoutConfigs', JSON.stringify(layoutConfigs));
-      localStorage.setItem('pref_language', language);
-      localStorage.setItem('pref_currency', displayCurrency);
-      localStorage.setItem('pref_trackingDays', trackingDays);
-      localStorage.setItem('pref_interval', interval);
-      if (lastUpdated) localStorage.setItem('pref_lastUpdated', lastUpdated);
+      try {
+        localStorage.setItem('assets', JSON.stringify(assets));
+        localStorage.setItem('sections', JSON.stringify(sections));
+        localStorage.setItem('layoutConfigs', JSON.stringify(layoutConfigs));
+        localStorage.setItem('pref_language', language);
+        localStorage.setItem('pref_currency', displayCurrency);
+        localStorage.setItem('pref_trackingDays', trackingDays);
+        localStorage.setItem('pref_interval', interval);
+        if (lastUpdated) localStorage.setItem('pref_lastUpdated', lastUpdated);
+      } catch (e) {
+        console.warn('Failed to save preferences to localStorage:', e);
+      }
     }
   }, [assets, sections, layoutConfigs, language, displayCurrency, trackingDays, interval, lastUpdated, mounted]);
 
