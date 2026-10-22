@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer,
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
@@ -42,6 +42,7 @@ const t = {
     total: 'TOTAL', 
     categoryDetail: 'Category Breakdown',
     noAssets: 'No assets in this category',
+    noData: 'NO ASSET DATA',
     tapHint: 'Hover chart for historical breakdown',
     categories: { 'Stock': 'Equity', 'Crypto': 'Crypto', 'Bank': 'Other', 'Savings': 'Deposit', 'ETF': 'ETF', 'Option': 'Option', 'Fund': 'Fund', 'Index': 'Index', 'Future': 'Future', 'Forex': 'Forex' }
   },
@@ -49,8 +50,9 @@ const t = {
     allocation: '當前資產配置比例', 
     trend: '歷史資產演變走勢', 
     total: '投資組合總計', 
-    categoryDetail: '類別細項明細',
+    categoryDetail: '類別配置明細',
     noAssets: '此類別無資產',
+    noData: '尚無資產數據',
     tapHint: '滑動圖表查看歷史細項',
     categories: { 'Stock': '股票', 'Crypto': '加密貨幣', 'Bank': '其他資產', 'Savings': '存款', 'ETF': 'ETF', 'Option': '選擇權', 'Fund': '基金', 'Index': '指數', 'Future': '期貨', 'Forex': '外匯' }
   }
@@ -96,36 +98,6 @@ const CustomTooltip = ({ active, payload, label, symbol, langCategories, selecte
     );
   }
   return null;
-};
-
-const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, percent, langCategories }: any) => {
-  if (!percent || percent < 0.01) return null; 
-  
-  const RADIAN = Math.PI / 180;
-  const sin = Math.sin(-RADIAN * midAngle);
-  const cos = Math.cos(-RADIAN * midAngle);
-  
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const offset = isMobile ? 2 : 12;
-  const sx = cx + (outerRadius + 2) * cos;
-  const sy = cy + (outerRadius + 2) * sin;
-  const mx = cx + (outerRadius + offset) * cos;
-  const my = cy + (outerRadius + offset) * sin;
-  const ex = mx + (cos >= 0 ? 1 : -1) * (isMobile ? 2 : 8);
-  const ey = my;
-  const textAnchor = cos >= 0 ? 'start' : 'end';
-
-  return (
-    <g>
-      <path d={`M${sx},${sy}L${mx},${my}L${ex},${ey}`} stroke="#cbd5e1" strokeWidth={1} fill="none" />
-      <text x={ex + (cos >= 0 ? 1 : -1) * 3} y={ey} dy={-2} textAnchor={textAnchor} fill="#334155" fontSize={isMobile ? 8 : 10} fontWeight={900} className="uppercase tracking-widest">
-        {langCategories[name] || name}
-      </text>
-      <text x={ex + (cos >= 0 ? 1 : -1) * 3} y={ey} dy={8} textAnchor={textAnchor} fill="#64748b" fontSize={isMobile ? 8 : 9} fontWeight={700}>
-        {`${(percent * 100).toFixed(1)}%`}
-      </text>
-    </g>
-  );
 };
 
 export function HistoricalTrendChart({ historicalData, displayCurrency, language, loading, height, activeAssets }: any) {
@@ -352,75 +324,304 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
 }
 
 export function AllocationPieChart({ allocationData, displayCurrency, language, loading, height }: any) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const lang = t[language as keyof typeof t] || t.zh;
   const symbol = SYMBOLS[displayCurrency as Currency] || '$';
 
-  if (loading && (!allocationData || allocationData.length === 0)) return <Skeleton className="w-full rounded-2xl" style={{ height: height || 250 }} />;
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateSize = () => {
+      if (containerRef.current) {
+        setDimensions({
+          width: containerRef.current.clientWidth,
+          height: containerRef.current.clientHeight,
+        });
+      }
+    };
+    updateSize();
 
-  const filteredData = allocationData.filter((d: any) => d.value > 0);
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+          setDimensions({
+            width: entry.contentRect.width,
+            height: entry.contentRect.height,
+          });
+        }
+      }
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  if (loading && (!allocationData || allocationData.length === 0)) {
+    return <Skeleton className="w-full rounded-2xl" style={{ height: height || 250 }} />;
+  }
+
+  const filteredData = (allocationData || []).filter((d: any) => d.value > 0);
   const totalValue = filteredData.reduce((acc: number, cur: any) => acc + cur.value, 0);
 
+  const sortedData = [...filteredData].sort((a, b) => b.value - a.value);
+
   const activeEntry = activeIndex !== null ? filteredData[activeIndex] : null;
-  const displayLabel = activeEntry ? (lang.categories[activeEntry.name as keyof typeof lang.categories] || activeEntry.name) : lang.total;
-  const displayPercent = activeEntry ? (totalValue > 0 ? ((activeEntry.value / totalValue) * 100).toFixed(1) : "0.0") : "100";
+  const displayLabel = activeEntry
+    ? (lang.categories[activeEntry.name as keyof typeof lang.categories] || activeEntry.name)
+    : lang.total;
+  const displayPercent = activeEntry
+    ? (totalValue > 0 ? ((activeEntry.value / totalValue) * 100).toFixed(1) : "0.0")
+    : "100";
   const displayValue = activeEntry ? activeEntry.value : totalValue;
 
+  const isWide = dimensions.width >= 420;
+
   return (
-    <div className="modern-card p-5 sm:p-6 flex flex-col items-center border-slate-100 bg-white relative shadow-sm rounded-2xl h-full overflow-hidden" style={{ minHeight: '250px', height: height || 250 }}>
-      <div className="w-full mb-4 text-left shrink-0">
+    <div 
+      ref={containerRef}
+      className="modern-card p-4 sm:p-5 flex flex-col border-slate-100 bg-white relative shadow-sm rounded-2xl h-full overflow-hidden" 
+      style={{ minHeight: '250px', height: height || 250 }}
+    >
+      <div className="w-full mb-2 flex items-center justify-between shrink-0">
         <h3 className="pro-label text-xs sm:text-sm">{lang.allocation}</h3>
-      </div>
-      <div className="flex-1 w-full relative flex items-center justify-center overflow-hidden min-h-[120px]">
-        {filteredData.length === 0 ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-[12px] font-black uppercase tracking-widest opacity-40">No Data</div>
-        ) : (
-          <>
-            <div className="absolute inset-0 z-10">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-              <Pie 
-                data={filteredData} 
-                cx="50%" cy="50%" 
-                innerRadius="75%" 
-                outerRadius="92%" 
-                paddingAngle={2} 
-                dataKey="value" 
-                stroke="none" 
-                onMouseEnter={(_, index) => setActiveIndex(index)} 
-                onMouseLeave={() => setActiveIndex(null)} 
-                label={(props) => renderCustomLabel({ ...props, symbol, langCategories: lang.categories })} 
-                labelLine={false}
-                isAnimationActive={false}
-              >
-                {filteredData.map((entry: any, i: number) => (
-                  <Cell 
-                    key={i} 
-                    fill={getCategoryColor(entry.name)} 
-                    className="outline-none transition-all duration-300"
-                    opacity={activeIndex === null || activeIndex === i ? 1 : 0.4}
-                  />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-        
-        <div className="absolute flex flex-col items-center justify-center pointer-events-none text-center max-w-[65%] z-0">
-          <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-0.5 line-clamp-1">
-            {displayLabel}
-          </p>
-          <div className="flex items-baseline gap-0.5">
-             <span className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tighter leading-none">{displayPercent}</span>
-             <span className="text-[12px] font-black text-slate-500">%</span>
-          </div>
-          <div className="mt-2 text-[10px] font-black text-white bg-slate-900 px-3 py-1 rounded-full shadow-lg border border-white/10 whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
-            {symbol}{displayValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          </div>
-        </div>
-        </>
+        {filteredData.length > 0 && (
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest tabular-nums">
+            {filteredData.length} {language === 'zh' ? '類別' : 'Categories'}
+          </span>
         )}
       </div>
+
+      {filteredData.length === 0 ? (
+        <div className="flex-1 w-full flex flex-col items-center justify-center text-slate-400 text-[12px] font-black uppercase tracking-widest opacity-40">
+          {lang.noData}
+        </div>
+      ) : isWide ? (
+        /* Wide Mode: Side-by-side Donut & Interactive Breakdown */
+        <div className="flex-1 w-full flex flex-row items-center justify-between gap-4 overflow-hidden min-h-0">
+          {/* Donut Chart Container */}
+          <div className="relative flex-1 h-full min-w-[150px] max-w-[48%] flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
+                <Pie
+                  data={filteredData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius="65%"
+                  outerRadius="88%"
+                  paddingAngle={filteredData.length > 1 ? 2 : 0}
+                  dataKey="value"
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                  onMouseEnter={(_, index) => setActiveIndex(index)}
+                  onMouseLeave={() => setActiveIndex(null)}
+                  isAnimationActive={false}
+                >
+                  {filteredData.map((entry: any, i: number) => (
+                    <Cell
+                      key={`cell-${i}`}
+                      fill={getCategoryColor(entry.name)}
+                      className="outline-none transition-all duration-200 cursor-pointer"
+                      opacity={activeIndex === null || activeIndex === i ? 1 : 0.3}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      const pct = totalValue > 0 ? ((data.value / totalValue) * 100).toFixed(1) : '0';
+                      const catLabel = lang.categories[data.name as keyof typeof lang.categories] || data.name;
+                      return (
+                        <div className="bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/50 px-3 py-1.5 shadow-xl rounded-xl z-[1000] pointer-events-none text-left">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getCategoryColor(data.name) }} />
+                            <span className="text-[10px] font-black uppercase tracking-wider">{catLabel}</span>
+                          </div>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-xs font-black tabular-nums">{symbol}{Math.round(data.value).toLocaleString()}</span>
+                            <span className="text-[10px] font-bold text-slate-400 tabular-nums">({pct}%)</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+
+            {/* Adaptive Center Typography */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-2 z-0">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[85%] leading-tight">
+                {displayLabel}
+              </p>
+              <div className="flex items-baseline gap-0.5 my-0.5">
+                <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none tabular-nums">
+                  {displayPercent}
+                </span>
+                <span className="text-[10px] font-black text-slate-400">%</span>
+              </div>
+              <div className="text-[10px] font-black text-slate-700 tabular-nums truncate max-w-[85%] leading-tight">
+                {symbol}{Math.round(displayValue).toLocaleString()}
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Category Breakdown List */}
+          <div className="flex-1 h-full flex flex-col justify-center min-w-[180px] max-w-[52%] pr-1">
+            <div className="space-y-1.5 overflow-y-auto max-h-[210px] pr-1.5 no-scrollbar">
+              {sortedData.map((cat: any) => {
+                const pct = totalValue > 0 ? (cat.value / totalValue) * 100 : 0;
+                const catLabel = lang.categories[cat.name as keyof typeof lang.categories] || cat.name;
+                const color = getCategoryColor(cat.name);
+                const isHovered = activeIndex !== null && filteredData[activeIndex]?.name === cat.name;
+
+                return (
+                  <div
+                    key={cat.name}
+                    className={cn(
+                      "p-1.5 rounded-xl cursor-pointer transition-all duration-200",
+                      isHovered ? "bg-slate-100 ring-1 ring-slate-200/80 scale-[1.01]" : "hover:bg-slate-50"
+                    )}
+                    onMouseEnter={() => {
+                      const idx = filteredData.findIndex((d: any) => d.name === cat.name);
+                      setActiveIndex(idx);
+                    }}
+                    onMouseLeave={() => setActiveIndex(null)}
+                  >
+                    <div className="flex items-center justify-between gap-2 text-xs mb-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                        <span className="font-black text-slate-800 text-[11px] truncate">{catLabel}</span>
+                      </div>
+                      <div className="flex items-baseline gap-1.5 shrink-0">
+                        <span className="font-bold text-slate-500 text-[10px] tabular-nums">{pct.toFixed(1)}%</span>
+                        <span className="font-black text-slate-900 tabular-nums text-[11px]">
+                          {symbol}{Math.round(cat.value).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Micro Progress Bar */}
+                    <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min(100, Math.max(3, pct))}%`, backgroundColor: color }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Compact Mode: Stacked Donut & Compact Badges */
+        <div className="flex-1 w-full flex flex-col items-center justify-between overflow-hidden min-h-0">
+          <div className="relative w-full flex-1 min-h-[120px] flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
+                <Pie
+                  data={filteredData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius="65%"
+                  outerRadius="88%"
+                  paddingAngle={filteredData.length > 1 ? 2 : 0}
+                  dataKey="value"
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                  onMouseEnter={(_, index) => setActiveIndex(index)}
+                  onMouseLeave={() => setActiveIndex(null)}
+                  isAnimationActive={false}
+                >
+                  {filteredData.map((entry: any, i: number) => (
+                    <Cell
+                      key={`cell-compact-${i}`}
+                      fill={getCategoryColor(entry.name)}
+                      className="outline-none transition-all duration-200 cursor-pointer"
+                      opacity={activeIndex === null || activeIndex === i ? 1 : 0.3}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      const pct = totalValue > 0 ? ((data.value / totalValue) * 100).toFixed(1) : '0';
+                      const catLabel = lang.categories[data.name as keyof typeof lang.categories] || data.name;
+                      return (
+                        <div className="bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/50 px-2.5 py-1.5 shadow-xl rounded-xl z-[1000] pointer-events-none text-left">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: getCategoryColor(data.name) }} />
+                            <span className="text-[10px] font-black uppercase tracking-wider">{catLabel}</span>
+                          </div>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-xs font-black tabular-nums">{symbol}{Math.round(data.value).toLocaleString()}</span>
+                            <span className="text-[10px] font-bold text-slate-400 tabular-nums">({pct}%)</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+
+            {/* Adaptive Center Typography */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-2 z-0">
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest truncate max-w-[80%] leading-tight">
+                {displayLabel}
+              </p>
+              <div className="flex items-baseline gap-0.5 my-0.5">
+                <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-none tabular-nums">
+                  {displayPercent}
+                </span>
+                <span className="text-[9px] font-black text-slate-400">%</span>
+              </div>
+              <div className="text-[9px] font-black text-slate-700 tabular-nums truncate max-w-[85%] leading-tight">
+                {symbol}{Math.round(displayValue).toLocaleString()}
+              </div>
+            </div>
+          </div>
+
+          {/* Compact Category Badges */}
+          <div className="w-full shrink-0 flex flex-wrap items-center justify-center gap-1 pt-1.5 border-t border-slate-100 max-h-[65px] overflow-y-auto no-scrollbar">
+            {sortedData.map((cat: any) => {
+              const pct = totalValue > 0 ? (cat.value / totalValue) * 100 : 0;
+              const catLabel = lang.categories[cat.name as keyof typeof lang.categories] || cat.name;
+              const color = getCategoryColor(cat.name);
+              const isHovered = activeIndex !== null && filteredData[activeIndex]?.name === cat.name;
+
+              return (
+                <button
+                  key={cat.name}
+                  type="button"
+                  onClick={() => {
+                    const idx = filteredData.findIndex((d: any) => d.name === cat.name);
+                    setActiveIndex(activeIndex === idx ? null : idx);
+                  }}
+                  onMouseEnter={() => {
+                    const idx = filteredData.findIndex((d: any) => d.name === cat.name);
+                    setActiveIndex(idx);
+                  }}
+                  onMouseLeave={() => setActiveIndex(null)}
+                  className={cn(
+                    "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black transition-all",
+                    isHovered
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  )}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                  <span>{catLabel}</span>
+                  <span className={isHovered ? "text-slate-300" : "text-slate-400"}>{pct.toFixed(0)}%</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
