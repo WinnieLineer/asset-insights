@@ -12,7 +12,7 @@ if (!fs.existsSync(claspJsonPath)) {
   process.exit(1);
 }
 
-const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+const npxCmd = process.platform === 'win32' ? 'npx.cmd -y' : 'npx -y';
 
 try {
   const claspConfig = JSON.parse(fs.readFileSync(claspJsonPath, 'utf8'));

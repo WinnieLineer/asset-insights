@@ -59,6 +59,7 @@ function doGet(e) {
 function handleGitHubOAuth(params) {
   const code = params.code;
   const state = params.state;
+  const format = params.format;
   const targetUrl = state ? decodeURIComponent(state) : DEFAULT_REDIRECT_URL;
 
   try {
@@ -76,6 +77,12 @@ function handleGitHubOAuth(params) {
 
     const tokenData = JSON.parse(tokenResponse.getContentText());
     const accessToken = tokenData.access_token;
+
+    // 若前端要求回傳 JSON（由純前端在背景非同步發出 fetch），直接回傳 JSON！
+    if (format === 'json' || !state) {
+      return ContentService.createTextOutput(JSON.stringify(tokenData))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
 
     if (!accessToken) {
       return HtmlService.createHtmlOutput(`
@@ -172,6 +179,10 @@ function handleGitHubOAuth(params) {
       </html>
     `).setTitle('Asset Insights - GitHub 授權成功');
   } catch (err) {
+    if (format === 'json' || !state) {
+      return ContentService.createTextOutput(JSON.stringify({ error: err.toString() }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     return HtmlService.createHtmlOutput(`<h3>OAuth 錯誤：</h3><p>${err.toString()}</p>`);
   }
 }

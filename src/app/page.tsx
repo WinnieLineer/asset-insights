@@ -374,8 +374,39 @@ export default function AssetInsightsPage() {
 
     // Handle GitHub Auth Callback
     const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
     const token = urlParams.get('gh_token');
-    if (token) {
+    if (code) {
+      // Clear code from URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      const isZh = (savedLang || language) === 'zh';
+      toast({
+        title: isZh ? '正在驗證 GitHub 授權...' : 'Authenticating with GitHub...',
+        description: isZh ? '正在與代理伺服器交換金鑰，請稍候' : 'Exchanging token with proxy server...'
+      });
+      fetch(`${GAS_PROXY_URL}?code=${encodeURIComponent(code)}&format=json`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.access_token) {
+            handleGitHubLogin(data.access_token);
+          } else {
+            console.error('GitHub token exchange error response:', data);
+            toast({
+              variant: 'destructive',
+              title: isZh ? '授權交換失敗' : 'Authorization Failed',
+              description: data?.error_description || data?.error || (isZh ? '未能自代理伺服器取得 Token' : 'Failed to retrieve access token')
+            });
+          }
+        })
+        .catch(err => {
+          console.error('Token exchange error:', err);
+          toast({
+            variant: 'destructive',
+            title: isZh ? '連線錯誤' : 'Connection Error',
+            description: err.message || (isZh ? '無法連線至代理伺服器' : 'Could not reach proxy')
+          });
+        });
+    } else if (token) {
       // Clear token from URL
       window.history.replaceState({}, document.title, window.location.pathname);
       handleGitHubLogin(token);
@@ -468,8 +499,8 @@ export default function AssetInsightsPage() {
 
   const handleGitHubConnect = () => {
     const scope = 'repo';
-    const returnUrl = typeof window !== 'undefined' ? (window.location.origin + window.location.pathname) : '';
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=${scope}&redirect_uri=${encodeURIComponent(GAS_PROXY_URL)}&state=${encodeURIComponent(returnUrl)}`;
+    const returnUrl = typeof window !== 'undefined' ? (window.location.origin + window.location.pathname) : 'https://winnie-lin.space/asset-insights/';
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=${scope}&redirect_uri=${encodeURIComponent(returnUrl)}`;
   };
 
   useEffect(() => {
