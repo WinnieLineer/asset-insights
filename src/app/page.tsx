@@ -831,6 +831,20 @@ export default function AssetInsightsPage() {
       let currentD = new Date(firstDay);
       const endD = new Date(lastDay);
 
+      // 效能優化：在迴圈外部預先計算每個資產的購買時間戳與匯率轉換乘數，避免數千次重複 Date 解析
+      const assetMetadata = processedAssets.map(asset => {
+        const hasSymbol = Boolean(asset.symbol && asset.symbol.trim() !== '');
+        const apiCurrency = marketData.assetMarketPrices?.[asset.id]?.currency || asset.currency || 'TWD';
+        const currencyRate = marketData.rates?.[apiCurrency as Currency] || 1;
+        const cashCurrencyRate = marketData.rates?.[asset.currency] || 1;
+        return {
+          asset,
+          acqTime: new Date(asset.acquisitionDate).getTime(),
+          hasSymbol,
+          rateFactor: hasSymbol ? (rateTWD / currencyRate) : (rateTWD / cashCurrencyRate)
+        };
+      });
+
       while (currentD <= endD) {
         const dateKey = currentD.toISOString().split('T')[0];
         const currentUnix = Math.floor(currentD.getTime() / 1000);
@@ -850,21 +864,18 @@ export default function AssetInsightsPage() {
         const assetDetails: Record<string, { name: string; category: string; symbol: string; value: number }> = {};
 
         const currentT = currentD.getTime();
-        for (const asset of processedAssets) {
-          const acqTime = new Date(asset.acquisitionDate).getTime();
+        for (const meta of assetMetadata) {
+          const { asset, acqTime, hasSymbol, rateFactor } = meta;
           if (currentT < acqTime || (asset.endDate && dateKey > asset.endDate)) continue;
 
           let valInTWD = 0;
-          if (asset.symbol && asset.symbol.trim() !== '') {
-            let priceAtT = lastKnownPrices[asset.id];
+          if (hasSymbol) {
+            const priceAtT = lastKnownPrices[asset.id];
             if (priceAtT !== undefined) {
-              const apiCurrency = marketData.assetMarketPrices?.[asset.id]?.currency || asset.currency || 'TWD';
-              const apiCurrencyRate = marketData.rates?.[apiCurrency as Currency] || 1;
-              valInTWD = (asset.amount || 0) * priceAtT * (rateTWD / apiCurrencyRate);
+              valInTWD = (asset.amount || 0) * priceAtT * rateFactor;
             }
           } else {
-            const assetCurrencyRate = marketData.rates?.[asset.currency] || 1;
-            valInTWD = (asset.amount || 0) * (rateTWD / assetCurrencyRate);
+            valInTWD = (asset.amount || 0) * rateFactor;
           }
 
           if (valInTWD > 0) {

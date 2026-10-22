@@ -140,16 +140,27 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   const categoryValue = useWatch({ control: form.control, name: 'category' }) || 'Stock';
   const showCurrencyField = !symbolValue || symbolValue.trim() === '';
   
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const performSearch = async (val: string) => {
     if (!val || val.length < 1) {
+      if (abortControllerRef.current) abortControllerRef.current.abort();
       setSuggestions([]);
       setTickerFound(null);
       return;
     }
 
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setIsSearching(true);
     try {
-      const response = await fetch(`${AUTOCOMPLETE_API}${encodeURIComponent(val)}`);
+      const response = await fetch(`${AUTOCOMPLETE_API}${encodeURIComponent(val)}`, {
+        signal: controller.signal
+      });
       if (response.ok) {
         const data = await response.json();
         const results = data.ResultSet?.Result || [];
@@ -162,13 +173,22 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
         setTickerFound(results.length > 0);
         setShowSuggestions(true);
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.name === 'AbortError') return;
       // Network issue or search service unavailable - do not block manual entry
       setTickerFound(null);
     } finally {
-      setIsSearching(false);
+      if (abortControllerRef.current === controller) {
+        setIsSearching(false);
+      }
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (!isManualTyping.current || !symbolValue || symbolValue.length < 1) {

@@ -20,6 +20,10 @@ export interface PriceInfo {
   currency: string;
 }
 
+// 快取匯率資料 10 分鐘，避免無效重複請求
+let cachedRates: { rates: any; timestamp: number } | null = null;
+const RATES_CACHE_TTL = 10 * 60 * 1000;
+
 export async function fetchMarketData(
   assets: any[], 
   p1: number, 
@@ -30,21 +34,26 @@ export async function fetchMarketData(
   const assetMarketPrices: Record<string, PriceInfo> = {};
   const historicalTimeline: any[] = [];
 
-  try {
-    const erResponse = await fetch(EXCHANGE_RATE_API);
-    if (erResponse.ok) {
-      const data = await erResponse.json();
-      if (data && data.rates) {
-        rates = { 
-          TWD: data.rates.TWD || 32.5, 
-          CNY: data.rates.CNY || 7.2, 
-          USD: 1, 
-          SGD: data.rates.SGD || 1.35 
-        };
+  if (cachedRates && (Date.now() - cachedRates.timestamp) < RATES_CACHE_TTL) {
+    rates = cachedRates.rates;
+  } else {
+    try {
+      const erResponse = await fetch(EXCHANGE_RATE_API, { signal: AbortSignal.timeout(8000) });
+      if (erResponse.ok) {
+        const data = await erResponse.json();
+        if (data && data.rates) {
+          rates = { 
+            TWD: data.rates.TWD || 32.5, 
+            CNY: data.rates.CNY || 7.2, 
+            USD: 1, 
+            SGD: data.rates.SGD || 1.35 
+          };
+          cachedRates = { rates, timestamp: Date.now() };
+        }
       }
+    } catch (e) { 
+      console.warn('Rates fetch error - using defaults:', e); 
     }
-  } catch (e) { 
-    console.warn('Rates fetch error - using defaults:', e); 
   }
 
   const fetchableAssets = (assets || []).filter(a => a.symbol && a.symbol.trim() !== '');
@@ -60,7 +69,7 @@ export async function fetchMarketData(
 
   try {
     const url = `${BATCH_STOCK_PROXY_URL}?symbols=${encodeURIComponent(symbols.join(','))}&period1=${p1}&period2=${p2}&interval=${interval}`;
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: AbortSignal.timeout(18000) });
     if (response.ok) {
       const dataArray = await response.json();
       if (Array.isArray(dataArray)) {

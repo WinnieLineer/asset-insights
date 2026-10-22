@@ -109,9 +109,11 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
   
   if (loading && historicalData.length === 0) return <Skeleton className="w-full rounded-2xl" style={{ height: height || 250 }} />;
 
-  const activeCategoriesInHistory = Array.from(new Set(
-    historicalData.flatMap((d: any) => Object.keys(d).filter(k => !['timestamp', 'displayDate', 'shortDate', 'totalValue', '_assetDetails'].includes(k) && d[k] > 0))
-  )) as AssetCategory[];
+  const activeCategoriesInHistory = useMemo(() => {
+    return Array.from(new Set(
+      historicalData.flatMap((d: any) => Object.keys(d).filter(k => !['timestamp', 'displayDate', 'shortDate', 'totalValue', '_assetDetails'].includes(k) && d[k] > 0))
+    )) as AssetCategory[];
+  }, [historicalData]);
 
   const formatYAxis = (v: number) => {
     if (v >= 1000000) return `${symbol}${(v / 1000000).toFixed(1)}M`;
@@ -119,30 +121,25 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
     return `${symbol}${v}`;
   };
 
-  // Get per-asset breakdown for the selected category at the hovered time point
-  const getDetailAssets = () => {
+  // Get per-asset breakdown for the selected category at the hovered time point (memoized)
+  const detailAssets = useMemo(() => {
     if (!selectedCategory) return [];
-    
     const pointData = hoveredPointData;
-    if (!pointData || !pointData._assetDetails) {
-      // Fall back to the latest data point
+    let details: Record<string, any> | null = null;
+    if (pointData && pointData._assetDetails) {
+      details = pointData._assetDetails;
+    } else {
       const lastPoint = historicalData.length > 0 ? historicalData[historicalData.length - 1] : null;
-      if (!lastPoint || !lastPoint._assetDetails) return [];
-      const details = lastPoint._assetDetails;
-      return Object.entries(details)
-        .filter(([_, d]: any) => d.category === selectedCategory)
-        .map(([id, d]: any) => ({ id, ...d }))
-        .sort((a: any, b: any) => b.value - a.value);
+      if (lastPoint && lastPoint._assetDetails) {
+        details = lastPoint._assetDetails;
+      }
     }
-    
-    const details = pointData._assetDetails;
+    if (!details) return [];
     return Object.entries(details)
       .filter(([_, d]: any) => d.category === selectedCategory)
       .map(([id, d]: any) => ({ id, ...d }))
       .sort((a: any, b: any) => b.value - a.value);
-  };
-
-  const detailAssets = getDetailAssets();
+  }, [selectedCategory, hoveredPointData, historicalData]);
   const detailTotal = detailAssets.reduce((sum: number, a: any) => sum + (a.value || 0), 0);
   const detailDate = hoveredPointData?.displayDate || (historicalData.length > 0 ? historicalData[historicalData.length - 1]?.displayDate : '');
 
