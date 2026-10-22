@@ -22,7 +22,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Loader2, Search, Plus } from 'lucide-react';
+import { Loader2, Search, Plus, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const AUTOCOMPLETE_API = 'https://script.google.com/macros/s/AKfycbzlJZLp5_hA5eiUDZ2oSj8eWf094drGlHXmE4uYapt1oz3aTScbJm6W-AoJb6hdYhZ5UQ/exec?q=';
@@ -40,6 +40,13 @@ const t = {
     date: 'Starting Holding Date',
     endDate: 'Closed Date',
     submit: 'Add Position',
+    searching: 'Searching...',
+    searchingGlobal: 'Searching live global market data...',
+    searchingHint: 'Connecting to market proxy and fetching matches',
+    searchingMore: 'Searching more...',
+    canClickMatch: 'You can click current match',
+    noMatchTitle: 'No matching ticker (Manual entry supported)',
+    noMatchDesc: 'If this is a private asset or deposit, you can directly enter the asset name and holdings to add it.',
     categories: { Stock: 'Stock', Crypto: 'Crypto', Savings: 'Deposit', Bank: 'Other', ETF: 'ETF', Option: 'Option', Fund: 'Fund', Index: 'Index', Future: 'Future', Forex: 'Forex', Custom: 'Custom...' },
     errors: { 
       nameTooShort: 'Min 2 characters', 
@@ -62,6 +69,13 @@ const t = {
     date: '起始持有日期',
     endDate: '結清日期',
     submit: '新增部位',
+    searching: '查詢中...',
+    searchingGlobal: '正在即時查詢全球市場行情...',
+    searchingHint: '正在連線市場代理並檢索最佳匹配代碼',
+    searchingMore: '持續搜尋中...',
+    canClickMatch: '可直接點選已匹配標的',
+    noMatchTitle: '查無符合代碼（仍可手動新增）',
+    noMatchDesc: '若此為私有資產、定存或特殊投資，您可直接填寫資產名稱與金額，即可順利新增部位！',
     categories: { Stock: '股票', Crypto: '加密貨幣', Savings: '存款', Bank: '其他資產', ETF: 'ETF', Option: '選擇權', Fund: '基金', Index: '指數', Future: '期貨', Forex: '外匯', Custom: '自定義...' },
     errors: { 
       nameTooShort: '至少 2 個字', 
@@ -141,13 +155,71 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   const showCurrencyField = !symbolValue || symbolValue.trim() === '';
   
   const abortControllerRef = useRef<AbortController | null>(null);
+  const searchCacheRef = useRef<Map<string, Suggestion[]>>(new Map());
+
+  const getFastMatches = (raw: string): Suggestion[] => {
+    const clean = raw.trim().toUpperCase();
+    if (!clean) return [];
+    const list: Suggestion[] = [];
+    if (/^\d{4,6}$/.test(clean)) {
+      list.push({
+        symbol: `${clean}.TW`,
+        name: `${clean} (${language === 'zh' ? '台股快速代碼' : 'TW Stock'})`,
+        exchDisp: 'TWSE',
+        typeDisp: 'Stock'
+      });
+    }
+    const cryptoAliases: Record<string, string> = {
+      'BTC': 'Bitcoin',
+      'ETH': 'Ethereum',
+      'SOL': 'Solana',
+      'BNB': 'BNB',
+      'DOGE': 'Dogecoin',
+      'USDT': 'Tether',
+      'USDC': 'USD Coin',
+      'XRP': 'Ripple'
+    };
+    if (cryptoAliases[clean]) {
+      list.push({
+        symbol: `${clean}-USD`,
+        name: `${cryptoAliases[clean]} (${clean}/USD)`,
+        exchDisp: 'Crypto',
+        typeDisp: 'Crypto'
+      });
+    }
+    return list;
+  };
 
   const performSearch = async (val: string) => {
-    if (!val || val.length < 1) {
+    const query = (val || '').trim();
+    if (!query) {
       if (abortControllerRef.current) abortControllerRef.current.abort();
       setSuggestions([]);
       setTickerFound(null);
+      setIsSearching(false);
       return;
+    }
+
+    const cacheKey = query.toUpperCase();
+    const fastMatches = getFastMatches(query);
+
+    // 1. 若記憶體快取命中，0 毫秒即時回傳！
+    if (searchCacheRef.current.has(cacheKey)) {
+      const cached = searchCacheRef.current.get(cacheKey) || [];
+      setSuggestions(cached);
+      setTickerFound(cached.length > 0);
+      setIsSearching(false);
+      setShowSuggestions(true);
+      return;
+    }
+
+    // 2. 若有快速本地匹配候選（如台股 4 碼或知名虛幣），先立即呈現本地結果，不讓使用者乾等
+    if (fastMatches.length > 0) {
+      setSuggestions(fastMatches);
+      setTickerFound(true);
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(true);
     }
 
     if (abortControllerRef.current) {
@@ -158,25 +230,35 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
 
     setIsSearching(true);
     try {
-      const response = await fetch(`${AUTOCOMPLETE_API}${encodeURIComponent(val)}`, {
+      const response = await fetch(`${AUTOCOMPLETE_API}${encodeURIComponent(query)}`, {
         signal: controller.signal
       });
       if (response.ok) {
         const data = await response.json();
         const results = data.ResultSet?.Result || [];
-        setSuggestions(results.map((r: any) => ({
+        const networkSuggestions: Suggestion[] = results.map((r: any) => ({
           symbol: r.symbol,
           name: r.name,
           exchDisp: r.exchDisp,
           typeDisp: r.typeDisp
-        })));
-        setTickerFound(results.length > 0);
+        }));
+
+        // 合併快速匹配與網路搜尋結果（避免重複 symbol）
+        const combined = [...fastMatches];
+        networkSuggestions.forEach(ns => {
+          if (!combined.some(c => c.symbol.toUpperCase() === ns.symbol.toUpperCase())) {
+            combined.push(ns);
+          }
+        });
+
+        searchCacheRef.current.set(cacheKey, combined);
+        setSuggestions(combined);
+        setTickerFound(combined.length > 0);
         setShowSuggestions(true);
       }
     } catch (error: any) {
       if (error?.name === 'AbortError') return;
-      // Network issue or search service unavailable - do not block manual entry
-      setTickerFound(null);
+      setTickerFound(fastMatches.length > 0 ? true : null);
     } finally {
       if (abortControllerRef.current === controller) {
         setIsSearching(false);
@@ -191,18 +273,19 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
   }, []);
 
   useEffect(() => {
-    if (!isManualTyping.current || !symbolValue || symbolValue.length < 1) {
-      if (!symbolValue) {
+    if (!isManualTyping.current || !symbolValue || symbolValue.trim().length < 1) {
+      if (!symbolValue || symbolValue.trim() === '') {
         setSuggestions([]);
         setTickerFound(null);
         setShowSuggestions(false);
+        setIsSearching(false);
       }
       return;
     }
 
     const timer = setTimeout(() => {
       performSearch(symbolValue);
-    }, 400);
+    }, 180);
 
     return () => clearTimeout(timer);
   }, [symbolValue]);
@@ -321,35 +404,104 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
               <FormLabel className="pro-label text-[10px] opacity-60">{lang.symbol}</FormLabel>
               <div className="relative">
                 <div className="absolute left-2.5 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
-                  {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-400" /> : <Search className="w-3.5 h-3.5 text-slate-400" />}
+                  {isSearching ? <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" /> : <Search className="w-3.5 h-3.5 text-slate-400" />}
                 </div>
                 <FormControl>
                   <Input 
                     placeholder={lang.symbolPlaceholder} 
                     {...field} 
                     autoComplete="off"
-                    onChange={(e) => { isManualTyping.current = true; field.onChange(e); }}
-                    onFocus={(e) => { const target = e.currentTarget; setTimeout(() => target.select(), 50); }}
+                    onChange={(e) => { 
+                      isManualTyping.current = true; 
+                      setShowSuggestions(true);
+                      field.onChange(e); 
+                    }}
+                    onFocus={(e) => { 
+                      const target = e.currentTarget; 
+                      setTimeout(() => target.select(), 50); 
+                      if (field.value && field.value.trim().length > 0) {
+                        setShowSuggestions(true);
+                      }
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         performSearch(field.value || '');
+                      } else if (e.key === 'Escape') {
+                        setShowSuggestions(false);
                       }
                     }}
-                    className={cn("bg-slate-50 border-slate-200 h-9 text-[13px] font-bold uppercase focus:border-black rounded-lg pl-9", tickerFound === false && !isCustomCategory && "border-rose-300")} 
+                    className={cn(
+                      "bg-slate-50 border-slate-200 h-9 text-[13px] font-bold uppercase focus:border-black rounded-lg pl-9 pr-24 transition-colors", 
+                      tickerFound === false && !isCustomCategory && !isSearching && "border-amber-300"
+                    )} 
                   />
                 </FormControl>
-                {showSuggestions && suggestions.length > 0 && (
-                  <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border border-slate-200 rounded-lg shadow-xl max-h-[200px] overflow-auto no-scrollbar">
-                    {suggestions.map((s, idx) => (
-                      <div key={idx} onClick={() => selectSuggestion(s)} className="p-3 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0">
-                        <div className="font-black text-xs text-slate-900 leading-tight">{s.name}</div>
-                        <div className="flex items-center justify-between mt-1">
-                          <span className="text-[11px] font-black text-blue-600 uppercase">{s.symbol}</span>
-                          <span className="text-[10px] font-bold text-slate-400">{s.typeDisp}</span>
+                {isSearching && (
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200/80 animate-pulse pointer-events-none select-none z-10">
+                    <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
+                    <span className="text-[10px] font-black tracking-wider uppercase">{lang.searching}</span>
+                  </div>
+                )}
+                {showSuggestions && Boolean(field.value && field.value.trim().length > 0) && (
+                  <div ref={suggestionRef} className="absolute left-0 right-0 top-[calc(100%+4px)] z-[200] bg-white border border-slate-200 rounded-xl shadow-2xl max-h-[260px] overflow-auto no-scrollbar">
+                    {isSearching && suggestions.length === 0 ? (
+                      <div className="p-4 flex flex-col items-center justify-center gap-2 text-center bg-slate-50/70">
+                        <div className="flex items-center gap-2 text-blue-600 font-black text-xs">
+                          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                          <span>{lang.searchingGlobal}</span>
                         </div>
+                        <span className="text-[10px] font-bold text-slate-400">
+                          {lang.searchingHint}
+                        </span>
                       </div>
-                    ))}
+                    ) : (
+                      <>
+                        {isSearching && suggestions.length > 0 && (
+                          <div className="px-3 py-1.5 bg-blue-50/80 border-b border-blue-100 flex items-center justify-between">
+                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-wider flex items-center gap-1.5">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              {lang.searchingMore}
+                            </span>
+                            <span className="text-[9px] font-bold text-blue-400">
+                              {lang.canClickMatch}
+                            </span>
+                          </div>
+                        )}
+                        {suggestions.length > 0 ? (
+                          suggestions.map((s, idx) => (
+                            <div 
+                              key={idx} 
+                              onClick={() => selectSuggestion(s)} 
+                              className="p-3 hover:bg-blue-50/50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors group"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="font-black text-xs text-slate-900 group-hover:text-blue-600 transition-colors leading-tight truncate">
+                                  {s.name}
+                                </div>
+                                <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 shrink-0 uppercase border border-slate-200">
+                                  {s.exchDisp || s.typeDisp}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between mt-1">
+                                <span className="text-[11px] font-black font-mono text-blue-600 uppercase tracking-tight">{s.symbol}</span>
+                                <span className="text-[10px] font-bold text-slate-400">{s.typeDisp}</span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-4 text-center space-y-1.5 bg-slate-50/60">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-black border border-amber-200">
+                              <AlertCircle className="w-3 h-3 shrink-0" />
+                              <span>{lang.noMatchTitle}</span>
+                            </div>
+                            <p className="text-[11px] font-bold text-slate-400 leading-relaxed px-2">
+                              {lang.noMatchDesc}
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 )}
               </div>
