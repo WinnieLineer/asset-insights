@@ -37,6 +37,13 @@ import {
   TrendingUp,
   TrendingDown,
   GripHorizontal,
+  GripVertical,
+  RotateCcw,
+  Check,
+  LayoutGrid,
+  Columns,
+  PieChart,
+  Sliders,
   Sparkles,
   Brain,
   ArrowRightLeft,
@@ -162,7 +169,7 @@ function sanitizeImportData(data: any): { assets?: Asset[]; sections?: string[];
     for (const key of DEFAULT_SECTIONS) {
       const incoming = data.layoutConfigs[key];
       if (incoming && typeof incoming === 'object' && !Array.isArray(incoming)) {
-        const width = [4, 6, 8, 10, 12].includes(Number(incoming.width)) ? Number(incoming.width) : (DEFAULT_LAYOUT_CONFIGS[key]?.width || 12);
+        const width = [4, 5, 6, 7, 8, 10, 12].includes(Number(incoming.width)) ? Number(incoming.width) : (DEFAULT_LAYOUT_CONFIGS[key]?.width || 12);
         const height = typeof incoming.height === 'number' && incoming.height >= 80 && incoming.height <= 2000 ? incoming.height : (DEFAULT_LAYOUT_CONFIGS[key]?.height || 400);
         cleanConfigs[key] = { width, height };
       } else {
@@ -993,20 +1000,51 @@ export default function AssetInsightsPage() {
     setter({ key, direction });
   };
 
-  const resizeSection = (id: string, axis: 'x' | 'y', direction: 'inc' | 'dec') => {
+  const setSectionWidth = (id: string, width: number) => {
     setLayoutConfigs(prev => {
-      const existing = prev[id] || { width: 12, height: 400 };
-      const config = { ...existing };
-      if (axis === 'x') {
-        const steps = [4, 6, 8, 10, 12];
-        const currentIdx = steps.indexOf(config.width);
-        if (direction === 'inc' && currentIdx < steps.length - 1) config.width = steps[currentIdx + 1];
-        if (direction === 'dec' && currentIdx > 0) config.width = steps[currentIdx - 1];
-      } else {
-        if (direction === 'inc') config.height = Math.min(1500, config.height + 50);
-        if (direction === 'dec') config.height = Math.max(80, config.height - 50);
-      }
-      return { ...prev, [id]: config };
+      const existing = prev[id] || DEFAULT_LAYOUT_CONFIGS[id] || { width: 12, height: 400 };
+      return { ...prev, [id]: { ...existing, width } };
+    });
+  };
+
+  const setSectionHeight = (id: string, height: number) => {
+    setLayoutConfigs(prev => {
+      const existing = prev[id] || DEFAULT_LAYOUT_CONFIGS[id] || { width: 12, height: 400 };
+      return { ...prev, [id]: { ...existing, height } };
+    });
+  };
+
+  const stepSectionHeight = (id: string, delta: number) => {
+    setLayoutConfigs(prev => {
+      const existing = prev[id] || DEFAULT_LAYOUT_CONFIGS[id] || { width: 12, height: 400 };
+      const currentHeight = typeof existing.height === 'number' ? existing.height : 450;
+      const newHeight = Math.max(280, Math.min(850, currentHeight + delta));
+      return { ...prev, [id]: { ...existing, height: newHeight } };
+    });
+  };
+
+  const resizeSection = (id: string, axis: 'x' | 'y', direction: 'inc' | 'dec') => {
+    if (axis === 'y') {
+      stepSectionHeight(id, direction === 'inc' ? 50 : -50);
+    } else {
+      setLayoutConfigs(prev => {
+        const existing = prev[id] || DEFAULT_LAYOUT_CONFIGS[id] || { width: 12, height: 400 };
+        const steps = [4, 5, 6, 7, 8, 10, 12];
+        const currentIdx = steps.indexOf(existing.width);
+        let nextIdx = currentIdx === -1 ? 2 : currentIdx;
+        if (direction === 'inc' && nextIdx < steps.length - 1) nextIdx += 1;
+        if (direction === 'dec' && nextIdx > 0) nextIdx -= 1;
+        return { ...prev, [id]: { ...existing, width: steps[nextIdx] } };
+      });
+    }
+  };
+
+  const resetLayout = () => {
+    setSections([...DEFAULT_SECTIONS]);
+    setLayoutConfigs({ ...DEFAULT_LAYOUT_CONFIGS });
+    toast({
+      title: language === 'zh' ? '已恢復預設最佳佈局' : 'Layout Reset',
+      description: language === 'zh' ? '所有卡片大小與排列已還原至預設最佳展示比例' : 'Sections and sizes restored to default'
     });
   };
 
@@ -1318,7 +1356,7 @@ export default function AssetInsightsPage() {
                   )}
                 >
                   <GripHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden md:inline">{isReordering ? 'EXIT LAYOUT' : 'LAYOUT'}</span>
+                  <span className="hidden md:inline">{isReordering ? (language === 'zh' ? '完成佈局' : 'EXIT LAYOUT') : (language === 'zh' ? '調整佈局' : 'LAYOUT')}</span>
                 </Button>
 
                 <Button
@@ -1379,9 +1417,51 @@ export default function AssetInsightsPage() {
         </div>
       </header>
       <main className="max-w-[1900px] mx-auto px-3 sm:px-10 pt-[115px] sm:pt-24 pb-20">
+        {isReordering && (
+          <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-slate-900 text-white shadow-2xl border border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <h2 className="text-sm sm:text-base font-black tracking-wide flex items-center gap-2">
+                  <LayoutGrid className="w-4 h-4 text-emerald-400 shrink-0" />
+                  {language === 'zh' ? '儀表板自訂佈局模式' : 'Dashboard Layout Customizer'}
+                </h2>
+                <span className="text-[10px] font-black uppercase tracking-wider bg-white/10 text-white/80 px-2 py-0.5 rounded-full">
+                  {language === 'zh' ? '即時排版' : 'Live Mode'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 font-medium">
+                {language === 'zh'
+                  ? '💡 點擊每張卡片上方的「寬度標籤（1/3、1/2、2/3、全寬）」直接改變佔比；圖表區塊可調整高度；按住卡片頂部把手即可自由拖曳換位。'
+                  : '💡 Click width presets (1/3, 1/2, 2/3, Full) to resize cards; adjust chart heights; grab handles to reorder sections.'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={resetLayout}
+                className="flex-1 md:flex-none h-9 px-4 rounded-xl font-black text-xs bg-white/10 hover:bg-white/20 text-white border-white/20 gap-1.5 transition-all"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-amber-300" />
+                {language === 'zh' ? '恢復預設佈局' : 'Reset Defaults'}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setIsReordering(false)}
+                className="flex-1 md:flex-none h-9 px-5 rounded-xl font-black text-xs bg-emerald-500 hover:bg-emerald-400 text-black shadow-lg gap-1.5 transition-all"
+              >
+                <Check className="w-4 h-4" />
+                {language === 'zh' ? '完成並儲存' : 'Done & Save'}
+              </Button>
+            </div>
+          </div>
+        )}
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <SortableContext items={sections} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 sm:gap-8 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
               {sections.map((id) => (
                 <SortableSection
                   key={id}
@@ -1424,6 +1504,9 @@ export default function AssetInsightsPage() {
                   fileInputRef={fileInputRef}
                   lastUpdated={lastUpdated}
                   resizeSection={resizeSection}
+                  setSectionWidth={setSectionWidth}
+                  setSectionHeight={setSectionHeight}
+                  stepSectionHeight={stepSectionHeight}
                   toast={toast}
                   ghConfig={ghConfig}
                   isSyncing={isSyncing}
@@ -1680,6 +1763,9 @@ interface SortableSectionProps {
   fileInputRef: React.RefObject<any>;
   lastUpdated: string | null;
   resizeSection: (id: string, axis: 'x' | 'y', direction: 'inc' | 'dec') => void;
+  setSectionWidth: (id: string, width: number) => void;
+  setSectionHeight: (id: string, height: number) => void;
+  stepSectionHeight: (id: string, delta: number) => void;
   toast: any;
   ghConfig: GitHubConfig;
   isSyncing: boolean;
@@ -1693,7 +1779,8 @@ const SortableSection = ({
   assets, setAssets, updateAllData, setEditingAsset, setEditName, setEditAmount, setEditAmountUnit,
   setEditDate, setEditEndDate, setEditCurrency, scrollPosRef, categoryFilter, setCategoryFilter,
   allCategories, activeSort, closedSort, requestSort, sortedActiveAssets, sortedClosedAssets,
-  trackingDays, setTrackingDays, interval, setInterval, handleExport, handleExportCSV, handleFileImport, fileInputRef, lastUpdated, resizeSection, toast,
+  trackingDays, setTrackingDays, interval, setInterval, handleExport, handleExportCSV, handleFileImport, fileInputRef, lastUpdated, resizeSection,
+  setSectionWidth, setSectionHeight, stepSectionHeight, toast,
   ghConfig, isSyncing, syncToGitHub, syncFromGitHub, handleGitHubConnect
 }: SortableSectionProps) => {
   if (id === 'closedList' && assetCalculations.closedAssets.length === 0) return null;
@@ -1723,13 +1810,13 @@ const SortableSection = ({
   const commonClass = cn(
     "relative transition-all duration-500 ease-in-out",
     isReordering && "z-[900]",
-    config.width === 4 && "xl:col-span-4",
-    config.width === 5 && "xl:col-span-5",
-    config.width === 6 && "xl:col-span-6",
-    config.width === 7 && "xl:col-span-7",
-    config.width === 8 && "xl:col-span-8",
-    config.width === 10 && "xl:col-span-10",
-    config.width === 12 && "xl:col-span-12"
+    config.width === 4 && "lg:col-span-4 xl:col-span-4",
+    config.width === 5 && "lg:col-span-5 xl:col-span-5",
+    config.width === 6 && "lg:col-span-6 xl:col-span-6",
+    config.width === 7 && "lg:col-span-7 xl:col-span-7",
+    config.width === 8 && "lg:col-span-8 xl:col-span-8",
+    config.width === 10 && "lg:col-span-10 xl:col-span-10",
+    config.width === 12 && "lg:col-span-12 xl:col-span-12"
   );
 
   const wrapperStyle = {
@@ -1925,36 +2012,204 @@ const SortableSection = ({
     default: return null;
   }
 
+  // Section layout metadata
+  const meta = {
+    summary: { zh: '資產總淨值概覽', en: 'Portfolio Net Worth', icon: Globe, resizableHeight: false, fixedFullWidth: true },
+    controls: { zh: '走勢週期與控制列', en: 'Timeline & Controls', icon: Sliders, resizableHeight: false, fixedFullWidth: true },
+    historicalTrend: { zh: '歷史資產走勢折線圖', en: 'Historical Trend', icon: TrendingUp, resizableHeight: true, fixedFullWidth: false },
+    allocation: { zh: '資產分佈圓餅圖', en: 'Asset Allocation', icon: PieChart, resizableHeight: true, fixedFullWidth: false },
+    list: { zh: '進行中部位清單', en: 'Active Holdings', icon: BarChart3, resizableHeight: false, fixedFullWidth: false },
+    addAsset: { zh: '新增資產部位表單', en: 'Add Position Form', icon: Plus, resizableHeight: false, fixedFullWidth: false },
+    closedList: { zh: '已結清歷史部位', en: 'Closed Positions', icon: History, resizableHeight: false, fixedFullWidth: false },
+    ai: { zh: 'Gemini AI 智能分析', en: 'AI Insights', icon: Sparkles, resizableHeight: false, fixedFullWidth: false },
+  }[id] || { zh: id, en: id, icon: LayoutGrid, resizableHeight: false, fixedFullWidth: false };
+
+  // Determine available width options for this card
+  let availableWidths: { width: number; labelZh: string; labelEn: string; desc: string }[] = [];
+  if (!meta.fixedFullWidth) {
+    if (id === 'historicalTrend') {
+      availableWidths = [
+        { width: 4, labelZh: '1/3', labelEn: '1/3', desc: '33% 緊湊欄寬' },
+        { width: 6, labelZh: '1/2', labelEn: '1/2', desc: '50% 對等並排' },
+        { width: 7, labelZh: '7/12 經典', labelEn: '7/12', desc: '58% 主圖經典配比' },
+        { width: 8, labelZh: '2/3', labelEn: '2/3', desc: '67% 加寬展示' },
+        { width: 12, labelZh: '全寬', labelEn: 'Full', desc: '100% 完整寬度' },
+      ];
+    } else if (id === 'allocation') {
+      availableWidths = [
+        { width: 4, labelZh: '1/3', labelEn: '1/3', desc: '33% 緊湊欄寬' },
+        { width: 5, labelZh: '5/12 經典', labelEn: '5/12', desc: '42% 副圖經典配比' },
+        { width: 6, labelZh: '1/2', labelEn: '1/2', desc: '50% 對等並排' },
+        { width: 8, labelZh: '2/3', labelEn: '2/3', desc: '67% 加寬展示' },
+        { width: 12, labelZh: '全寬', labelEn: 'Full', desc: '100% 完整寬度' },
+      ];
+    } else if (id === 'addAsset') {
+      availableWidths = [
+        { width: 4, labelZh: '1/3', labelEn: '1/3', desc: '33% 緊湊表單' },
+        { width: 6, labelZh: '1/2', labelEn: '1/2', desc: '50% 側邊表單' },
+        { width: 12, labelZh: '全寬', labelEn: 'Full', desc: '100% 完整寬度' },
+      ];
+    } else {
+      availableWidths = [
+        { width: 6, labelZh: '1/2', labelEn: '1/2', desc: '50% 半寬並排' },
+        { width: 8, labelZh: '2/3', labelEn: '2/3', desc: '67% 加寬展示' },
+        { width: 12, labelZh: '全寬', labelEn: 'Full', desc: '100% 完整寬度' },
+      ];
+    }
+  }
+
+  const SectionIcon = meta.icon;
+
   return (
     <div
       ref={setNodeRef}
       style={wrapperStyle}
-      className={cn(commonClass, id === 'summary' && "xl:col-span-12")}
-      {...(isReordering ? { ...attributes, ...listeners } : {})}
+      className={cn(
+        commonClass,
+        meta.fixedFullWidth && "lg:col-span-12 xl:col-span-12",
+        isReordering && "p-2 sm:p-2.5 rounded-3xl bg-slate-100/90 border-2 border-dashed border-slate-300/90 shadow-sm transition-all duration-300"
+      )}
     >
-      {isDragging && <div className="absolute inset-0 bg-slate-100/30 rounded-2xl border-2 border-dashed border-slate-300 z-0" />}
-      <div className={cn("h-full w-full transition-all duration-300", isReordering && "pointer-events-none", isDragging && "scale-[1.05] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] z-[1000] rotate-[1deg]")}>
-        <div className={cn("h-full w-full rounded-2xl overflow-hidden", isReordering && !isDragging && "ring-2 ring-slate-200 shadow-sm")}>
-          {content}
-        </div>
-      </div>
+      {isDragging && <div className="absolute inset-0 bg-blue-50/50 rounded-3xl border-2 border-dashed border-blue-400 z-0" />}
+
+      {/* Modern Layout Customizer Header Bar */}
       {isReordering && (
         <div
-          className="absolute bottom-2 right-2 z-[2100] flex flex-col gap-1 bg-black/90 backdrop-blur-xl p-1.5 rounded-xl border border-white/20 shadow-2xl scale-90 sm:scale-100"
           onPointerDown={(e) => e.stopPropagation()}
+          className="mb-2.5 bg-slate-900 text-white rounded-2xl p-2 sm:p-2.5 shadow-xl border border-white/10 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-2.5 transition-all animate-in fade-in zoom-in-95 duration-200 select-none z-10 relative"
         >
-          <div className="flex items-center gap-1 border-b border-white/10 pb-1 mb-1">
-            <span className="text-[9px] font-black text-white/40 w-3 text-center">W</span>
-            <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'x', 'dec'); }}><Minimize2 className="w-3 h-3" /></button>
-            <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'x', 'inc'); }}><Maximize2 className="w-3 h-3" /></button>
+          {/* Card Drag Grip and Title */}
+          <div
+            {...attributes}
+            {...listeners}
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 cursor-grab active:cursor-grabbing transition-colors shrink-0"
+            title={language === 'zh' ? '按住此處拖曳更換卡片位置' : 'Drag here to reorder card'}
+          >
+            <GripVertical className="w-4 h-4 text-amber-400 shrink-0" />
+            <SectionIcon className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+            <span className="text-[12px] font-black text-white tracking-wide">
+              {language === 'zh' ? meta.zh : meta.en}
+            </span>
+            <span className="text-[9px] font-black uppercase tracking-wider text-amber-300/90 bg-amber-400/20 px-1.5 py-0.5 rounded-md ml-1">
+              {language === 'zh' ? '可拖曳' : 'Drag'}
+            </span>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="text-[9px] font-black text-white/40 w-3 text-center">H</span>
-            <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'y', 'dec'); }}><Minimize2 className="w-3 h-3" /></button>
-            <button type="button" tabIndex={-1} className="h-6 w-6 text-white hover:bg-white/20 rounded-md flex items-center justify-center transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); resizeSection(id, 'y', 'inc'); }}><Maximize2 className="w-3 h-3" /></button>
+
+          {/* Sizing Controls */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            {/* Width Presets */}
+            {meta.fixedFullWidth ? (
+              <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1 rounded-xl border border-white/10 text-[11px] font-black text-white/60">
+                <Columns className="w-3.5 h-3.5 text-white/40" />
+                <span>{language === 'zh' ? '寬度：全寬固定 (100%)' : 'Width: Full (Fixed 100%)'}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10 overflow-x-auto no-scrollbar">
+                <span className="text-[10px] font-black text-white/50 px-1.5 flex items-center gap-1 shrink-0">
+                  <Columns className="w-3 h-3" />
+                  {language === 'zh' ? '寬度' : 'Width'}
+                </span>
+                {availableWidths.map((opt) => {
+                  const isActive = config.width === opt.width;
+                  return (
+                    <button
+                      key={opt.width}
+                      type="button"
+                      title={opt.desc}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSectionWidth(id, opt.width);
+                      }}
+                      className={cn(
+                        "px-2.5 py-1 rounded-lg text-[11px] font-black transition-all shrink-0",
+                        isActive
+                          ? "bg-white text-slate-900 shadow-md scale-105"
+                          : "text-white/70 hover:text-white hover:bg-white/10"
+                      )}
+                    >
+                      {language === 'zh' ? opt.labelZh : opt.labelEn}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Height Controls */}
+            {meta.resizableHeight ? (
+              <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10">
+                <span className="text-[10px] font-black text-white/50 px-1.5 shrink-0">
+                  {language === 'zh' ? '高度' : 'Height'}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    stepSectionHeight(id, -50);
+                  }}
+                  className="w-6 h-6 rounded-md bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center font-black transition-colors"
+                  title={language === 'zh' ? '降低高度 -50px' : 'Decrease height -50px'}
+                >
+                  -
+                </button>
+                <span className="text-[11px] font-black text-amber-300 px-1.5 min-w-[50px] text-center tabular-nums">
+                  {config.height}px
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    stepSectionHeight(id, 50);
+                  }}
+                  className="w-6 h-6 rounded-md bg-white/10 hover:bg-white/20 active:scale-95 text-white flex items-center justify-center font-black transition-colors"
+                  title={language === 'zh' ? '增加高度 +50px' : 'Increase height +50px'}
+                >
+                  +
+                </button>
+                <div className="hidden sm:flex items-center gap-1 pl-1 border-l border-white/10">
+                  {[
+                    { h: 340, zh: '緊湊', en: 'Compact' },
+                    { h: 450, zh: '標準', en: 'Normal' },
+                    { h: 580, zh: '延伸', en: 'Tall' }
+                  ].map((preset) => (
+                    <button
+                      key={preset.h}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSectionHeight(id, preset.h);
+                      }}
+                      className={cn(
+                        "px-2 py-0.5 rounded text-[10px] font-bold transition-all",
+                        config.height === preset.h
+                          ? "bg-amber-400 text-black font-black"
+                          : "text-white/60 hover:text-white hover:bg-white/10"
+                      )}
+                    >
+                      {language === 'zh' ? preset.zh : preset.en}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-[10px] font-bold text-white/50 bg-black/30 px-2.5 py-1 rounded-xl border border-white/5">
+                <span>↕</span>
+                <span>{language === 'zh' ? '高度依內容自適應' : 'Auto Height'}</span>
+              </div>
+            )}
           </div>
         </div>
       )}
+
+      {/* Card Content Body */}
+      <div className={cn("h-full w-full transition-all duration-300", isDragging && "scale-[1.02] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] z-[1000] rotate-[0.5deg]")}>
+        <div className={cn("h-full w-full rounded-2xl overflow-hidden", isReordering && !isDragging && "shadow-sm border border-slate-200/80")}>
+          {content}
+        </div>
+      </div>
     </div>
   );
 };
