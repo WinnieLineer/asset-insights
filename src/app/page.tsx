@@ -560,11 +560,14 @@ export default function AssetInsightsPage() {
       const now = new Date();
       const timestamp = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
       setLastUpdated(timestamp);
-      if (typeof window !== 'undefined' && window.innerWidth > 1024) {
-        toast({ title: t.dataUpdated });
-      }
-    } catch (error) {
+      toast({ title: t.dataUpdated });
+    } catch (error: any) {
       console.warn('Market sync failed - continuing with cached data:', error);
+      toast({ 
+        variant: 'destructive', 
+        title: language === 'zh' ? '市場數據更新失敗' : 'Market Sync Failed', 
+        description: error?.message || (language === 'zh' ? '請檢查網路連線或稍後再試' : 'Please check connection') 
+      });
     } finally {
       setLoading(false);
     }
