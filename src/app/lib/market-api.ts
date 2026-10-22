@@ -5,7 +5,10 @@ const EXCHANGE_RATE_API = 'https://open.er-api.com/v6/latest/USD';
 
 function formatSymbol(s: string, category: string) {
   if (!s) return '';
-  const upper = s.toUpperCase();
+  const upper = s.toUpperCase().trim();
+  if (category === 'Crypto' && !upper.includes('-') && !upper.includes('.')) {
+    return `${upper}-USD`;
+  }
   if (/^\d+$/.test(upper)) return `${upper}.TW`; // Taiwan stocks
   if (upper.endsWith('.SI')) return upper; // Singapore
   if (upper.length <= 4 && !upper.includes('.')) return upper; // US

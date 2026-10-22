@@ -305,10 +305,9 @@ export default function AssetInsightsPage() {
   const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
 
-  // 初始佈局順序調整：對齊截圖
-  const [sections, setSections] = useState<string[]>(['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'addAsset', 'closedList', 'ai']);
+  const DEFAULT_SECTIONS = ['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'addAsset', 'closedList', 'ai'];
 
-  const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>({
+  const DEFAULT_LAYOUT_CONFIGS: Record<string, LayoutConfig> = {
     summary: { width: 12, height: 160 },
     controls: { width: 12, height: 80 },
     historicalTrend: { width: 7, height: 450 },
@@ -317,7 +316,11 @@ export default function AssetInsightsPage() {
     addAsset: { width: 12, height: 500 },
     closedList: { width: 12, height: 400 },
     ai: { width: 12, height: 650 }
-  });
+  };
+
+  // 初始佈局順序
+  const [sections, setSections] = useState<string[]>(DEFAULT_SECTIONS);
+  const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>(DEFAULT_LAYOUT_CONFIGS);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollPosRef = useRef<number>(0);
@@ -354,12 +357,33 @@ export default function AssetInsightsPage() {
 
     const savedVersion = localStorage.getItem('app_version');
     if (savedVersion !== APP_VERSION) {
-      localStorage.setItem('app_version', APP_VERSION);
-      localStorage.removeItem('sections');
-      localStorage.removeItem('layoutConfigs');
-      localStorage.removeItem('has_seen_intro'); // Reset intro on version bump
-      window.location.reload();
-      return;
+      try {
+        localStorage.setItem('app_version', APP_VERSION);
+        // 無感升級遷移：保留使用者原有的排序與尺寸設定，自動補齊新版本新增的模組
+        const savedSecs = localStorage.getItem('sections');
+        if (savedSecs) {
+          const parsed = JSON.parse(savedSecs);
+          if (Array.isArray(parsed)) {
+            const missing = DEFAULT_SECTIONS.filter(s => !parsed.includes(s));
+            if (missing.length > 0) {
+              const merged = [...parsed, ...missing];
+              localStorage.setItem('sections', JSON.stringify(merged));
+              setSections(merged);
+            }
+          }
+        }
+        const savedCfgs = localStorage.getItem('layoutConfigs');
+        if (savedCfgs) {
+          const parsed = JSON.parse(savedCfgs);
+          if (typeof parsed === 'object' && parsed !== null) {
+            const merged = { ...DEFAULT_LAYOUT_CONFIGS, ...parsed };
+            localStorage.setItem('layoutConfigs', JSON.stringify(merged));
+            setLayoutConfigs(merged);
+          }
+        }
+      } catch (e) {
+        console.warn('Migration error:', e);
+      }
     }
 
     const hasSeenIntro = localStorage.getItem('has_seen_intro');
@@ -619,15 +643,15 @@ export default function AssetInsightsPage() {
       let p2 = Math.floor(Date.now() / 1000);
       let p1: number;
       if (trackingDays === 'max') {
-        if (currentAssets.length > 0) {
-          const dates = currentAssets.map(a => new Date(a.acquisitionDate).getTime());
-          p1 = Math.floor(Math.min(...dates) / 1000);
-        } else {
-          p1 = p2 - (365 * 24 * 60 * 60);
-        }
+        const dates = currentAssets
+          .map(a => new Date(a.acquisitionDate).getTime())
+          .filter(t => !isNaN(t) && t > 0);
+        p1 = dates.length > 0 ? Math.floor(Math.min(...dates) / 1000) : (p2 - 365 * 24 * 60 * 60);
       } else {
-        p1 = p2 - (parseInt(trackingDays) * 24 * 60 * 60);
+        const days = parseInt(trackingDays, 10);
+        p1 = p2 - ((isNaN(days) ? 365 : days) * 24 * 60 * 60);
       }
+      if (p1 >= p2) p1 = p2 - (30 * 24 * 60 * 60);
       const result = await fetchMarketData(currentAssets, p1, p2, interval);
       setMarketData(result.marketData);
       setMarketTimeline(result.historicalTimeline);
@@ -821,13 +845,15 @@ export default function AssetInsightsPage() {
       allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ name, value: value * displayScale })),
       chartData: historyData
     };
-  }, [assets, marketData, displayCurrency, marketTimeline]);
+  }, [assets, marketData, displayCurrency, marketTimeline, language]);
 
   const getSortedItems = useCallback((items: any[], config: SortConfig) => {
     if (!config.direction) return items;
     return [...items].sort((a, b) => {
       let aVal = a[config.key];
       let bVal = b[config.key];
+      if (aVal === undefined || aVal === null) return 1;
+      if (bVal === undefined || bVal === null) return -1;
       if (typeof aVal === 'string') { aVal = aVal.toLowerCase(); bVal = bVal.toLowerCase(); }
       if (aVal < bVal) return config.direction === 'asc' ? -1 : 1;
       if (aVal > bVal) return config.direction === 'asc' ? 1 : -1;
@@ -955,6 +981,33 @@ export default function AssetInsightsPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
+  };
+  const handleSaveEdit = () => {
+    if (!editName.trim()) {
+      toast({ variant: 'destructive', title: language === 'zh' ? '請輸入資產名稱' : 'Asset name required' });
+      return;
+    }
+    if (editAmount < 0 || isNaN(editAmount)) {
+      toast({ variant: 'destructive', title: language === 'zh' ? '持有數量不得為負數' : 'Amount cannot be negative' });
+      return;
+    }
+    if (editEndDate && editDate && editEndDate < editDate) {
+      toast({ variant: 'destructive', title: language === 'zh' ? '結清日期不得早於起始持有日期' : 'Closed date cannot be earlier than start date' });
+      return;
+    }
+    const finalAmount = (editingAsset?.category === 'Stock' || editingAsset?.category === 'ETF') && editAmountUnit === 'lot' ? editAmount * 1000 : editAmount;
+    const updated = assets.map(a => a.id === editingAsset?.id ? { 
+      ...a, 
+      name: editName.trim(), 
+      amount: finalAmount, 
+      amountUnit: editAmountUnit as any, 
+      acquisitionDate: editDate, 
+      endDate: editEndDate || undefined, 
+      currency: editCurrency 
+    } : a);
+    setAssets(updated);
+    setEditingAsset(null);
+    updateAllData(updated);
   };
 
   if (!mounted) return null;
@@ -1180,7 +1233,14 @@ export default function AssetInsightsPage() {
             {editingAsset && (!editingAsset.symbol || editingAsset.symbol.trim() === '') && (<div className="space-y-1"><Label className="pro-label text-[10px]">{t.currency}</Label><Select value={editCurrency} onValueChange={(v) => setEditCurrency(v as Currency)}><SelectTrigger className="h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg"><SelectValue /></SelectTrigger><SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-[13px] font-bold">{c}</SelectItem>)}</SelectContent></Select></div>)}
             <div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label className="pro-label text-[10px]">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div><div className="space-y-1"><Label className="pro-label text-[10px]">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div></div>
           </div>
-          <DialogFooter className="flex flex-row gap-3"><Button variant="ghost" onClick={() => { setEditingAsset(null); }} className="h-10 flex-1 font-black uppercase text-xs">{t.cancel}</Button><Button onClick={() => { const finalAmount = (editingAsset?.category === 'Stock' || editingAsset?.category === 'ETF') && editAmountUnit === 'lot' ? editAmount * 1000 : editAmount; const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, name: editName, amount: finalAmount, amountUnit: editAmountUnit as any, acquisitionDate: editDate, endDate: editEndDate || undefined, currency: editCurrency } : a); setAssets(updated); setEditingAsset(null); updateAllData(updated); }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[13px] px-3 shadow-md">{t.saveChanges}</Button></DialogFooter>
+          <DialogFooter className="flex flex-row gap-3">
+            <Button variant="ghost" onClick={() => { setEditingAsset(null); }} className="h-10 flex-1 font-black uppercase text-xs">
+              {t.cancel}
+            </Button>
+            <Button onClick={handleSaveEdit} className="bg-black text-white h-10 flex-1 font-black uppercase text-[13px] px-3 shadow-md">
+              {t.saveChanges}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

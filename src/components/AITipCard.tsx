@@ -203,7 +203,18 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!rawText) throw new Error('Empty response from Gemini');
       const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-      setInsight(JSON.parse(cleanJson));
+      let parsed: FinancialTipOutput;
+      try {
+        parsed = JSON.parse(cleanJson);
+      } catch {
+        const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsed = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('Unable to parse JSON from AI response');
+        }
+      }
+      setInsight(parsed);
     } catch (error: any) {
       console.error('AI Error:', error);
       toast({ 

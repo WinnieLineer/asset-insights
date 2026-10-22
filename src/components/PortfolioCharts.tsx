@@ -56,7 +56,7 @@ const t = {
   }
 };
 
-const CustomTooltip = ({ active, payload, label, symbol, langCategories, selectedCategory }: any) => {
+const CustomTooltip = ({ active, payload, label, symbol, langCategories, selectedCategory, totalLabel }: any) => {
   if (active && payload && payload.length) {
     const categories = payload.filter((p: any) => p.dataKey !== 'totalValue' && p.value > 0);
     const totalEntry = payload.find((p: any) => p.dataKey === 'totalValue');
@@ -85,7 +85,7 @@ const CustomTooltip = ({ active, payload, label, symbol, langCategories, selecte
           ))}
           {totalEntry && (
             <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between gap-8">
-              <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">Portfolio Total</span>
+              <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{totalLabel || 'Portfolio Total'}</span>
               <span className="text-[11px] font-black text-slate-900 tabular-nums">
                 {symbol}{Math.round(totalEntry.value).toLocaleString()}
               </span>
@@ -224,6 +224,7 @@ export function HistoricalTrendChart({ historicalData, displayCurrency, language
                   symbol={symbol} 
                   langCategories={lang.categories} 
                   selectedCategory={selectedCategory}
+                  totalLabel={lang.total}
                 />
               )} 
             />

@@ -46,7 +46,8 @@ const t = {
       invalidAmount: 'Invalid amount', 
       required: 'Required', 
       tickerRequired: 'Symbol required for market assets',
-      invalidTicker: 'Invalid symbol or not found'
+      invalidTicker: 'Invalid symbol or not found',
+      invalidDateRange: 'Closed date cannot be earlier than start date'
     }
   },
   zh: {
@@ -67,7 +68,8 @@ const t = {
       invalidAmount: '請輸入有效的正數', 
       required: '必填', 
       tickerRequired: '此類別必須填寫代號',
-      invalidTicker: '無效的資產代碼或查無此代號'
+      invalidTicker: '無效的資產代碼或查無此代號',
+      invalidDateRange: '結清日期不得早於起始持有日期'
     }
   }
 };
@@ -112,9 +114,14 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
     const skipValidation = ['Savings', 'Bank', 'Custom'].includes(data.category) || isCustomCategory;
     if (skipValidation) return true;
     if (!data.symbol || data.symbol.trim() === '') return false;
-    if (tickerFound === false) return false;
     return true;
-  }, { message: lang.errors.tickerRequired, path: ['symbol'] }), [lang, isCustomCategory, tickerFound]);
+  }, { message: lang.errors.tickerRequired, path: ['symbol'] })
+  .refine((data) => {
+    if (data.endDate && data.acquisitionDate && data.endDate < data.acquisitionDate) {
+      return false;
+    }
+    return true;
+  }, { message: lang.errors.invalidDateRange, path: ['endDate'] }), [lang, isCustomCategory]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -156,7 +163,8 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
         setShowSuggestions(true);
       }
     } catch (error) {
-      setTickerFound(false);
+      // Network issue or search service unavailable - do not block manual entry
+      setTickerFound(null);
     } finally {
       setIsSearching(false);
     }
