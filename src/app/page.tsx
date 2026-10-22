@@ -39,7 +39,9 @@ import {
   GripHorizontal,
   Sparkles,
   Brain,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import {
   DndContext,
@@ -357,6 +359,22 @@ export default function AssetInsightsPage() {
   // 初始佈局順序
   const [sections, setSections] = useState<string[]>(DEFAULT_SECTIONS);
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>(DEFAULT_LAYOUT_CONFIGS);
+
+  const [privacyMode, setPrivacyMode] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      const savedPrivacy = localStorage.getItem('pref_privacy_mode');
+      if (savedPrivacy === 'true') setPrivacyMode(true);
+    } catch (e) {}
+  }, []);
+
+  const togglePrivacyMode = (val: boolean) => {
+    setPrivacyMode(val);
+    try {
+      localStorage.setItem('pref_privacy_mode', String(val));
+    } catch (e) {}
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollPosRef = useRef<number>(0);
@@ -1178,6 +1196,19 @@ export default function AssetInsightsPage() {
                   <span className="hidden md:inline">{isReordering ? 'EXIT LAYOUT' : 'LAYOUT'}</span>
                 </Button>
 
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => togglePrivacyMode(!privacyMode)}
+                  className={cn(
+                    "h-8 sm:h-9 w-8 sm:w-9 rounded-full transition-all",
+                    privacyMode ? "bg-slate-900 text-white hover:bg-black shadow-sm" : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+                  )}
+                  title={language === 'zh' ? (privacyMode ? '顯示資產金額' : '隱藏資產金額（隱私模式）') : (privacyMode ? 'Show Balances' : 'Hide Balances (Privacy Mode)')}
+                >
+                  {privacyMode ? <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+                </Button>
+
                 <div className="flex bg-slate-100 p-1 rounded-full items-center">
                   <Button variant={language === 'zh' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('zh')} className="h-6 sm:h-8 px-2.5 sm:px-4 font-black text-[10px] sm:text-[11px] rounded-full transition-all">繁</Button>
                   <Button variant={language === 'en' ? 'secondary' : 'ghost'} size="sm" onClick={() => setLanguage('en')} className="h-6 sm:h-8 px-2.5 sm:px-4 font-black text-[10px] sm:text-[11px] rounded-full transition-all">EN</Button>
@@ -1230,6 +1261,7 @@ export default function AssetInsightsPage() {
                 <SortableSection
                   key={id}
                   id={id}
+                  privacyMode={privacyMode}
                   isReordering={isReordering}
                   layoutConfigs={layoutConfigs}
                   assetCalculations={assetCalculations}
@@ -1451,6 +1483,7 @@ export default function AssetInsightsPage() {
 
 interface SortableSectionProps {
   id: string;
+  privacyMode?: boolean;
   isReordering: boolean;
   layoutConfigs: Record<string, LayoutConfig>;
   assetCalculations: any;
@@ -1496,7 +1529,7 @@ interface SortableSectionProps {
 }
 
 const SortableSection = ({
-  id, isReordering, layoutConfigs, assetCalculations, loading, displayCurrency, t, language, isDesktop,
+  id, privacyMode = false, isReordering, layoutConfigs, assetCalculations, loading, displayCurrency, t, language, isDesktop,
   assets, setAssets, updateAllData, setEditingAsset, setEditName, setEditAmount, setEditAmountUnit,
   setEditDate, setEditEndDate, setEditCurrency, scrollPosRef, categoryFilter, setCategoryFilter,
   allCategories, activeSort, closedSort, requestSort, sortedActiveAssets, sortedClosedAssets,
@@ -1558,7 +1591,7 @@ const SortableSection = ({
               <div className="pro-label text-[10px] sm:text-sm"><Globe className="w-3 sm:w-3.5 h-3 sm:h-3.5" /> {t.totalValue}</div>
               <div className="pro-title flex items-center text-xl sm:text-4xl">
                 <span className="text-slate-200 font-medium text-[0.6em] mr-2">{CURRENCY_SYMBOLS[displayCurrency]}</span>
-                <span>{assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                <span>{privacyMode ? '••••••••' : assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                 {loading && <Loader2 className="w-3 h-3 sm:w-5 sm:h-5 animate-spin text-slate-200 ml-2 sm:ml-3" />}
               </div>
             </div>
@@ -1672,9 +1705,9 @@ const SortableSection = ({
                     </TableCell>
                     <TableCell><Badge variant="outline" className="text-[10px] font-black uppercase px-2 py-0.5">{t.categoryNames[asset.category as keyof typeof t.categoryNames] || asset.category}</Badge></TableCell>
                     <TableCell><span className="text-[13px] font-black text-slate-500">{asset.acquisitionDate}</span></TableCell>
-                    <TableCell><span className="text-[14px] font-black text-slate-700">{formatNumber(asset.amount)}<span className="text-[10px] text-slate-400 ml-1 font-bold">{(['Stock', 'ETF'].includes(asset.category)) ? t.shares : ''}</span></span></TableCell>
-                    <TableCell className="text-right"><div className="font-black text-[13px] text-slate-700"><span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.priceInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 4 }) || '0'}</div></TableCell>
-                    <TableCell className="text-right"><div className="font-black text-base text-slate-900"><span className="text-slate-200 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{asset.valueInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0'}</div></TableCell>
+                    <TableCell><span className="text-[14px] font-black text-slate-700">{privacyMode ? '••••' : formatNumber(asset.amount)}<span className="text-[10px] text-slate-400 ml-1 font-bold">{((['Stock', 'ETF'].includes(asset.category)) && !privacyMode) ? t.shares : ''}</span></span></TableCell>
+                    <TableCell className="text-right"><div className="font-black text-[13px] text-slate-700"><span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{privacyMode ? '••••' : (asset.priceInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 4 }) || '0')}</div></TableCell>
+                    <TableCell className="text-right"><div className="font-black text-base text-slate-900"><span className="text-slate-200 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{privacyMode ? '••••••' : (asset.valueInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0')}</div></TableCell>
                     <TableCell className="text-right"><div className={cn("inline-flex items-center gap-1 font-black text-[13px]", (asset.changePercent || 0) > 0 ? "text-emerald-500" : (asset.changePercent || 0) < 0 ? "text-rose-500" : "text-slate-400")}>{(asset.changePercent || 0) > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : (asset.changePercent || 0) < 0 ? <TrendingDown className="w-3.5 h-3.5" /> : null}{(asset.changePercent || 0).toFixed(2)}%</div></TableCell>
                     <TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                       scrollPosRef.current = window.scrollY;

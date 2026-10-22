@@ -7,6 +7,12 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 export const metadata: Metadata = {
   title: 'Asset Insights',
   description: '全方位的個人資產管理與 AI 智慧財務決策系統。',
+  manifest: `${basePath}/manifest.json`,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Asset Insights',
+  },
   icons: {
     icon: [
       { url: `${basePath}/app-icon.png?v=1.0.6` },
