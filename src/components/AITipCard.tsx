@@ -204,6 +204,9 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
         signal: AbortSignal.timeout(25000)
       });
       if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error(language === 'zh' ? 'Gemini API 請求額度超限 (429 Rate Limit)，請稍候 30 秒後再試' : 'Gemini API quota exceeded (429 Rate Limit). Please retry in 30 seconds');
+        }
         if (response.status === 400 || response.status === 403 || response.status === 401) {
           throw new Error(language === 'zh' ? 'Gemini API 金鑰無效或權限不足 (400/403)' : 'Invalid or unauthorized Gemini API key');
         }

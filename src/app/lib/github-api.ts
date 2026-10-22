@@ -76,6 +76,7 @@ async function parseApiError(res: Response, defaultMsg: string): Promise<GitHubA
 export async function fetchGitHubUser(token: string): Promise<GitHubUser> {
   const res = await fetch('https://api.github.com/user', {
     headers: getAuthHeaders(token),
+    signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) {
     throw await parseApiError(res, '無法取得 GitHub 使用者資訊');
@@ -87,6 +88,7 @@ export async function ensureRepoExists(token: string, owner: string) {
   // Check if repo exists
   const res = await fetch(`https://api.github.com/repos/${owner}/${REPO_NAME}`, {
     headers: getAuthHeaders(token),
+    signal: AbortSignal.timeout(15000),
   });
 
   if (res.status === 404) {
@@ -99,6 +101,7 @@ export async function ensureRepoExists(token: string, owner: string) {
         private: true,
         description: 'Auto-backup for Asset Insights',
       }),
+      signal: AbortSignal.timeout(15000),
     });
     if (!createRes.ok) {
       throw await parseApiError(createRes, '無法建立備份儲存庫 (asset-insights-backup)');
@@ -116,6 +119,7 @@ export async function ensureRepoExists(token: string, owner: string) {
 export async function getFileSha(token: string, owner: string): Promise<string | null> {
   const res = await fetch(`https://api.github.com/repos/${owner}/${REPO_NAME}/contents/${BACKUP_PATH}`, {
     headers: getAuthHeaders(token),
+    signal: AbortSignal.timeout(15000),
   });
   if (res.status === 404) return null;
   if (!res.ok) {
@@ -137,6 +141,7 @@ export async function uploadToGitHub(token: string, owner: string, content: any)
     method: 'PUT',
     headers: getAuthHeaders(token, true),
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(15000),
   });
 
   if (!res.ok) {
@@ -148,6 +153,7 @@ export async function uploadToGitHub(token: string, owner: string, content: any)
 export async function downloadFromGitHub(token: string, owner: string) {
   const res = await fetch(`https://api.github.com/repos/${owner}/${REPO_NAME}/contents/${BACKUP_PATH}`, {
     headers: getAuthHeaders(token),
+    signal: AbortSignal.timeout(15000),
   });
   if (res.status === 404) return null;
   if (!res.ok) {

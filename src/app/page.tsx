@@ -41,7 +41,9 @@ import {
   Brain,
   ArrowRightLeft,
   Eye,
-  EyeOff
+  EyeOff,
+  FileSpreadsheet,
+  Keyboard
 } from 'lucide-react';
 import {
   DndContext,
@@ -219,7 +221,14 @@ const translations = {
     dataUpdated: 'Market data synced.',
     acqDate: 'Starting Holding Date',
     posEndDate: 'Closed Date',
-    exportData: 'Export',
+    exportData: 'Export JSON',
+    exportCSV: 'Export CSV',
+    shortcutsTitle: 'Keyboard Shortcuts',
+    keyP: 'Toggle Privacy Mode (Mask Balances)',
+    keyR: 'Sync Market Data',
+    keyE: 'Export CSV (Excel)',
+    keyEsc: 'Close Active Modal',
+    keyHelp: 'Show Shortcuts Guide',
     importData: 'Import',
     importSuccess: 'Data imported successfully.',
     reorderHint: 'REORDER MODE ACTIVE',
@@ -279,7 +288,14 @@ const translations = {
     allCategories: '全部類別',
     unitPrice: '單位價值',
     priceChange: '漲跌',
-    exportData: '匯出',
+    exportData: '匯出 JSON',
+    exportCSV: '匯出 CSV (Excel)',
+    shortcutsTitle: '鍵盤快捷鍵指南',
+    keyP: '切換隱私模式（隱藏資產金額）',
+    keyR: '即時同步市場最新行情',
+    keyE: '匯出 Excel 相容 CSV 報表',
+    keyEsc: '關閉當前開啟的彈窗',
+    keyHelp: '顯示快捷鍵指南',
     importData: '匯入',
     importSuccess: '資產資料已成功匯入。',
     reorderHint: '已進入佈局調整模式',
@@ -352,6 +368,7 @@ export default function AssetInsightsPage() {
   const [isGhModalOpen, setIsGhModalOpen] = useState(false);
   const [customGhToken, setCustomGhToken] = useState('');
   const [isVerifyingToken, setIsVerifyingToken] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
 
   const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
@@ -1004,6 +1021,65 @@ export default function AssetInsightsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handleExportCSV = useCallback(() => {
+    if (assets.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: language === 'zh' ? '無可匯出的資產' : 'No Assets to Export',
+        description: language === 'zh' ? '請先新增資產部位後再匯出' : 'Please add positions first'
+      });
+      return;
+    }
+    const isZh = language === 'zh';
+    const headers = isZh 
+      ? ['資產名稱', '代碼', '類別', '持有數量', '單位', '計價幣別', '即時單價', '帳面總值', '起始持有日期', '結清日期']
+      : ['Asset Name', 'Symbol', 'Category', 'Holdings', 'Unit', 'Currency', 'Unit Price', 'Valuation', 'Acquisition Date', 'Closed Date'];
+
+    const escapeCsv = (val: any) => {
+      const str = String(val ?? '');
+      if (/[",\n\r]/.test(str)) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const rows = assets.map(asset => {
+      const market = marketData.assetMarketPrices[asset.id];
+      const unitPrice = market?.price || 0;
+      const totalUnits = asset.amountUnit === 'lot' ? asset.amount * 1000 : asset.amount;
+      const valuation = unitPrice > 0 ? totalUnits * unitPrice : asset.amount;
+      const catName = (t.categoryNames as any)[asset.category] || asset.category;
+      const unitStr = asset.amountUnit === 'lot' ? (isZh ? '張' : 'Lots') : (isZh ? '股' : 'Shares');
+
+      return [
+        escapeCsv(asset.name),
+        escapeCsv(asset.symbol || ''),
+        escapeCsv(catName),
+        escapeCsv(asset.amount),
+        escapeCsv(unitStr),
+        escapeCsv(asset.currency),
+        escapeCsv(unitPrice ? unitPrice.toFixed(2) : '-'),
+        escapeCsv(valuation.toFixed(2)),
+        escapeCsv(asset.acquisitionDate || ''),
+        escapeCsv(asset.endDate || '')
+      ].join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.download = `asset-insights-portfolio-${dateStr}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast({
+      title: isZh ? 'CSV 匯出成功' : 'CSV Exported Successfully',
+      description: isZh ? '已產生相容於 Excel 的 UTF-8 CSV 檔案' : 'Excel-compatible UTF-8 CSV generated'
+    });
+  }, [assets, marketData, language, t, toast]);
+
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1099,6 +1175,46 @@ export default function AssetInsightsPage() {
     updateAllData(updated);
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInput = target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable
+      );
+
+      if (e.key === 'Escape') {
+        setEditingAsset(null);
+        setIsGhModalOpen(false);
+        setIsHelpModalOpen(false);
+        return;
+      }
+
+      if (isInput) return;
+
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        setIsHelpModalOpen(prev => !prev);
+      } else if (e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        togglePrivacyMode(!privacyMode);
+      } else if (e.key === 'r' || e.key === 'R') {
+        if (!loading) {
+          e.preventDefault();
+          updateAllData(assets);
+        }
+      } else if (e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        handleExportCSV();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [privacyMode, loading, assets, updateAllData, handleExportCSV]);
+
   if (!mounted) return null;
 
   if (showIntro) {
@@ -1175,6 +1291,15 @@ export default function AssetInsightsPage() {
 
             <div className="flex items-center gap-1.5 sm:gap-3">
               <div className="flex items-center gap-1.5 sm:gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsHelpModalOpen(true)}
+                  className="h-7 w-7 sm:h-8 sm:w-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-black transition-colors hidden xs:flex"
+                  title={t.shortcutsTitle + ' (?)'}
+                >
+                  <Keyboard className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -1294,6 +1419,7 @@ export default function AssetInsightsPage() {
                   interval={interval}
                   setInterval={setInterval}
                   handleExport={handleExport}
+                  handleExportCSV={handleExportCSV}
                   handleFileImport={handleFileImport}
                   fileInputRef={fileInputRef}
                   lastUpdated={lastUpdated}
@@ -1477,6 +1603,39 @@ export default function AssetInsightsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Keyboard Shortcuts Modal */}
+      <Dialog open={isHelpModalOpen} onOpenChange={setIsHelpModalOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[460px] bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-slate-100" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black uppercase flex items-center gap-3">
+              <Keyboard className="w-5 h-5 text-slate-900" />
+              {t.shortcutsTitle}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2.5 py-3">
+            {[
+              { key: 'P', desc: t.keyP },
+              { key: 'R', desc: t.keyR },
+              { key: 'E', desc: t.keyE },
+              { key: '?', desc: t.keyHelp },
+              { key: 'Esc', desc: t.keyEsc },
+            ].map((item, idx) => (
+              <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                <span className="text-xs font-bold text-slate-700">{item.desc}</span>
+                <kbd className="px-2.5 py-1 text-[11px] font-black bg-white border border-slate-200 rounded-lg shadow-sm text-slate-900 tracking-wider">
+                  {item.key}
+                </kbd>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsHelpModalOpen(false)} className="w-full bg-slate-900 hover:bg-black text-white font-black text-xs uppercase h-10 rounded-xl">
+              {language === 'zh' ? '知道了' : 'Got it'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1516,6 +1675,7 @@ interface SortableSectionProps {
   interval: string;
   setInterval: (val: string) => void;
   handleExport: () => void;
+  handleExportCSV: () => void;
   handleFileImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
   fileInputRef: React.RefObject<any>;
   lastUpdated: string | null;
@@ -1533,7 +1693,7 @@ const SortableSection = ({
   assets, setAssets, updateAllData, setEditingAsset, setEditName, setEditAmount, setEditAmountUnit,
   setEditDate, setEditEndDate, setEditCurrency, scrollPosRef, categoryFilter, setCategoryFilter,
   allCategories, activeSort, closedSort, requestSort, sortedActiveAssets, sortedClosedAssets,
-  trackingDays, setTrackingDays, interval, setInterval, handleExport, handleFileImport, fileInputRef, lastUpdated, resizeSection, toast,
+  trackingDays, setTrackingDays, interval, setInterval, handleExport, handleExportCSV, handleFileImport, fileInputRef, lastUpdated, resizeSection, toast,
   ghConfig, isSyncing, syncToGitHub, syncFromGitHub, handleGitHubConnect
 }: SortableSectionProps) => {
   if (id === 'closedList' && assetCalculations.closedAssets.length === 0) return null;
@@ -1634,8 +1794,9 @@ const SortableSection = ({
               </Select>
             </div>
           </div>
-          <div className="flex-1 flex items-center gap-2 w-full">
-            <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg"><Download className="w-3 h-3" /> {t.exportData}</Button>
+          <div className="flex-1 flex flex-wrap sm:flex-nowrap items-center gap-2 w-full">
+            <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg"><Download className="w-3 h-3" /> JSON</Button>
+            <Button variant="outline" size="sm" onClick={handleExportCSV} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg" title={language === 'zh' ? '匯出相容於 Excel 的 CSV 報表' : 'Export Excel-compatible CSV'}><FileSpreadsheet className="w-3 h-3" /> CSV</Button>
             <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg"><Upload className="w-3 h-3" /> {t.importData}</Button>
             <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".json" className="hidden" />
           </div>

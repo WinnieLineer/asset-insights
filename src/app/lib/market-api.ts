@@ -65,21 +65,39 @@ export async function fetchMarketData(
     };
   }
 
-  const symbols = fetchableAssets.map(a => formatSymbol(a.symbol, a.category));
+  const assetSymbolMap = fetchableAssets.map(a => ({
+    asset: a,
+    formattedSymbol: formatSymbol(a.symbol, a.category)
+  }));
+  const uniqueSymbols = Array.from(new Set(assetSymbolMap.map(x => x.formattedSymbol))).filter(Boolean);
+
+  if (uniqueSymbols.length === 0) {
+    return { 
+      marketData: { exchangeRate: rates.TWD, rates, assetMarketPrices },
+      historicalTimeline: [] 
+    };
+  }
 
   try {
-    const url = `${BATCH_STOCK_PROXY_URL}?symbols=${encodeURIComponent(symbols.join(','))}&period1=${p1}&period2=${p2}&interval=${interval}`;
+    const url = `${BATCH_STOCK_PROXY_URL}?symbols=${encodeURIComponent(uniqueSymbols.join(','))}&period1=${p1}&period2=${p2}&interval=${interval}`;
     const response = await fetch(url, { signal: AbortSignal.timeout(18000) });
     if (response.ok) {
       const dataArray = await response.json();
       if (Array.isArray(dataArray)) {
+        const chartBySymbol: Record<string, any> = {};
+        uniqueSymbols.forEach((sym, idx) => {
+          const chart = dataArray[idx]?.chart?.result?.[0];
+          if (chart) {
+            chartBySymbol[sym] = chart;
+          }
+        });
+
         const timelineMap: Record<number, any> = {};
 
-        dataArray.forEach((result: any, idx: number) => {
-          const chart = result?.chart?.result?.[0];
+        assetSymbolMap.forEach(({ asset, formattedSymbol }) => {
+          const chart = chartBySymbol[formattedSymbol];
           if (!chart) return;
 
-          const asset = fetchableAssets[idx];
           const apiCurrency = chart.meta?.currency || (asset.category === 'Crypto' ? 'USD' : 'TWD');
           const currentPrice = chart.meta?.regularMarketPrice || 0;
           

@@ -56,6 +56,20 @@ export default function RootLayout({
             `
           }}
         />
+        <script
+          type="text/javascript"
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('${basePath}/sw.js', { scope: '${basePath || '/'}' }).catch(function(err) {
+                    console.warn('SW registration failed:', err);
+                  });
+                });
+              }
+            `
+          }}
+        />
       </head>
       <body className="font-sans selection:bg-primary/10" suppressHydrationWarning>
         {children}
