@@ -532,7 +532,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                 <FormLabel className="pro-label text-[10px] opacity-60">{lang.currency}</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger className="h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg">
+                    <SelectTrigger className="h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg px-3 gap-2">
                       <SelectValue />
                     </SelectTrigger>
                   </FormControl>

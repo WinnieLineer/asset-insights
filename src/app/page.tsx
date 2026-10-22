@@ -1340,7 +1340,7 @@ export default function AssetInsightsPage() {
                 </div>
 
                 <Select value={displayCurrency} onValueChange={(v) => setDisplayCurrency(v as Currency)}>
-                  <SelectTrigger className="h-8 sm:h-10 w-16 sm:w-24 bg-slate-100 border-none font-black text-[11px] sm:text-[13px] rounded-full hover:bg-slate-200 transition-colors focus:ring-0">
+                  <SelectTrigger className="h-8 sm:h-9 min-w-[76px] sm:min-w-[88px] w-auto bg-slate-100 border-none font-black text-[11px] sm:text-[13px] rounded-full hover:bg-slate-200 transition-colors focus:ring-0 px-3 sm:px-3.5 gap-2 shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent align="end" className="min-w-[100px] font-black text-[12px] rounded-2xl border-slate-100 shadow-2xl p-1">
@@ -1459,7 +1459,7 @@ export default function AssetInsightsPage() {
                 )}
               </div>
             </div>
-            {editingAsset && (!editingAsset.symbol || editingAsset.symbol.trim() === '') && (<div className="space-y-1"><Label className="pro-label text-[10px]">{t.currency}</Label><Select value={editCurrency} onValueChange={(v) => setEditCurrency(v as Currency)}><SelectTrigger className="h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg"><SelectValue /></SelectTrigger><SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-[13px] font-bold">{c}</SelectItem>)}</SelectContent></Select></div>)}
+            {editingAsset && (!editingAsset.symbol || editingAsset.symbol.trim() === '') && (<div className="space-y-1"><Label className="pro-label text-[10px]">{t.currency}</Label><Select value={editCurrency} onValueChange={(v) => setEditCurrency(v as Currency)}><SelectTrigger className="h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg px-3 gap-2"><SelectValue /></SelectTrigger><SelectContent>{['TWD', 'USD', 'CNY', 'SGD'].map(c => <SelectItem key={c} value={c} className="text-[13px] font-bold">{c}</SelectItem>)}</SelectContent></Select></div>)}
             <div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label className="pro-label text-[10px]">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div><div className="space-y-1"><Label className="pro-label text-[10px]">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div></div>
           </div>
           <DialogFooter className="flex flex-row gap-3">
