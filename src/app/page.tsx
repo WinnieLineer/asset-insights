@@ -105,6 +105,23 @@ const CURRENCY_SYMBOLS: Record<Currency, string> = {
   SGD: 'S$',
 };
 
+function sanitizeAssets(rawList: any[]): Asset[] {
+  if (!Array.isArray(rawList)) return [];
+  return rawList
+    .filter((a) => a && typeof a === 'object')
+    .map((a, idx) => ({
+      id: typeof a.id === 'string' && a.id ? a.id : `asset_${Date.now()}_${idx}`,
+      name: typeof a.name === 'string' && a.name ? a.name : 'Unknown Asset',
+      symbol: typeof a.symbol === 'string' ? a.symbol : '',
+      category: typeof a.category === 'string' && a.category ? a.category : 'Stock',
+      amount: typeof a.amount === 'number' && !isNaN(a.amount) ? Math.max(0, a.amount) : 0,
+      currency: (['TWD', 'USD', 'CNY', 'SGD'].includes(a.currency) ? a.currency : 'TWD') as Currency,
+      acquisitionDate: typeof a.acquisitionDate === 'string' && a.acquisitionDate ? a.acquisitionDate : new Date().toISOString().slice(0, 10),
+      endDate: typeof a.endDate === 'string' && a.endDate ? a.endDate : undefined,
+      amountUnit: a.amountUnit === 'lot' ? 'lot' : 'share',
+    }));
+}
+
 const translations = {
   en: {
     title: 'ASSET INSIGHTS',
@@ -352,7 +369,7 @@ export default function AssetInsightsPage() {
       const savedAssets = localStorage.getItem('assets');
       if (savedAssets) {
         const parsed = JSON.parse(savedAssets);
-        if (Array.isArray(parsed)) setAssets(parsed);
+        if (Array.isArray(parsed)) setAssets(sanitizeAssets(parsed));
       }
     } catch (e) {
       console.warn('Failed to parse saved assets:', e);
@@ -543,11 +560,14 @@ export default function AssetInsightsPage() {
     try {
       const data = await downloadFromGitHub(ghConfig.token, ghConfig.user.login);
       if (data) {
-        if (data.assets && Array.isArray(data.assets)) setAssets(data.assets);
-        if (data.sections && Array.isArray(data.sections)) setSections(data.sections);
+        if (data.assets && Array.isArray(data.assets)) {
+          const sanitized = sanitizeAssets(data.assets);
+          setAssets(sanitized);
+          updateAllData(sanitized);
+        }
+        if (data.sections && Array.isArray(data.sections) && data.sections.length > 0) setSections(data.sections);
         if (data.layoutConfigs && typeof data.layoutConfigs === 'object') setLayoutConfigs(data.layoutConfigs);
         toast({ title: language === 'zh' ? '匯入成功' : 'Import Successful', description: language === 'zh' ? '已從 GitHub 抓取最新資料' : 'Latest data fetched from GitHub' });
-        if (data.assets && Array.isArray(data.assets)) updateAllData(data.assets);
       } else {
         toast({ title: language === 'zh' ? '找不到備份' : 'No Backup Found' });
       }
@@ -866,6 +886,43 @@ export default function AssetInsightsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const raw = event.target?.result as string;
+        const data = JSON.parse(raw);
+        if (!data || typeof data !== 'object') {
+          throw new Error('Invalid JSON format');
+        }
+        if (data.assets && Array.isArray(data.assets)) {
+          const sanitized = sanitizeAssets(data.assets);
+          setAssets(sanitized);
+          updateAllData(sanitized);
+        }
+        if (data.sections && Array.isArray(data.sections) && data.sections.length > 0) {
+          setSections(data.sections);
+        }
+        if (data.layoutConfigs && typeof data.layoutConfigs === 'object') {
+          setLayoutConfigs(data.layoutConfigs);
+        }
+        toast({ title: t.importSuccess });
+      } catch (err: any) {
+        console.error('File import failed:', err);
+        toast({ 
+          variant: 'destructive', 
+          title: language === 'zh' ? '匯入失敗' : 'Import Failed', 
+          description: language === 'zh' ? '請確認上傳的檔案為正確的備份 JSON 格式' : 'Invalid JSON backup file' 
+        });
+      } finally {
+        e.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: {
@@ -1081,6 +1138,7 @@ export default function AssetInsightsPage() {
                   interval={interval}
                   setInterval={setInterval}
                   handleExport={handleExport}
+                  handleFileImport={handleFileImport}
                   fileInputRef={fileInputRef}
                   lastUpdated={lastUpdated}
                   resizeSection={resizeSection}
@@ -1294,6 +1352,7 @@ interface SortableSectionProps {
   interval: string;
   setInterval: (val: string) => void;
   handleExport: () => void;
+  handleFileImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
   fileInputRef: React.RefObject<any>;
   lastUpdated: string | null;
   resizeSection: (id: string, axis: 'x' | 'y', direction: 'inc' | 'dec') => void;
@@ -1310,7 +1369,7 @@ const SortableSection = ({
   assets, setAssets, updateAllData, setEditingAsset, setEditName, setEditAmount, setEditAmountUnit,
   setEditDate, setEditEndDate, setEditCurrency, scrollPosRef, categoryFilter, setCategoryFilter,
   allCategories, activeSort, closedSort, requestSort, sortedActiveAssets, sortedClosedAssets,
-  trackingDays, setTrackingDays, interval, setInterval, handleExport, fileInputRef, lastUpdated, resizeSection, toast,
+  trackingDays, setTrackingDays, interval, setInterval, handleExport, handleFileImport, fileInputRef, lastUpdated, resizeSection, toast,
   ghConfig, isSyncing, syncToGitHub, syncFromGitHub, handleGitHubConnect
 }: SortableSectionProps) => {
   if (id === 'closedList' && assetCalculations.closedAssets.length === 0) return null;
@@ -1414,12 +1473,7 @@ const SortableSection = ({
           <div className="flex-1 flex items-center gap-2 w-full">
             <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg"><Download className="w-3 h-3" /> {t.exportData}</Button>
             <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg"><Upload className="w-3 h-3" /> {t.importData}</Button>
-            <input type="file" ref={fileInputRef} onChange={(e) => {
-              const file = e.target.files?.[0]; if (!file) return;
-              const reader = new FileReader(); reader.onload = (event) => {
-                try { const data = JSON.parse(event.target?.result as string); if (data.assets) setAssets(data.assets); toast({ title: t.importSuccess }); } catch (err) { toast({ variant: 'destructive', title: '匯入失敗' }); }
-              }; reader.readAsText(file);
-            }} accept=".json" className="hidden" />
+            <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".json" className="hidden" />
           </div>
           {ghConfig.token ? (
             <div className="w-full flex items-center gap-2 border-t border-slate-100 pt-3 xl:border-t-0 xl:pt-0 xl:w-auto">

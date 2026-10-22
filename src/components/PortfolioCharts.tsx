@@ -362,7 +362,7 @@ export function AllocationPieChart({ allocationData, displayCurrency, language, 
 
   const activeEntry = activeIndex !== null ? filteredData[activeIndex] : null;
   const displayLabel = activeEntry ? (lang.categories[activeEntry.name as keyof typeof lang.categories] || activeEntry.name) : lang.total;
-  const displayPercent = activeEntry ? ((activeEntry.value / totalValue) * 100).toFixed(1) : "100";
+  const displayPercent = activeEntry ? (totalValue > 0 ? ((activeEntry.value / totalValue) * 100).toFixed(1) : "0.0") : "100";
   const displayValue = activeEntry ? activeEntry.value : totalValue;
 
   return (
