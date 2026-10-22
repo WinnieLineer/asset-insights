@@ -78,7 +78,12 @@ function handleGitHubOAuth(params) {
     const accessToken = tokenData.access_token;
 
     if (!accessToken) {
-      return HtmlService.createHtmlOutput(`<h3>GitHub 授權交換失敗：</h3><pre>${JSON.stringify(tokenData, null, 2)}</pre>`);
+      return HtmlService.createHtmlOutput(`
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; text-align: center;">
+          <h3 style="color: #dc2626;">❌ GitHub 授權交換失敗</h3>
+          <pre style="text-align: left; background: #f1f5f9; padding: 16px; border-radius: 8px; overflow: auto;">${JSON.stringify(tokenData, null, 2)}</pre>
+        </div>
+      `).setTitle('GitHub 授權失敗');
     }
 
     const separator = targetUrl.includes('?') ? '&' : '?';
@@ -89,18 +94,83 @@ function handleGitHubOAuth(params) {
       <html>
         <head>
           <meta charset="utf-8">
-          <title>轉跳中...</title>
-          <script>window.location.replace("${finalRedirectUrl}");</script>
+          <title>GitHub 授權成功</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            * { box-sizing: border-box; }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 90vh;
+              margin: 0;
+              background-color: #f8fafc;
+              color: #0f172a;
+              padding: 20px;
+            }
+            .card {
+              background: #ffffff;
+              padding: 36px 28px;
+              border-radius: 20px;
+              box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+              text-align: center;
+              max-width: 440px;
+              width: 100%;
+              border: 1px solid #e2e8f0;
+            }
+            .icon {
+              width: 56px;
+              height: 56px;
+              background: #ecfdf5;
+              color: #059669;
+              border-radius: 50%;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 28px;
+              margin-bottom: 20px;
+              font-weight: bold;
+            }
+            h2 { margin: 0 0 10px; font-size: 20px; font-weight: 800; color: #0f172a; }
+            p { margin: 0 0 24px; color: #64748b; font-size: 14px; line-height: 1.6; }
+            .btn {
+              display: block;
+              width: 100%;
+              background: #0f172a;
+              color: #ffffff !important;
+              text-decoration: none;
+              padding: 14px 24px;
+              border-radius: 12px;
+              font-weight: 700;
+              font-size: 14px;
+              letter-spacing: 0.05em;
+              box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+              transition: all 0.2s ease;
+            }
+            .btn:hover { background: #1e293b; transform: translateY(-1px); }
+          </style>
+          <script>
+            // 嘗試跳出 Google Apps Script iframe 轉跳頂層視窗
+            try {
+              if (window.top && window.top !== window) {
+                window.top.location.href = "${finalRedirectUrl}";
+              }
+            } catch (e) {
+              console.log('Top navigation blocked by sandbox:', e);
+            }
+          </script>
         </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; text-align: center;">
-          <h2 style="color: #1e293b;">GitHub 授權成功</h2>
-          <p style="color: #64748b;">正在返回 Asset Insights，請稍候...</p>
-          <p style="margin-top: 20px;">
-            <a href="${finalRedirectUrl}" style="color: #2563eb; text-decoration: underline;">如果沒有自動跳轉，請點擊此處</a>
-          </p>
+        <body>
+          <div class="card">
+            <div class="icon">✓</div>
+            <h2>GitHub 授權成功</h2>
+            <p>已成功取得授權金鑰！請點擊下方按鈕返回 Asset Insights 繼續使用：</p>
+            <a href="${finalRedirectUrl}" target="_top" class="btn">返回 ASSET INSIGHTS</a>
+          </div>
         </body>
       </html>
-    `);
+    `).setTitle('Asset Insights - GitHub 授權成功');
   } catch (err) {
     return HtmlService.createHtmlOutput(`<h3>OAuth 錯誤：</h3><p>${err.toString()}</p>`);
   }

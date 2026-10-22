@@ -294,7 +294,7 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
-                        performSearch(field.value);
+                        performSearch(field.value || '');
                       }
                     }}
                     className={cn("bg-slate-50 border-slate-200 h-9 text-[13px] font-bold uppercase focus:border-black rounded-lg pl-9", tickerFound === false && !isCustomCategory && "border-rose-300")} 
@@ -364,11 +364,11 @@ export function AssetForm({ onAdd, language, hideSubmit = false }: AssetFormProp
                       setTimeout(() => target.select(), 50);
                     }}
                     onChange={e => field.onChange(parseFloat(e.target.value) || 0)} 
-                    className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg" 
+                    className="h-9 font-bold bg-slate-50 border-slate-200 text-[13px] rounded-lg flex-1" 
                   />
                 </FormControl>
                 <Select value={amountUnit} onValueChange={(val: any) => setAmountUnit(val)}>
-                  <SelectTrigger className="w-20 h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg shrink-0">
+                  <SelectTrigger className="w-[115px] sm:w-[120px] h-9 px-2.5 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

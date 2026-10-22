@@ -12,17 +12,19 @@ if (!fs.existsSync(claspJsonPath)) {
   process.exit(1);
 }
 
+const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+
 try {
   const claspConfig = JSON.parse(fs.readFileSync(claspJsonPath, 'utf8'));
 
   console.log('🚀 正在推送程式碼至 Google Apps Script...');
-  execSync('npx @google/clasp push --force', { stdio: 'inherit' });
+  execSync(`${npxCmd} @google/clasp push --force`, { stdio: 'inherit' });
 
   let deploymentId = claspConfig.deploymentId;
 
   if (!deploymentId) {
     try {
-      const output = execSync('npx @google/clasp deployments', { encoding: 'utf8' });
+      const output = execSync(`${npxCmd} @google/clasp deployments`, { encoding: 'utf8' });
       const lines = output.split('\n').filter(l => l.includes('- AKfyc') && !l.includes('@HEAD'));
       if (lines.length > 0) {
         const match = lines[lines.length - 1].match(/AKfyc[a-zA-Z0-9_-]+/);
@@ -38,11 +40,11 @@ try {
 
   if (deploymentId) {
     console.log(`📦 更新現有部署作業: ${deploymentId}`);
-    execSync(`npx @google/clasp deploy -i ${deploymentId} -d "Auto deploy on ${new Date().toLocaleString('zh-TW')}"`, { stdio: 'inherit' });
+    execSync(`${npxCmd} @google/clasp deploy -i ${deploymentId} -d "Auto deploy on ${new Date().toLocaleString('zh-TW')}"`, { stdio: 'inherit' });
     console.log(`\n🎉 部署完成！您的 Web App 網址為：\n👉 https://script.google.com/macros/s/${deploymentId}/exec\n`);
   } else {
     console.log('📦 尚未建立部署作業，正在建立全新部署...');
-    const deployOut = execSync('npx @google/clasp deploy -d "Initial Web App Deployment"', { encoding: 'utf8' });
+    const deployOut = execSync(`${npxCmd} @google/clasp deploy -d "Initial Web App Deployment"`, { encoding: 'utf8' });
     console.log(deployOut);
     const match = deployOut.match(/- (AKfyc[a-zA-Z0-9_-]+)/);
     if (match) {

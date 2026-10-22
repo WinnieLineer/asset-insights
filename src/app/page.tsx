@@ -94,7 +94,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
 
-const APP_VERSION = '1.0.5';
+const APP_VERSION = '1.0.6';
 const GITHUB_CLIENT_ID = 'Ov23liaxNNxcPIxmCKlD';
 const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbzlJZLp5_hA5eiUDZ2oSj8eWf094drGlHXmE4uYapt1oz3aTScbJm6W-AoJb6hdYhZ5UQ/exec';
 
@@ -281,6 +281,9 @@ export default function AssetInsightsPage() {
     path: 'data/backup.json'
   });
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isGhModalOpen, setIsGhModalOpen] = useState(false);
+  const [customGhToken, setCustomGhToken] = useState('');
+  const [isVerifyingToken, setIsVerifyingToken] = useState(false);
 
   const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
@@ -390,10 +393,40 @@ export default function AssetInsightsPage() {
       setGhConfig(prev => ({ ...prev, token, user }));
       localStorage.setItem('gh_token', token);
       toast({ title: language === 'zh' ? 'GitHub 已連結' : 'GitHub Connected', description: `Welcome, ${user.name || user.login}` });
-    } catch (err) {
+    } catch (err: any) {
       console.error('GitHub login failed', err);
       localStorage.removeItem('gh_token');
+      toast({ 
+        variant: 'destructive', 
+        title: language === 'zh' ? 'GitHub 驗證失敗' : 'GitHub Auth Failed', 
+        description: err.message || (language === 'zh' ? 'Token 無效或權限不足，請確認是否具備 repo 權限' : 'Invalid token or insufficient permissions') 
+      });
+      throw err;
     }
+  };
+
+  const handleTokenSubmit = async () => {
+    if (!customGhToken.trim()) {
+      toast({ variant: 'destructive', title: language === 'zh' ? '請輸入 Token' : 'Please enter a token' });
+      return;
+    }
+    setIsVerifyingToken(true);
+    try {
+      await handleGitHubLogin(customGhToken.trim());
+      setIsGhModalOpen(false);
+      setCustomGhToken('');
+    } catch (e) {
+      // toast is handled in handleGitHubLogin
+    } finally {
+      setIsVerifyingToken(false);
+    }
+  };
+
+  const handleGitHubDisconnect = () => {
+    setGhConfig(prev => ({ ...prev, token: null, user: null, lastSync: undefined }));
+    localStorage.removeItem('gh_token');
+    setIsGhModalOpen(false);
+    toast({ title: language === 'zh' ? '已解除 GitHub 連結' : 'GitHub Disconnected' });
   };
 
   const syncToGitHub = async () => {
@@ -871,19 +904,24 @@ export default function AssetInsightsPage() {
                 </Select>
 
                 {ghConfig.user ? (
-                  <div className="flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-2 border-l border-slate-100 ml-0.5 sm:ml-1 shrink-0">
+                  <div 
+                    onClick={() => setIsGhModalOpen(true)}
+                    className="flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-2 border-l border-slate-100 ml-0.5 sm:ml-1 shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                    title={language === 'zh' ? '點擊管理 GitHub 雲端備份' : 'Manage GitHub Cloud Sync'}
+                  >
                     <div className="flex flex-col items-end">
                       <span className="text-[8px] sm:text-[10px] font-black leading-none truncate max-w-[60px] sm:max-w-none">{ghConfig.user.name || ghConfig.user.login}</span>
                       <span className="text-[7px] sm:text-[8px] font-bold text-emerald-500 uppercase tracking-tighter">Synced</span>
                     </div>
-                    <img src={ghConfig.user.avatar_url} alt="GitHub" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform cursor-pointer object-cover shrink-0" title="GitHub Connected" />
+                    <img src={ghConfig.user.avatar_url} alt="GitHub" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-white shadow-sm hover:scale-110 transition-transform object-cover shrink-0" />
                   </div>
                 ) : (
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    onClick={handleGitHubConnect}
+                    onClick={() => setIsGhModalOpen(true)}
                     className="h-8 w-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-black transition-colors"
+                    title={language === 'zh' ? '連結 GitHub 雲端備份' : 'Connect GitHub'}
                   >
                     <Globe className="w-4 h-4" />
                   </Button>
@@ -941,7 +979,7 @@ export default function AssetInsightsPage() {
                   isSyncing={isSyncing}
                   syncToGitHub={syncToGitHub}
                   syncFromGitHub={syncFromGitHub}
-                  handleGitHubConnect={handleGitHubConnect}
+                  handleGitHubConnect={() => setIsGhModalOpen(true)}
                 />
               ))}
             </div>
@@ -960,11 +998,11 @@ export default function AssetInsightsPage() {
                 <Input id="edit-amount" type="number" step="any" value={editAmount} onFocus={(e) => { const target = e.currentTarget; setTimeout(() => target.select(), 50); }} onChange={(e) => setEditAmount(parseFloat(e.target.value) || 0)} className="h-9 font-black text-sm rounded-lg flex-1" />
                 {(editingAsset?.category === 'Stock' || editingAsset?.category === 'ETF') && (
                   <Select value={editAmountUnit} onValueChange={(val: any) => setEditAmountUnit(val)}>
-                    <SelectTrigger className="w-20 h-9 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg shrink-0">
+                    <SelectTrigger className="w-[115px] sm:w-[120px] h-9 px-2.5 bg-slate-50 border-slate-200 text-[13px] font-bold rounded-lg shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="share">{language === 'zh' ? '股' : 'Shares'}</SelectItem>
+                      <SelectItem value="share">{language === 'zh' ? '股/單位' : 'Shares/Units'}</SelectItem>
                       <SelectItem value="lot">{language === 'zh' ? '張' : 'Lots'}</SelectItem>
                     </SelectContent>
                   </Select>
@@ -975,6 +1013,137 @@ export default function AssetInsightsPage() {
             <div className="grid grid-cols-2 gap-3"><div className="space-y-1"><Label className="pro-label text-[10px]">{t.acqDate}</Label><Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div><div className="space-y-1"><Label className="pro-label text-[10px]">{t.posEndDate}</Label><Input type="date" value={editEndDate} onChange={(e) => setEditEndDate(e.target.value)} className="h-9 font-black text-xs rounded-lg" /></div></div>
           </div>
           <DialogFooter className="flex flex-row gap-3"><Button variant="ghost" onClick={() => { setEditingAsset(null); }} className="h-10 flex-1 font-black uppercase text-xs">{t.cancel}</Button><Button onClick={() => { const finalAmount = (editingAsset?.category === 'Stock' || editingAsset?.category === 'ETF') && editAmountUnit === 'lot' ? editAmount * 1000 : editAmount; const updated = assets.map(a => a.id === editingAsset?.id ? { ...a, name: editName, amount: finalAmount, amountUnit: editAmountUnit as any, acquisitionDate: editDate, endDate: editEndDate || undefined, currency: editCurrency } : a); setAssets(updated); setEditingAsset(null); updateAllData(updated); }} className="bg-black text-white h-10 flex-1 font-black uppercase text-[13px] px-3 shadow-md">{t.saveChanges}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* GitHub Sync Modal */}
+      <Dialog open={isGhModalOpen} onOpenChange={setIsGhModalOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[500px] bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-slate-100" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black uppercase flex items-center gap-3">
+              <Globe className="w-5 h-5 text-slate-900" />
+              {language === 'zh' ? 'GitHub 雲端備份同步' : 'GitHub Cloud Sync'}
+            </DialogTitle>
+          </DialogHeader>
+
+          {ghConfig.user ? (
+            <div className="space-y-5 py-3">
+              <div className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                <img src={ghConfig.user.avatar_url} alt="GitHub" className="w-12 h-12 rounded-full border-2 border-white shadow-sm object-cover" />
+                <div className="flex-1 min-w-0">
+                  <div className="font-black text-sm text-slate-900 truncate">{ghConfig.user.name || ghConfig.user.login}</div>
+                  <div className="text-xs text-slate-500 truncate">@{ghConfig.user.login}</div>
+                  <div className="text-[10px] text-emerald-600 font-bold mt-0.5">● {language === 'zh' ? '已連線至私有儲存庫 (asset-insights-backup)' : 'Connected to asset-insights-backup'}</div>
+                </div>
+              </div>
+
+              {ghConfig.lastSync && (
+                <div className="text-[11px] text-slate-400 font-medium">
+                  {language === 'zh' ? '上次同步時間：' : 'Last sync: '} {ghConfig.lastSync}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <Button 
+                  onClick={() => { syncToGitHub(); setIsGhModalOpen(false); }} 
+                  disabled={isSyncing}
+                  className="bg-slate-900 hover:bg-black text-white font-black text-xs uppercase h-10 rounded-xl gap-1.5"
+                >
+                  {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  {language === 'zh' ? '上傳備份至雲端' : 'Sync to Cloud'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => { syncFromGitHub(); setIsGhModalOpen(false); }} 
+                  disabled={isSyncing}
+                  className="font-black text-xs uppercase h-10 rounded-xl gap-1.5 border-slate-200"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {language === 'zh' ? '從雲端拉取備份' : 'Pull from Cloud'}
+                </Button>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+                <span className="text-xs text-slate-400">{language === 'zh' ? '若需更換帳號可隨時解除綁定' : 'Disconnect anytime to switch accounts'}</span>
+                <Button variant="ghost" size="sm" onClick={handleGitHubDisconnect} className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 font-bold text-xs">
+                  {language === 'zh' ? '解除綁定' : 'Disconnect'}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-5 py-2">
+              <p className="text-xs text-slate-500 leading-relaxed">
+                {language === 'zh' 
+                  ? '將您的資產數據與儀表板佈局自動備份至個人 GitHub 私有儲存庫中，跨裝置隨時同步，保障資料隱私與安全。' 
+                  : 'Automatically backup your assets and dashboard layout to your private GitHub repository for cross-device sync.'}
+              </p>
+
+              {/* 方式一：OAuth 快速授權 */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase text-slate-800 tracking-wider">
+                    {language === 'zh' ? '方式 1：OAuth 一鍵快速授權' : 'Method 1: Fast OAuth'}
+                  </span>
+                  <Badge variant="secondary" className="text-[10px] font-bold bg-white text-slate-600 border border-slate-200">
+                    {language === 'zh' ? '自動轉跳' : 'Auto'}
+                  </Badge>
+                </div>
+                <Button 
+                  onClick={handleGitHubConnect}
+                  className="w-full bg-slate-900 hover:bg-black text-white font-black text-xs uppercase h-10 rounded-xl gap-2 shadow-sm"
+                >
+                  <Globe className="w-4 h-4" />
+                  {language === 'zh' ? '前往 GitHub 授權登入' : 'Authorize with GitHub'}
+                </Button>
+              </div>
+
+              <div className="relative flex items-center justify-center">
+                <div className="border-t border-slate-200 w-full" />
+                <span className="bg-white px-3 text-[10px] font-black uppercase text-slate-400 tracking-wider shrink-0">
+                  {language === 'zh' ? '或使用 Token 直連 (最推薦)' : 'OR CONNECT VIA TOKEN (RECOMMENDED)'}
+                </span>
+              </div>
+
+              {/* 方式二：Personal Access Token (最穩定，100% 保證可連) */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase text-slate-800 tracking-wider">
+                    {language === 'zh' ? '方式 2：貼上 GitHub Token' : 'Method 2: Personal Access Token'}
+                  </span>
+                  <Badge variant="default" className="text-[10px] font-bold bg-emerald-600 text-white">
+                    {language === 'zh' ? '100% 穩定免設定' : '100% Reliable'}
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <Input 
+                    type="password"
+                    placeholder="ghp_xxxxxxxxxxxx 或 github_pat_..."
+                    value={customGhToken}
+                    onChange={(e) => setCustomGhToken(e.target.value)}
+                    className="h-10 text-xs font-mono bg-white border-slate-200 rounded-xl"
+                  />
+                  <div className="flex justify-between items-center px-1">
+                    <a 
+                      href="https://github.com/settings/tokens/new?scopes=repo&description=Asset-Insights-Backup" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1"
+                    >
+                      👉 {language === 'zh' ? '點此前往 GitHub 建立 Token（需勾選 repo 權限）' : 'Create token on GitHub (needs repo scope)'}
+                    </a>
+                  </div>
+                </div>
+                <Button 
+                  onClick={handleTokenSubmit}
+                  disabled={isVerifyingToken || !customGhToken.trim()}
+                  className="w-full bg-slate-900 hover:bg-black text-white font-black text-xs uppercase h-10 rounded-xl gap-2 shadow-sm"
+                >
+                  {isVerifyingToken ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                  {language === 'zh' ? '驗證並綁定 Token' : 'Verify & Bind Token'}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
@@ -997,7 +1166,7 @@ interface SortableSectionProps {
   setEditingAsset: (asset: Asset | null) => void;
   setEditName: (val: string) => void;
   setEditAmount: (val: number) => void;
-  setEditAmountUnit: (val: string) => void;
+  setEditAmountUnit: (val: any) => void;
   setEditDate: (val: string) => void;
   setEditEndDate: (val: string) => void;
   setEditCurrency: (val: Currency) => void;
@@ -1015,7 +1184,7 @@ interface SortableSectionProps {
   interval: string;
   setInterval: (val: string) => void;
   handleExport: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<any>;
   lastUpdated: string | null;
   resizeSection: (id: string, axis: 'x' | 'y', direction: 'inc' | 'dec') => void;
   toast: any;
