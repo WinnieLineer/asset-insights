@@ -166,16 +166,25 @@ export function AITipCard({ assets, totalTWD, language, marketConditions = "Stab
       return;
     }
     setLoading(true);
-    const portfolioSummary = assets.map(a => 
-      `${a.name} (${a.symbol || a.category}): ${(a.amount ?? 0).toFixed(5)} units, Unit Price: ${(a.priceInDisplay ?? 0).toFixed(4)}, Total Value: ${(a.valueInDisplay ?? 0).toFixed(0)}`
-    ).join('\n');
+    const sanitizedQuestion = (userQuestion || 'Full portfolio analysis')
+      .trim()
+      .slice(0, 300)
+      .replace(/[\r\n]+/g, ' ')
+      .replace(/"/g, "'");
+
+    const portfolioSummary = assets.slice(0, 100).map(a => {
+      const cleanName = String(a.name || '').slice(0, 40).replace(/[\r\n]+/g, ' ');
+      const cleanSymbol = String(a.symbol || a.category || '').slice(0, 20).replace(/[\r\n]+/g, ' ');
+      return `${cleanName} (${cleanSymbol}): ${(a.amount ?? 0).toFixed(4)} units, Unit Price: ${(a.priceInDisplay ?? 0).toFixed(4)}, Total Value: ${(a.valueInDisplay ?? 0).toFixed(0)}`;
+    }).join('\n');
+
     const promptText = `
       You are a high-end institutional financial analyst. Provide a professional portfolio audit.
       PORTFOLIO DATA:
       ${portfolioSummary}
       Total Portfolio Value (TWD): ${(totalTWD ?? 0).toFixed(0)}
       Current Context: ${marketConditions}
-      User Custom Inquiry: "${userQuestion || 'Full portfolio analysis'}"
+      User Custom Inquiry: "${sanitizedQuestion}"
       OUTPUT FORMAT (JSON ONLY):
       {
         "answer": "Concise executive answer to the inquiry",

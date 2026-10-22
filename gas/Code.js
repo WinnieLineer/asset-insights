@@ -207,15 +207,25 @@ function handleGitHubOAuth(params) {
 // 處理 Yahoo Finance 批次平行請求
 function handleStockFetch(params) {
   try {
-    const symbols = params.symbols.split(',').map(s => s.trim()).filter(Boolean);
-    const period1 = params.period1;
-    const period2 = params.period2;
-    const interval = params.interval || '1d';
+    const rawSymbols = String(params.symbols || '').split(',').map(s => s.trim()).filter(Boolean);
+    // 安全防護：限制單次批次請求最大數量為 50，防止濫用 Google 基礎設施 Quota
+    const SAFE_SYMBOL_REGEX = /^[A-Za-z0-9\.\-\=\^]{1,20}$/;
+    const symbols = rawSymbols.slice(0, 50).filter(s => SAFE_SYMBOL_REGEX.test(s));
+
+    if (symbols.length === 0) {
+      return ContentService.createTextOutput(JSON.stringify([]))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const p1 = params.period1 ? parseInt(params.period1, 10) : null;
+    const p2 = params.period2 ? parseInt(params.period2, 10) : null;
+    const ALLOWED_INTERVALS = ['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo'];
+    const interval = ALLOWED_INTERVALS.includes(params.interval) ? params.interval : '1d';
 
     const requests = symbols.map(symbol => {
       let targetUrl = '';
-      if (period1 && period2) {
-        targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${period1}&period2=${period2}&interval=${interval}`;
+      if (p1 !== null && p2 !== null && !isNaN(p1) && !isNaN(p2) && p1 > 0 && p2 > 0) {
+        targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${p1}&period2=${p2}&interval=${interval}`;
       } else {
         targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1d`;
       }
@@ -250,7 +260,13 @@ function handleStockFetch(params) {
 // 處理 Yahoo Finance 搜尋與自動完成
 function handleSearch(query) {
   try {
-    const targetUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}`;
+    // 安全防護：長度限制為 50 字元，移除危險控制字元
+    const cleanQuery = String(query || '').trim().slice(0, 50).replace(/[^\w\s\.\-\^]/gi, '');
+    if (!cleanQuery) {
+      return ContentService.createTextOutput(JSON.stringify({ ResultSet: { Result: [] } }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const targetUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(cleanQuery)}`;
     const resp = UrlFetchApp.fetch(targetUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -262,7 +278,7 @@ function handleSearch(query) {
 
     const result = {
       ResultSet: {
-        Query: query,
+        Query: cleanQuery,
         Result: quotes.map(q => ({
           symbol: q.symbol,
           name: q.longname || q.shortname || q.symbol,

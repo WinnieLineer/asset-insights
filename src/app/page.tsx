@@ -122,6 +122,55 @@ function sanitizeAssets(rawList: any[]): Asset[] {
     }));
 }
 
+const DEFAULT_SECTIONS = ['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'addAsset', 'closedList', 'ai'];
+
+const DEFAULT_LAYOUT_CONFIGS: Record<string, LayoutConfig> = {
+  summary: { width: 12, height: 160 },
+  controls: { width: 12, height: 80 },
+  historicalTrend: { width: 7, height: 450 },
+  allocation: { width: 5, height: 450 },
+  list: { width: 12, height: 600 },
+  addAsset: { width: 12, height: 500 },
+  closedList: { width: 12, height: 400 },
+  ai: { width: 12, height: 650 }
+};
+
+function sanitizeImportData(data: any): { assets?: Asset[]; sections?: string[]; layoutConfigs?: Record<string, LayoutConfig> } {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('Invalid JSON format');
+  }
+  const result: { assets?: Asset[]; sections?: string[]; layoutConfigs?: Record<string, LayoutConfig> } = {};
+
+  if (Array.isArray(data.assets)) {
+    result.assets = sanitizeAssets(data.assets);
+  }
+
+  if (Array.isArray(data.sections)) {
+    const valid = data.sections.filter((s: any) => typeof s === 'string' && DEFAULT_SECTIONS.includes(s));
+    if (valid.length > 0) {
+      const missing = DEFAULT_SECTIONS.filter(s => !valid.includes(s));
+      result.sections = [...valid, ...missing];
+    }
+  }
+
+  if (data.layoutConfigs && typeof data.layoutConfigs === 'object' && !Array.isArray(data.layoutConfigs)) {
+    const cleanConfigs: Record<string, LayoutConfig> = {};
+    for (const key of DEFAULT_SECTIONS) {
+      const incoming = data.layoutConfigs[key];
+      if (incoming && typeof incoming === 'object' && !Array.isArray(incoming)) {
+        const width = [4, 6, 8, 10, 12].includes(Number(incoming.width)) ? Number(incoming.width) : (DEFAULT_LAYOUT_CONFIGS[key]?.width || 12);
+        const height = typeof incoming.height === 'number' && incoming.height >= 80 && incoming.height <= 2000 ? incoming.height : (DEFAULT_LAYOUT_CONFIGS[key]?.height || 400);
+        cleanConfigs[key] = { width, height };
+      } else {
+        cleanConfigs[key] = DEFAULT_LAYOUT_CONFIGS[key] || { width: 12, height: 400 };
+      }
+    }
+    result.layoutConfigs = cleanConfigs;
+  }
+
+  return result;
+}
+
 const translations = {
   en: {
     title: 'ASSET INSIGHTS',
@@ -305,19 +354,6 @@ export default function AssetInsightsPage() {
   const [activeSort, setActiveSort] = useState<SortConfig>({ key: 'name', direction: 'asc' });
   const [closedSort, setClosedSort] = useState<SortConfig>({ key: 'endDate', direction: 'desc' });
 
-  const DEFAULT_SECTIONS = ['summary', 'controls', 'historicalTrend', 'allocation', 'list', 'addAsset', 'closedList', 'ai'];
-
-  const DEFAULT_LAYOUT_CONFIGS: Record<string, LayoutConfig> = {
-    summary: { width: 12, height: 160 },
-    controls: { width: 12, height: 80 },
-    historicalTrend: { width: 7, height: 450 },
-    allocation: { width: 5, height: 450 },
-    list: { width: 12, height: 600 },
-    addAsset: { width: 12, height: 500 },
-    closedList: { width: 12, height: 400 },
-    ai: { width: 12, height: 650 }
-  };
-
   // 初始佈局順序
   const [sections, setSections] = useState<string[]>(DEFAULT_SECTIONS);
   const [layoutConfigs, setLayoutConfigs] = useState<Record<string, LayoutConfig>>(DEFAULT_LAYOUT_CONFIGS);
@@ -438,7 +474,30 @@ export default function AssetInsightsPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const token = urlParams.get('gh_token');
+    const state = urlParams.get('state');
+
     if (code) {
+      // CSRF validation
+      let stateValid = true;
+      try {
+        const expectedState = sessionStorage.getItem('oauth_state');
+        sessionStorage.removeItem('oauth_state');
+        if (expectedState && state && state !== expectedState) {
+          stateValid = false;
+        }
+      } catch (e) {}
+
+      if (!stateValid) {
+        console.error('OAuth state mismatch detected (possible CSRF)');
+        toast({
+          variant: 'destructive',
+          title: (savedLang || language) === 'zh' ? '安全警告 (CSRF 攔截)' : 'Security Warning',
+          description: (savedLang || language) === 'zh' ? 'OAuth 授權狀態比對不符，登入已被終止以保護帳號安全' : 'OAuth state mismatch, login aborted'
+        });
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+
       // Clear code from URL
       window.history.replaceState({}, document.title, window.location.pathname);
       const isZh = (savedLang || language) === 'zh';
@@ -582,15 +641,15 @@ export default function AssetInsightsPage() {
     if (!ghConfig.token || !ghConfig.user) return;
     setIsSyncing(true);
     try {
-      const data = await downloadFromGitHub(ghConfig.token, ghConfig.user.login);
-      if (data) {
-        if (data.assets && Array.isArray(data.assets)) {
-          const sanitized = sanitizeAssets(data.assets);
-          setAssets(sanitized);
-          updateAllData(sanitized);
+      const rawData = await downloadFromGitHub(ghConfig.token, ghConfig.user.login);
+      if (rawData) {
+        const data = sanitizeImportData(rawData);
+        if (data.assets) {
+          setAssets(data.assets);
+          updateAllData(data.assets);
         }
-        if (data.sections && Array.isArray(data.sections) && data.sections.length > 0) setSections(data.sections);
-        if (data.layoutConfigs && typeof data.layoutConfigs === 'object') setLayoutConfigs(data.layoutConfigs);
+        if (data.sections) setSections(data.sections);
+        if (data.layoutConfigs) setLayoutConfigs(data.layoutConfigs);
         toast({ title: language === 'zh' ? '匯入成功' : 'Import Successful', description: language === 'zh' ? '已從 GitHub 抓取最新資料' : 'Latest data fetched from GitHub' });
       } else {
         toast({ title: language === 'zh' ? '找不到備份' : 'No Backup Found' });
@@ -616,7 +675,11 @@ export default function AssetInsightsPage() {
   const handleGitHubConnect = () => {
     const scope = 'repo';
     const returnUrl = typeof window !== 'undefined' ? (window.location.origin + window.location.pathname) : 'https://winnie-lin.space/asset-insights/';
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=${scope}&redirect_uri=${encodeURIComponent(returnUrl)}`;
+    const state = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
+    try {
+      sessionStorage.setItem('oauth_state', state);
+    } catch (e) {}
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=${scope}&state=${encodeURIComponent(state)}&redirect_uri=${encodeURIComponent(returnUrl)}`;
   };
 
   useEffect(() => {
@@ -919,19 +982,16 @@ export default function AssetInsightsPage() {
     reader.onload = (event) => {
       try {
         const raw = event.target?.result as string;
-        const data = JSON.parse(raw);
-        if (!data || typeof data !== 'object') {
-          throw new Error('Invalid JSON format');
+        const parsed = JSON.parse(raw);
+        const data = sanitizeImportData(parsed);
+        if (data.assets) {
+          setAssets(data.assets);
+          updateAllData(data.assets);
         }
-        if (data.assets && Array.isArray(data.assets)) {
-          const sanitized = sanitizeAssets(data.assets);
-          setAssets(sanitized);
-          updateAllData(sanitized);
-        }
-        if (data.sections && Array.isArray(data.sections) && data.sections.length > 0) {
+        if (data.sections) {
           setSections(data.sections);
         }
-        if (data.layoutConfigs && typeof data.layoutConfigs === 'object') {
+        if (data.layoutConfigs) {
           setLayoutConfigs(data.layoutConfigs);
         }
         toast({ title: t.importSuccess });
