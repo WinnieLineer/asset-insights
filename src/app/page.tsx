@@ -44,6 +44,7 @@ import {
   Columns,
   PieChart,
   Sliders,
+  Search,
   Sparkles,
   Brain,
   ArrowRightLeft,
@@ -355,6 +356,8 @@ export default function AssetInsightsPage() {
   const [editDate, setEditDate] = useState<string>('');
   const [editEndDate, setEditEndDate] = useState<string>('');
   const [editCurrency, setEditCurrency] = useState<Currency>('TWD');
+  const [tableSearchQuery, setTableSearchQuery] = useState<string>('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const [trackingDays, setTrackingDays] = useState<string>("max");
   const [interval, setInterval] = useState<string>("1d");
@@ -952,6 +955,25 @@ export default function AssetInsightsPage() {
     }
 
     const historyData = Object.keys(dayAggregator).sort().map(key => dayAggregator[key]);
+
+    // Period & Daily Change calculations
+    let periodDelta = 0;
+    let periodDeltaPercent = 0;
+    let dailyDelta = 0;
+    let dailyDeltaPercent = 0;
+
+    if (historyData.length >= 2) {
+      const firstVal = historyData[0].totalValue || 0;
+      const lastVal = historyData[historyData.length - 1].totalValue || 0;
+      const prevVal = historyData[historyData.length - 2].totalValue || firstVal;
+
+      periodDelta = lastVal - firstVal;
+      periodDeltaPercent = firstVal > 0 ? (periodDelta / firstVal) * 100 : 0;
+
+      dailyDelta = lastVal - prevVal;
+      dailyDeltaPercent = prevVal > 0 ? (dailyDelta / prevVal) * 100 : 0;
+    }
+
     return {
       processedAssets,
       activeAssets: processedAssets.filter(a => !a.isClosed),
@@ -959,7 +981,11 @@ export default function AssetInsightsPage() {
       totalTWD,
       totalDisplay: totalTWD * displayScale,
       allocationData: Object.entries(allocationMap).filter(([_, v]) => v > 0).map(([name, value]) => ({ name, value: value * displayScale })),
-      chartData: historyData
+      chartData: historyData,
+      periodDelta,
+      periodDeltaPercent,
+      dailyDelta,
+      dailyDeltaPercent,
     };
   }, [assets, marketData, displayCurrency, marketTimeline, language]);
 
@@ -980,8 +1006,16 @@ export default function AssetInsightsPage() {
   const sortedActiveAssets = useMemo(() => {
     let filtered = assetCalculations.activeAssets;
     if (categoryFilter !== 'all') filtered = filtered.filter(a => a.category === categoryFilter);
+    if (tableSearchQuery.trim()) {
+      const q = tableSearchQuery.toLowerCase().trim();
+      filtered = filtered.filter(a => 
+        (a.name && a.name.toLowerCase().includes(q)) ||
+        (a.symbol && a.symbol.toLowerCase().includes(q)) ||
+        (a.category && a.category.toLowerCase().includes(q))
+      );
+    }
     return getSortedItems(filtered, activeSort);
-  }, [assetCalculations.activeAssets, activeSort, getSortedItems, categoryFilter]);
+  }, [assetCalculations.activeAssets, activeSort, getSortedItems, categoryFilter, tableSearchQuery]);
 
   const sortedClosedAssets = useMemo(() => getSortedItems(assetCalculations.closedAssets, closedSort), [assetCalculations.closedAssets, closedSort, getSortedItems]);
 
@@ -1117,6 +1151,51 @@ export default function AssetInsightsPage() {
       description: isZh ? '已產生相容於 Excel 的 UTF-8 CSV 檔案' : 'Excel-compatible UTF-8 CSV generated'
     });
   }, [assets, marketData, language, t, toast]);
+
+  // Global Keyboard Shortcuts (P = Privacy, R = Refresh, E = Export CSV, ? = Help, / = Search, Esc = Close)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      const isInput = activeEl && (
+        activeEl.tagName === 'INPUT' || 
+        activeEl.tagName === 'TEXTAREA' || 
+        activeEl.getAttribute('contenteditable') === 'true'
+      );
+
+      if (e.key === 'Escape') {
+        if (isReordering) setIsReordering(false);
+        if (editingAsset) setEditingAsset(null);
+        if (isGhModalOpen) setIsGhModalOpen(false);
+        if (isHelpModalOpen) setIsHelpModalOpen(false);
+        if (showIntro) setShowIntro(false);
+        return;
+      }
+
+      if (isInput) return;
+
+      if (e.key === 'p' || e.key === 'P') {
+        e.preventDefault();
+        togglePrivacyMode(!privacyMode);
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        if (!loading && assets.length > 0) {
+          updateAllData(assets);
+        }
+      } else if (e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+        handleExportCSV();
+      } else if (e.key === '?') {
+        e.preventDefault();
+        setIsHelpModalOpen(prev => !prev);
+      } else if (e.key === '/') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [privacyMode, isReordering, editingAsset, isGhModalOpen, isHelpModalOpen, showIntro, loading, assets, updateAllData, handleExportCSV, togglePrivacyMode]);
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1507,6 +1586,9 @@ export default function AssetInsightsPage() {
                   setSectionWidth={setSectionWidth}
                   setSectionHeight={setSectionHeight}
                   stepSectionHeight={stepSectionHeight}
+                  tableSearchQuery={tableSearchQuery}
+                  setTableSearchQuery={setTableSearchQuery}
+                  searchInputRef={searchInputRef}
                   toast={toast}
                   ghConfig={ghConfig}
                   isSyncing={isSyncing}
@@ -1700,6 +1782,7 @@ export default function AssetInsightsPage() {
             {[
               { key: 'P', desc: t.keyP },
               { key: 'R', desc: t.keyR },
+              { key: '/', desc: language === 'zh' ? '快速聚焦資產搜尋欄' : 'Focus asset search bar' },
               { key: 'E', desc: t.keyE },
               { key: '?', desc: t.keyHelp },
               { key: 'Esc', desc: t.keyEsc },
@@ -1766,6 +1849,9 @@ interface SortableSectionProps {
   setSectionWidth: (id: string, width: number) => void;
   setSectionHeight: (id: string, height: number) => void;
   stepSectionHeight: (id: string, delta: number) => void;
+  tableSearchQuery: string;
+  setTableSearchQuery: (val: string) => void;
+  searchInputRef: React.RefObject<any>;
   toast: any;
   ghConfig: GitHubConfig;
   isSyncing: boolean;
@@ -1780,7 +1866,7 @@ const SortableSection = ({
   setEditDate, setEditEndDate, setEditCurrency, scrollPosRef, categoryFilter, setCategoryFilter,
   allCategories, activeSort, closedSort, requestSort, sortedActiveAssets, sortedClosedAssets,
   trackingDays, setTrackingDays, interval, setInterval, handleExport, handleExportCSV, handleFileImport, fileInputRef, lastUpdated, resizeSection,
-  setSectionWidth, setSectionHeight, stepSectionHeight, toast,
+  setSectionWidth, setSectionHeight, stepSectionHeight, tableSearchQuery, setTableSearchQuery, searchInputRef, toast,
   ghConfig, isSyncing, syncToGitHub, syncFromGitHub, handleGitHubConnect
 }: SortableSectionProps) => {
   if (id === 'closedList' && assetCalculations.closedAssets.length === 0) return null;
@@ -1830,28 +1916,95 @@ const SortableSection = ({
 
   let content = null;
   switch (id) {
-    case 'summary':
+    case 'summary': {
+      const { dailyDelta = 0, dailyDeltaPercent = 0, activeAssets = [], allocationData = [] } = assetCalculations;
+      const isPositive = dailyDelta >= 0;
+      const currSymbol = CURRENCY_SYMBOLS[displayCurrency] || '$';
+
       content = (
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full items-stretch">
-          <Card className="md:col-span-8 lg:col-span-9 modern-card p-3 sm:p-6 relative overflow-hidden bg-white flex flex-col justify-center min-h-[90px] sm:min-h-[140px]">
-            <div className="space-y-1 sm:space-y-2 z-20 relative text-left">
-              <div className="pro-label text-[10px] sm:text-sm"><Globe className="w-3 sm:w-3.5 h-3 sm:h-3.5" /> {t.totalValue}</div>
-              <div className="pro-title flex items-center text-xl sm:text-4xl">
-                <span className="text-slate-200 font-medium text-[0.6em] mr-2">{CURRENCY_SYMBOLS[displayCurrency]}</span>
-                <span>{privacyMode ? '••••••••' : assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                {loading && <Loader2 className="w-3 h-3 sm:w-5 sm:h-5 animate-spin text-slate-200 ml-2 sm:ml-3" />}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 sm:gap-6 h-full items-stretch">
+          <Card className="md:col-span-8 lg:col-span-9 modern-card p-5 sm:p-7 relative overflow-hidden bg-white flex flex-col justify-between min-h-[140px] sm:min-h-[160px] border-slate-200/80 shadow-sm hover:shadow-md transition-all">
+            <div className="space-y-2 sm:space-y-3 z-20 relative text-left">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="pro-label text-[11px] sm:text-xs">
+                  <Globe className="w-3.5 h-3.5 text-slate-500" /> {t.totalValue}
+                </div>
+                {/* Micro KPI badges */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/50">
+                    {activeAssets.length} {language === 'zh' ? '個部位' : 'positions'}
+                  </span>
+                  <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/50 hidden sm:inline-block">
+                    {allocationData.length} {language === 'zh' ? '項類別' : 'categories'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-baseline gap-3 sm:gap-4">
+                <div className="pro-title flex items-center text-2xl sm:text-4xl lg:text-5xl tracking-tight text-slate-900">
+                  <span className="text-slate-300 font-semibold text-[0.65em] mr-2">{currSymbol}</span>
+                  <span>{privacyMode ? '••••••••' : assetCalculations.totalDisplay.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                  {loading && <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-slate-400 ml-3 shrink-0" />}
+                </div>
+
+                {/* Daily Change Badge */}
+                {!privacyMode && assetCalculations.chartData.length >= 2 && (
+                  <div className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs sm:text-sm font-black border transition-all",
+                    isPositive 
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200/70" 
+                      : "bg-rose-50 text-rose-700 border-rose-200/70"
+                  )}>
+                    {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                    <span>{isPositive ? '+' : ''}{currSymbol}{Math.abs(dailyDelta).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                    <span className="text-[0.85em] opacity-80">({isPositive ? '+' : ''}{dailyDeltaPercent.toFixed(2)}%)</span>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 opacity-5 pointer-events-none"><Wallet className="w-10 h-10 sm:w-20 sm:h-20 text-black" /></div>
+
+            {/* Bottom info bar */}
+            <div className="pt-2 mt-2 border-t border-slate-100/80 flex items-center justify-between text-[11px] font-bold text-slate-400 z-20">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                {language === 'zh' ? '即時行情自動折算' : 'Live Auto Conversion'}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider text-slate-400 hidden sm:inline">
+                {language === 'zh' ? '按 [P] 切換隱私遮罩 · 按 [R] 同步' : 'Press [P] privacy · [R] sync'}
+              </span>
+            </div>
+
+            <div className="absolute -bottom-4 -right-4 opacity-5 pointer-events-none">
+              <Wallet className="w-32 h-32 sm:w-40 sm:h-40 text-black" />
+            </div>
           </Card>
+
           <div className="md:col-span-4 lg:col-span-3 flex items-stretch">
-            <Button onClick={() => updateAllData(assets)} disabled={loading} className="w-full h-12 sm:h-full bg-slate-900 text-white hover:bg-black font-black flex flex-row sm:flex-col items-center justify-center gap-2 sm:gap-1 rounded-2xl shadow-lg transition-all active:scale-95 py-2 sm:py-4 px-6">
-              <div className="flex items-center gap-2 sm:gap-3"><RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} /><span className="text-[11px] sm:text-[13px] tracking-[0.1em] sm:tracking-[0.2em] uppercase font-black">{loading ? t.fetching : t.syncMarket}</span></div>
-              {lastUpdated && !loading && (<span className="text-[8px] sm:text-[10px] opacity-60 font-bold uppercase tracking-widest mt-0 sm:mt-1">{lastUpdated}</span>)}
+            <Button
+              onClick={() => updateAllData(assets)}
+              disabled={loading}
+              className="w-full h-14 sm:h-full bg-slate-900 text-white hover:bg-black font-black flex flex-row sm:flex-col items-center justify-center gap-2 sm:gap-2 rounded-3xl shadow-lg hover:shadow-xl transition-all active:scale-95 py-3 sm:py-6 px-6 border border-white/10 group"
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <RefreshCw className={cn("w-4 h-4 transition-transform group-hover:rotate-180 duration-500", loading && "animate-spin")} />
+                <span className="text-xs sm:text-sm tracking-[0.15em] uppercase font-black">
+                  {loading ? t.fetching : t.syncMarket}
+                </span>
+                <span className="text-[9px] font-bold text-white/40 bg-white/10 px-1.5 py-0.5 rounded hidden sm:inline-block">
+                  R
+                </span>
+              </div>
+              {lastUpdated && !loading && (
+                <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0 sm:mt-1">
+                  {lastUpdated}
+                </span>
+              )}
             </Button>
           </div>
         </div>
-      ); break;
+      );
+      break;
+    }
     case 'controls':
       content = (
         <section className="bg-slate-50/80 backdrop-blur-md p-4 border border-slate-100 rounded-2xl flex flex-col xl:flex-row items-center gap-4 shadow-sm h-full overflow-hidden">
@@ -1883,7 +2036,17 @@ const SortableSection = ({
           </div>
           <div className="flex-1 flex flex-wrap sm:flex-nowrap items-center gap-2 w-full">
             <Button variant="outline" size="sm" onClick={handleExport} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg"><Download className="w-3 h-3" /> JSON</Button>
-            <Button variant="outline" size="sm" onClick={handleExportCSV} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg" title={language === 'zh' ? '匯出相容於 Excel 的 CSV 報表' : 'Export Excel-compatible CSV'}><FileSpreadsheet className="w-3 h-3" /> CSV</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCSV}
+              className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg group"
+              title={language === 'zh' ? '匯出相容於 Excel 的 CSV 報表 (按 E)' : 'Export Excel-compatible CSV (Press E)'}
+            >
+              <FileSpreadsheet className="w-3 h-3 text-emerald-600" />
+              <span>CSV</span>
+              <kbd className="hidden sm:inline-flex items-center px-1 py-0.2 bg-slate-100 text-[9px] rounded font-mono text-slate-500 border border-slate-200/60">E</kbd>
+            </Button>
             <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="flex-1 h-8 font-black text-[10px] uppercase gap-1 bg-white border-slate-200 rounded-lg"><Upload className="w-3 h-3" /> {t.importData}</Button>
             <input type="file" ref={fileInputRef} onChange={handleFileImport} accept=".json" className="hidden" />
           </div>
@@ -1923,13 +2086,72 @@ const SortableSection = ({
     case 'allocation':
       content = <AllocationPieChart language={language} allocationData={assetCalculations.allocationData} displayCurrency={displayCurrency} loading={loading} height={currentHeight === 'auto' ? 280 : currentHeight} />;
       break;
-    case 'list':
+    case 'list': {
+      const totalTWD = assetCalculations.totalTWD || 1;
+      const getCategoryBadgeClass = (cat: string) => {
+        switch (cat) {
+          case 'Stock': return 'bg-blue-50 text-blue-700 border-blue-200/60';
+          case 'Crypto': return 'bg-purple-50 text-purple-700 border-purple-200/60';
+          case 'ETF': return 'bg-indigo-50 text-indigo-700 border-indigo-200/60';
+          case 'Forex': return 'bg-sky-50 text-sky-700 border-sky-200/60';
+          case 'Savings':
+          case 'Bank': return 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
+          case 'Option':
+          case 'Future': return 'bg-amber-50 text-amber-700 border-amber-200/60';
+          default: return 'bg-slate-50 text-slate-700 border-slate-200/60';
+        }
+      };
+
       content = (
         <Card className="modern-card bg-white h-full flex flex-col overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-50 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <h3 className="pro-label text-sm"><BarChart3 className="w-5 h-5" /> {t.dashboard}</h3>
-            <div className="flex items-center gap-2"><Filter className="w-3.5 h-3.5 text-slate-400" /><Select value={categoryFilter} onValueChange={setCategoryFilter}><SelectTrigger className="w-[120px] h-8 bg-slate-50 border-slate-200 text-[11px] font-black uppercase rounded-lg"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t.allCategories}</SelectItem>{allCategories.map(cat => (<SelectItem key={cat} value={cat}>{t.categoryNames[cat as keyof typeof t.categoryNames] || cat}</SelectItem>))}</SelectContent></Select></div>
+          <div className="px-5 sm:px-6 py-4 border-b border-slate-100 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white/50 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <h3 className="pro-label text-sm"><BarChart3 className="w-5 h-5 text-slate-700" /> {t.dashboard}</h3>
+              <span className="text-[11px] font-black text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full">
+                {sortedActiveAssets.length} / {assetCalculations.activeAssets.length}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Instant Search Bar */}
+              <div className="relative min-w-[170px] sm:min-w-[210px] flex-1 sm:flex-none">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <Input
+                  ref={searchInputRef}
+                  value={tableSearchQuery}
+                  onChange={(e) => setTableSearchQuery(e.target.value)}
+                  placeholder={language === 'zh' ? '搜尋名稱/代碼 ( / )...' : 'Search ( / )...'}
+                  className="h-8 pl-8 pr-7 text-xs font-bold rounded-xl bg-slate-50 border-slate-200 focus:bg-white"
+                />
+                {tableSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setTableSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs font-black p-0.5"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Category filter */}
+              <div className="flex items-center gap-1.5">
+                <Filter className="w-3.5 h-3.5 text-slate-400" />
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-[120px] h-8 bg-slate-50 border-slate-200 text-[11px] font-black uppercase rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t.allCategories}</SelectItem>
+                    {allCategories.map(cat => (
+                      <SelectItem key={cat} value={cat}>{t.categoryNames[cat as keyof typeof t.categoryNames] || cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
+
           <CardContent className="p-0 flex-1 overflow-hidden relative">
             <Table className="min-w-[1200px] border-separate border-spacing-0" wrapperClassName="h-full overflow-auto no-scrollbar">
               <TableHeader className="relative z-30">
@@ -1940,70 +2162,211 @@ const SortableSection = ({
                   <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30" onClick={() => requestSort('active', 'amount')}><div className="flex items-center text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.holdings} <SortIcon config={activeSort} columnKey="amount" /></div></TableHead>
                   <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30 text-right" onClick={() => requestSort('active', 'priceInDisplay')}><div className="flex items-center justify-end text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.unitPrice} <SortIcon config={activeSort} columnKey="priceInDisplay" /></div></TableHead>
                   <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30 text-right" onClick={() => requestSort('active', 'valueInDisplay')}><div className="flex items-center justify-end text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.valuation} <SortIcon config={activeSort} columnKey="valueInDisplay" /></div></TableHead>
+                  <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30 text-right" onClick={() => requestSort('active', 'valueInDisplay')}><div className="flex items-center justify-end text-[12px] font-black text-slate-500 uppercase tracking-widest">{language === 'zh' ? '佔比' : 'Weight'} <SortIcon config={activeSort} columnKey="valueInDisplay" /></div></TableHead>
                   <TableHead className="sticky top-0 bg-white/95 h-12 cursor-pointer border-b border-slate-100 z-30 text-right" onClick={() => requestSort('active', 'changePercent')}><div className="flex items-center justify-end text-[12px] font-black text-slate-500 uppercase tracking-widest">{t.priceChange} <SortIcon config={activeSort} columnKey="changePercent" /></div></TableHead>
-                  <TableHead className="sticky top-0 bg-white/95 w-[60px] border-b border-slate-100 z-30"></TableHead>
+                  <TableHead className="sticky top-0 bg-white/95 w-[70px] border-b border-slate-100 z-30"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedActiveAssets.map((asset: any) => (
-                  <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50">
-                    <TableCell className="px-6 py-4">
-                      <div className="font-black text-[14px] text-slate-900">{asset.name}</div>
-                      <div className="text-[12px] font-black text-slate-400 uppercase tracking-[0.1em] mt-0.5">{asset.symbol || asset.category}</div>
-                    </TableCell>
-                    <TableCell><Badge variant="outline" className="text-[10px] font-black uppercase px-2 py-0.5">{t.categoryNames[asset.category as keyof typeof t.categoryNames] || asset.category}</Badge></TableCell>
-                    <TableCell><span className="text-[13px] font-black text-slate-500">{asset.acquisitionDate}</span></TableCell>
-                    <TableCell><span className="text-[14px] font-black text-slate-700">{privacyMode ? '••••' : formatNumber(asset.amount)}<span className="text-[10px] text-slate-400 ml-1 font-bold">{((['Stock', 'ETF'].includes(asset.category)) && !privacyMode) ? t.shares : ''}</span></span></TableCell>
-                    <TableCell className="text-right"><div className="font-black text-[13px] text-slate-700"><span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{privacyMode ? '••••' : (asset.priceInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 4 }) || '0')}</div></TableCell>
-                    <TableCell className="text-right"><div className="font-black text-base text-slate-900"><span className="text-slate-200 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{privacyMode ? '••••••' : (asset.valueInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0')}</div></TableCell>
-                    <TableCell className="text-right"><div className={cn("inline-flex items-center gap-1 font-black text-[13px]", (asset.changePercent || 0) > 0 ? "text-emerald-500" : (asset.changePercent || 0) < 0 ? "text-rose-500" : "text-slate-400")}>{(asset.changePercent || 0) > 0 ? <TrendingUp className="w-3.5 h-3.5" /> : (asset.changePercent || 0) < 0 ? <TrendingDown className="w-3.5 h-3.5" /> : null}{(asset.changePercent || 0).toFixed(2)}%</div></TableCell>
-                    <TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                      scrollPosRef.current = window.scrollY;
-                      setEditingAsset(asset);
-                      setEditName(asset.name);
-                      if (asset.amountUnit) {
-                        setEditAmount(asset.amountUnit === 'lot' ? asset.amount / 1000 : asset.amount);
-                        setEditAmountUnit(asset.amountUnit);
-                      } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) {
-                        setEditAmount(asset.amount / 1000);
-                        setEditAmountUnit('lot');
-                      } else {
-                        setEditAmount(asset.amount);
-                        setEditAmountUnit('share');
-                      }
-                      setEditDate(asset.acquisitionDate);
-                      setEditEndDate(asset.endDate || '');
-                      setEditCurrency(asset.currency);
-                    }}><Edit2 className="w-3.5 h-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button></div></TableCell>
-                  </TableRow>
-                ))}
+                {sortedActiveAssets.map((asset: any) => {
+                  const weight = totalTWD > 0 ? (((asset.valueInTWD || 0) / totalTWD) * 100) : 0;
+                  return (
+                    <TableRow key={asset.id} className="group hover:bg-slate-50/70 border-slate-50 transition-colors">
+                      <TableCell className="px-6 py-4">
+                        <div className="font-black text-[14px] text-slate-900 group-hover:text-black transition-colors">{asset.name}</div>
+                        <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.1em] mt-0.5">{asset.symbol || asset.category}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={cn("text-[10px] font-black uppercase px-2.5 py-0.5 rounded-md border", getCategoryBadgeClass(asset.category))}>
+                          {t.categoryNames[asset.category as keyof typeof t.categoryNames] || asset.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell><span className="text-[13px] font-bold text-slate-500">{asset.acquisitionDate}</span></TableCell>
+                      <TableCell><span className="text-[14px] font-black text-slate-700">{privacyMode ? '••••' : formatNumber(asset.amount)}<span className="text-[10px] text-slate-400 ml-1 font-bold">{((['Stock', 'ETF'].includes(asset.category)) && !privacyMode) ? t.shares : ''}</span></span></TableCell>
+                      <TableCell className="text-right"><div className="font-black text-[13px] text-slate-700"><span className="text-slate-300 text-[10px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{privacyMode ? '••••' : (asset.priceInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 4 }) || '0')}</div></TableCell>
+                      <TableCell className="text-right"><div className="font-black text-base text-slate-900"><span className="text-slate-300 text-[12px] mr-1">{CURRENCY_SYMBOLS[displayCurrency]}</span>{privacyMode ? '••••••' : (asset.valueInDisplay?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0')}</div></TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="text-[12px] font-black text-slate-600 tabular-nums">{privacyMode ? '••%' : `${weight.toFixed(1)}%`}</span>
+                          <div className="w-10 h-1.5 bg-slate-100 rounded-full overflow-hidden hidden xl:block">
+                            <div className="h-full bg-slate-900 rounded-full transition-all duration-500" style={{ width: `${Math.min(100, weight)}%` }} />
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className={cn(
+                          "inline-flex items-center gap-1 font-black text-[12px] px-2.5 py-0.5 rounded-full border",
+                          (asset.changePercent || 0) > 0 
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200/60" 
+                            : (asset.changePercent || 0) < 0 
+                              ? "bg-rose-50 text-rose-700 border-rose-200/60" 
+                              : "bg-slate-50 text-slate-500 border-slate-200/60"
+                        )}>
+                          {(asset.changePercent || 0) > 0 ? <TrendingUp className="w-3 h-3" /> : (asset.changePercent || 0) < 0 ? <TrendingDown className="w-3 h-3" /> : null}
+                          {(asset.changePercent || 0) > 0 ? '+' : ''}{(asset.changePercent || 0).toFixed(2)}%
+                        </div>
+                      </TableCell>
+                      <TableCell className="pr-6 text-right">
+                        <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-black transition-colors" 
+                            title={language === 'zh' ? '編輯部位' : 'Edit position'}
+                            onClick={() => {
+                              scrollPosRef.current = window.scrollY;
+                              setEditingAsset(asset);
+                              setEditName(asset.name);
+                              if (asset.amountUnit) {
+                                setEditAmount(asset.amountUnit === 'lot' ? asset.amount / 1000 : asset.amount);
+                                setEditAmountUnit(asset.amountUnit);
+                              } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) {
+                                setEditAmount(asset.amount / 1000);
+                                setEditAmountUnit('lot');
+                              } else {
+                                setEditAmount(asset.amount);
+                                setEditAmountUnit('share');
+                              }
+                              setEditDate(asset.acquisitionDate);
+                              setEditEndDate(asset.endDate || '');
+                              setEditCurrency(asset.currency);
+                            }}
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors" 
+                            title={language === 'zh' ? '刪除部位' : 'Delete position'}
+                            onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
+
+            {sortedActiveAssets.length === 0 && (
+              <div className="py-16 px-4 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
+                  <Search className="w-5 h-5 text-slate-400" />
+                </div>
+                <p className="text-sm font-black text-slate-800">
+                  {tableSearchQuery 
+                    ? (language === 'zh' ? `查無符合「${tableSearchQuery}」的資產部位` : `No positions matching "${tableSearchQuery}"`)
+                    : (language === 'zh' ? '目前尚無進行中的資產部位' : 'No active holdings yet')}
+                </p>
+                <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                  {tableSearchQuery 
+                    ? (language === 'zh' ? '請嘗試更換關鍵字或點擊清除篩選條件' : 'Try different keywords or clear filter')
+                    : (language === 'zh' ? '可由下方「新增資產部位」表單輸入股票、外匯或加密貨幣開始追蹤' : 'Add positions below to start tracking your portfolio')}
+                </p>
+                {tableSearchQuery && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setTableSearchQuery('')}
+                    className="mt-4 h-8 text-xs font-black rounded-xl border-slate-200"
+                  >
+                    {language === 'zh' ? '清除搜尋條件' : 'Clear search'}
+                  </Button>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
-      ); break;
+      );
+      break;
+    }
     case 'closedList':
       content = (
-        <Card className="modern-card bg-white h-full flex flex-col overflow-hidden opacity-80">
-          <div className="px-6 py-4 border-b border-slate-50 shrink-0"><h3 className="pro-label text-sm"><History className="w-5 h-5" /> {t.closedPositions}</h3></div>
-          <CardContent className="p-0 flex-1 overflow-auto no-scrollbar relative"><Table className="min-w-[800px] border-separate border-spacing-0"><TableBody>{sortedClosedAssets.map((asset: any) => (<TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50"><TableCell className="px-6 py-4"><div className="font-black text-[13px] text-slate-700 line-through">{asset.name}</div><div className="text-[11px] font-black text-slate-500 uppercase tracking-[0.1em] mt-0.5">{asset.symbol || asset.category}</div></TableCell><TableCell><span className="text-[13px] font-black text-slate-700">{formatNumber(asset.amount)}<span className="text-[10px] text-slate-500 ml-1 font-bold">{(['Stock', 'ETF'].includes(asset.category)) ? t.shares : ''}</span></span></TableCell><TableCell><span className="text-[12px] font-black text-slate-700">{asset.acquisitionDate}</span></TableCell><TableCell className="text-right"><div className="font-black text-[12px] text-slate-700">{asset.endDate}</div></TableCell><TableCell className="pr-6 text-right"><div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-            scrollPosRef.current = window.scrollY;
-            setEditingAsset(asset);
-            setEditName(asset.name);
-            if (asset.amountUnit) {
-              setEditAmount(asset.amountUnit === 'lot' ? asset.amount / 1000 : asset.amount);
-              setEditAmountUnit(asset.amountUnit);
-            } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) {
-              setEditAmount(asset.amount / 1000);
-              setEditAmountUnit('lot');
-            } else {
-              setEditAmount(asset.amount);
-              setEditAmountUnit('share');
-            }
-            setEditDate(asset.acquisitionDate);
-            setEditEndDate(asset.endDate || '');
-            setEditCurrency(asset.currency);
-          }}><Edit2 className="w-3.5 h-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-rose-300" onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}><Trash2 className="w-3.5 h-3.5" /></Button></div></TableCell></TableRow>))}</TableBody></Table></CardContent>
+        <Card className="modern-card bg-white h-full flex flex-col overflow-hidden opacity-90">
+          <div className="px-6 py-4 border-b border-slate-50 shrink-0 flex items-center justify-between">
+            <h3 className="pro-label text-sm"><History className="w-5 h-5" /> {t.closedPositions}</h3>
+            <span className="text-[11px] font-black text-slate-400 tabular-nums">
+              {sortedClosedAssets.length} {language === 'zh' ? '筆記錄' : 'Records'}
+            </span>
+          </div>
+          <CardContent className="p-0 flex-1 overflow-auto no-scrollbar relative">
+            {sortedClosedAssets.length === 0 ? (
+              <div className="p-12 text-center flex flex-col items-center justify-center text-slate-400">
+                <History className="w-10 h-10 mb-3 opacity-30 stroke-[1.5]" />
+                <p className="text-sm font-black text-slate-500">
+                  {language === 'zh' ? '尚無已結清部位記錄' : 'No closed positions yet'}
+                </p>
+                <p className="text-xs text-slate-400 mt-1 font-medium">
+                  {language === 'zh' ? '當資產部位填入結清日期時，將自動封存於此處' : 'Positions with an end date will be archived here'}
+                </p>
+              </div>
+            ) : (
+              <Table className="min-w-[800px] border-separate border-spacing-0">
+                <TableBody>
+                  {sortedClosedAssets.map((asset: any) => (
+                    <TableRow key={asset.id} className="group hover:bg-slate-50/50 border-slate-50 transition-colors">
+                      <TableCell className="px-6 py-4">
+                        <div className="font-black text-[13px] text-slate-700 line-through">{asset.name}</div>
+                        <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.1em] mt-0.5">{asset.symbol || asset.category}</div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-[13px] font-black text-slate-700">
+                          {formatNumber(asset.amount)}
+                          <span className="text-[10px] text-slate-400 ml-1 font-bold">{(['Stock', 'ETF'].includes(asset.category)) ? t.shares : ''}</span>
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-[12px] font-bold text-slate-600">{asset.acquisitionDate}</span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="font-bold text-[12px] text-slate-600">{asset.endDate}</div>
+                      </TableCell>
+                      <TableCell className="pr-6 text-right">
+                        <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 rounded-lg hover:bg-slate-100"
+                            onClick={() => {
+                              scrollPosRef.current = window.scrollY;
+                              setEditingAsset(asset);
+                              setEditName(asset.name);
+                              if (asset.amountUnit) {
+                                setEditAmount(asset.amountUnit === 'lot' ? asset.amount / 1000 : asset.amount);
+                                setEditAmountUnit(asset.amountUnit);
+                              } else if ((asset.category === 'Stock' || asset.category === 'ETF') && asset.amount >= 1000 && asset.amount % 1000 === 0) {
+                                setEditAmount(asset.amount / 1000);
+                                setEditAmountUnit('lot');
+                              } else {
+                                setEditAmount(asset.amount);
+                                setEditAmountUnit('share');
+                              }
+                              setEditDate(asset.acquisitionDate);
+                              setEditEndDate(asset.endDate || '');
+                              setEditCurrency(asset.currency);
+                            }}
+                          >
+                            <Edit2 className="w-3.5 h-3.5 text-slate-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50"
+                            onClick={() => { setAssets(prev => prev.filter(a => a.id !== asset.id)); }}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
         </Card>
       ); break;
     case 'ai':
